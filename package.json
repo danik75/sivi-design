@@ -4,6 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "start:dev": "npm --prefix be run start:dev",
+    "migrate": "echo \"migrate stub\"",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "private": true
