@@ -83,7 +83,15 @@ for i in $(seq 1 30); do
   sleep 1
 done
 
-# Seed DB: copy db/seed.sql into container and apply
+# Seed DB: copy db/schema.sql and db/seed.sql into container and apply (schema first)
+if [ -f "$REPO_ROOT/db/schema.sql" ]; then
+  echo "Copying db/schema.sql into container and applying"
+  docker cp "$REPO_ROOT/db/schema.sql" sivi_design_db_container:/tmp/schema.sql || true
+  docker exec -i sivi_design_db_container psql -U sivi_user -d sivi_db -f /tmp/schema.sql || echo "Schema applied (or schema command failed)"
+else
+  echo "No db/schema.sql found; skipping schema apply"
+fi
+
 if [ -f "$REPO_ROOT/db/seed.sql" ]; then
   echo "Copying db/seed.sql into container and applying"
   docker cp "$REPO_ROOT/db/seed.sql" sivi_design_db_container:/tmp/seed.sql || true
