@@ -117,6 +117,16 @@ BE_DIR="$REPO_ROOT/be"
 if [ -d "$BE_DIR" ]; then
   echo "Starting backend (be)"
   (cd "$BE_DIR" && npm install --no-audit --no-fund)
+
+  # Load backend env from be/.env if present (do not commit secrets into repo)
+  if [ -f "$REPO_ROOT/be/.env" ]; then
+    echo "Loading backend env from $REPO_ROOT/be/.env"
+    # shellcheck disable=SC1090
+    set -a
+    . "$REPO_ROOT/be/.env"
+    set +a
+  fi
+
   export PGHOST=${PGHOST:-localhost}
   export PGPORT=${PGPORT:-5432}
   export PGUSER=${PGUSER:-sivi_user}
@@ -124,6 +134,8 @@ if [ -d "$BE_DIR" ]; then
   export PGDATABASE=${PGDATABASE:-sivi_db}
   export JWT_SECRET=${JWT_SECRET:-devsecret}
   export JWT_EXPIRATION_MINUTES=${JWT_EXPIRATION_MINUTES:-30}
+
+  echo "Backend env: PGUSER=$PGUSER, PGDATABASE=$PGDATABASE, JWT_SECRET_SET=${JWT_SECRET:+yes}"
 
   nohup sh -c "cd '$BE_DIR' && export PGHOST='$PGHOST' PGPORT='$PGPORT' PGUSER='$PGUSER' PGPASSWORD='$PGPASSWORD' PGDATABASE='$PGDATABASE' JWT_SECRET='$JWT_SECRET' JWT_EXPIRATION_MINUTES='$JWT_EXPIRATION_MINUTES' && npm run start:dev" > /tmp/be_server.log 2>&1 &
   echo "Backend started (logs: /tmp/be_server.log)"
