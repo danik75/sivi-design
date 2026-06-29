@@ -16,29 +16,29 @@ version: '3.8'
 services:
   db:
     image: postgres:15-alpine
-    container_name: cv_design_db
+    container_name: sivi_design_db_container
     restart: unless-stopped
     environment:
-      POSTGRES_USER: cv_user
-      POSTGRES_PASSWORD: cv_pass
-      POSTGRES_DB: cv_db
+      POSTGRES_USER: sivi_user
+      POSTGRES_PASSWORD: sivi_pass
+      POSTGRES_DB: sivi_db
     volumes:
-      - cv_design_data:/var/lib/postgresql/data
+      - sivi_design_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
 
 volumes:
-  cv_design_data:
-    name: cv_design_data
+  sivi_design_data:
+    name: sivi_design_data
 ```
 
 Notes:
-- Data is persisted in the named Docker volume `cv_design_data`. The actual data directory on the host is managed by Docker; use `docker volume inspect cv_design_data` to find the mountpoint.
+- Data is persisted in the named Docker volume `sivi_design_data`. The actual data directory on the host is managed by Docker; use `docker volume inspect sivi_design_data` to find the mountpoint.
 
 Start/stop commands:
 - Start: docker compose -f docker-compose.postgres.yml up -d
 - Stop: docker compose -f docker-compose.postgres.yml down
-- Remove volume (destroys data): docker volume rm cv_design_data
+- Remove volume (destroys data): docker volume rm sivi_design_data
 
 2) Schema for user/password persistence
 
@@ -71,7 +71,7 @@ ON CONFLICT (username) DO NOTHING;
 
 Suggested seed workflow:
 1. Start Postgres via docker compose
-2. Run: psql "postgresql://cv_user:cv_pass@localhost:5432/cv_db" -c "<seed SQL above>"
+2. Run: psql "postgresql://sivi_user:sivi_pass@localhost:5432/sivi_db" -c "<seed SQL above>"
 
 3) Authentication behavior
 
@@ -117,8 +117,8 @@ Secrets handling:
   - JWT_EXPIRATION_MINUTES=30
 
 Backup/restore (local):
-- Export: docker exec -t cv_design_db pg_dump -U cv_user cv_db > cv_db_dump.sql
-- Import: psql "postgresql://cv_user:cv_pass@localhost:5432/cv_db" -f cv_db_dump.sql
+- Export: docker exec -t sivi_design_db_container pg_dump -U sivi_user sivi_db > sivi_db_dump.sql
+- Import: psql "postgresql://sivi_user:sivi_pass@localhost:5432/sivi_db" -f sivi_db_dump.sql
 - Inspect volume: docker volume inspect cv_design_data
 
 Migrating to managed cloud Postgres (notes):

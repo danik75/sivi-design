@@ -28,7 +28,7 @@ case "$cmd" in
   up)
     echo "Starting Postgres (docker compose -f $COMPOSE_FILE up -d)"
     docker compose -f "$COMPOSE_FILE" up -d
-    echo "Postgres started on localhost:5432 (container: cv_design_db)"
+    echo "Postgres started on localhost:5432 (container: sivi_design_db_container)"}
     ;;
   down)
     echo "Stopping Postgres (docker compose -f $COMPOSE_FILE down)"
@@ -38,7 +38,7 @@ case "$cmd" in
     echo "Seeding database cv_db on localhost:5432"
     SEED_SQL="CREATE EXTENSION IF NOT EXISTS \"pgcrypto\";\nCREATE TABLE IF NOT EXISTS users (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), username text NOT NULL UNIQUE, password text NOT NULL, role text NOT NULL DEFAULT 'user', created_at timestamp with time zone NOT NULL DEFAULT now());\nINSERT INTO users (username, password, role) VALUES ('cv', 'cv', 'admin') ON CONFLICT (username) DO NOTHING;"
 
-    psql "postgresql://cv_user:cv_pass@localhost:5432/cv_db" -c "$SEED_SQL"
+    psql "postgresql://sivi_user:sivi_pass@localhost:5432/sivi_db" -c "$SEED_SQL"
     echo "Seed complete."
     ;;
   help|*)
