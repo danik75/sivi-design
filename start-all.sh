@@ -73,10 +73,10 @@ else
 fi
 
 # Wait for DB port to be open in container
-echo "Waiting for Postgres container 'cv_design_db' to accept connections..."
+echo "Waiting for Postgres container 'sivi_design_db_container' to accept connections..."
 # Wait up to 30s
 for i in $(seq 1 30); do
-  if docker exec -i cv_design_db pg_isready -U cv_user >/dev/null 2>&1; then
+  if docker exec -i sivi_design_db_container pg_isready -U sivi_user >/dev/null 2>&1; then
     echo "Postgres ready"
     break
   fi
@@ -86,8 +86,8 @@ done
 # Seed DB: copy db/seed.sql into container and apply
 if [ -f "$REPO_ROOT/db/seed.sql" ]; then
   echo "Copying db/seed.sql into container and applying"
-  docker cp "$REPO_ROOT/db/seed.sql" cv_design_db:/tmp/seed.sql || true
-  docker exec -i cv_design_db psql -U cv_user -d cv_db -f /tmp/seed.sql || echo "Seed applied (or seed command failed)"
+  docker cp "$REPO_ROOT/db/seed.sql" sivi_design_db_container:/tmp/seed.sql || true
+  docker exec -i sivi_design_db_container psql -U sivi_user -d sivi_db -f /tmp/seed.sql || echo "Seed applied (or seed command failed)"
 else
   echo "No db/seed.sql found; skipping seed"
 fi
@@ -111,9 +111,9 @@ if [ -d "$BE_DIR" ]; then
   (cd "$BE_DIR" && npm install --no-audit --no-fund)
   export PGHOST=${PGHOST:-localhost}
   export PGPORT=${PGPORT:-5432}
-  export PGUSER=${PGUSER:-cv_user}
-  export PGPASSWORD=${PGPASSWORD:-cv_pass}
-  export PGDATABASE=${PGDATABASE:-cv_db}
+  export PGUSER=${PGUSER:-sivi_user}
+  export PGPASSWORD=${PGPASSWORD:-sivi_pass}
+  export PGDATABASE=${PGDATABASE:-sivi_db}
   export JWT_SECRET=${JWT_SECRET:-devsecret}
   export JWT_EXPIRATION_MINUTES=${JWT_EXPIRATION_MINUTES:-30}
 

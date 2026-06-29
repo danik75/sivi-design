@@ -20,6 +20,6 @@ CREATE TABLE IF NOT EXISTS users (
 );
 
 To apply with migrate CLI:
-  migrate -path migrations -database "postgresql://cv_user:cv_pass@localhost:5432/cv_db?sslmode=disable" up
+  migrate -path migrations -database "postgresql://sivi_user:sivi_pass@localhost:5432/sivi_db?sslmode=disable" up
 
 Alternatively use psql for ad-hoc / dev application of SQL files (see project README for scripts).

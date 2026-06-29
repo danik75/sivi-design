@@ -3,7 +3,7 @@
 -- This file intentionally inserts a cleartext password for fast dev testing.
 
 -- Usage (example):
--- psql "postgresql://cv_user:cv_pass@localhost:5432/cv_db" -f db/seed.sql
+-- psql "postgresql://sivi_user:sivi_pass@localhost:5432/sivi_db" -f db/seed.sql
 
 BEGIN;
 
