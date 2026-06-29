@@ -1,33 +1,32 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { useState } from 'react';
+import reactLogo from './assets/react.svg';
+import heroImg from './assets/hero.png';
+import './App.css';
 
 function App() {
-  const [username, setUsername] = useState('')
-  const [password, setPassword] = useState('')
-  const [token, setToken] = useState(null)
-  const [error, setError] = useState(null)
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [token, setToken] = useState(null);
+  const [error, setError] = useState(null);
 
   async function submit(e) {
-    e.preventDefault()
-    setError(null)
-    setToken(null)
+    e.preventDefault();
+    setError(null);
+    setToken(null);
     try {
       const res = await fetch('http://localhost:3000/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),
-      })
+      });
       if (!res.ok) {
-        const text = await res.text()
-        throw new Error(`${res.status} ${res.statusText}: ${text}`)
+        const text = await res.text();
+        throw new Error(`${res.status} ${res.statusText}: ${text}`);
       }
-      const data = await res.json()
-      setToken(data.access_token || data.token || JSON.stringify(data))
+      const data = await res.json();
+      setToken(data.access_token || data.token || JSON.stringify(data));
     } catch (err) {
-      setError(err.message)
+      setError(err.message);
     }
   }
 
@@ -47,7 +46,11 @@ function App() {
             </label>
             <label>
               Password
-              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
             </label>
             <div className="actions">
               <button type="submit">Login</button>
@@ -67,7 +70,9 @@ function App() {
             </div>
           )}
 
-          <div className="hint">Use username: <code>cv</code> password: <code>cv</code> (dev seed)</div>
+          <div className="hint">
+            Use username: <code>cv</code> password: <code>cv</code> (dev seed)
+          </div>
         </section>
 
         <section className="info">
@@ -80,7 +85,7 @@ function App() {
         <small>Local dev — JWT stored in-memory only for demo.</small>
       </footer>
     </div>
-  )
+  );
 }
 
-export default App
+export default App;
