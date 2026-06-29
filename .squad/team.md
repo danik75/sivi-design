@@ -1,6 +1,6 @@
 # Squad Team
 
-> cv-design
+> sivi-design
 
 ## Coordinator
 
@@ -17,8 +17,10 @@
 | be-nest | BE NestJS Developer | .squad/agents/be-nest/charter.md | active |
 | automation-qa | Automation QA | .squad/agents/automation-qa/charter.md | active |
 | architect | Architect | .squad/agents/architect/charter.md | active |
+| devops | DevOps Engineer | .squad/agents/devops/charter.md | active |
+| dba | DBA | .squad/agents/dba/charter.md | active |
 
 ## Project Context
 
-- **Project:** cv-design
+- **Project:** sivi-design
 - **Created:** 2026-06-29
