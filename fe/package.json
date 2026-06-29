@@ -11,7 +11,11 @@
   },
   "dependencies": {
     "react": "^19.2.7",
-    "react-dom": "^19.2.7"
+    "react-dom": "^19.2.7",
+    "axios": "^1.4.0",
+    "@tanstack/react-query": "^4.30.0",
+    "i18next": "^23.0.0",
+    "react-i18next": "^13.0.0"
   },
   "devDependencies": {
     "@types/react": "^19.2.17",
