@@ -35,12 +35,23 @@ case "$cmd" in
     docker compose -f "$COMPOSE_FILE" down
     ;;
   seed)
-    echo "Seeding database cv_db on localhost:5432"
-    SEED_SQL="CREATE EXTENSION IF NOT EXISTS \"pgcrypto\";\nCREATE TABLE IF NOT EXISTS users (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), username text NOT NULL UNIQUE, password text NOT NULL, role text NOT NULL DEFAULT 'user', created_at timestamp with time zone NOT NULL DEFAULT now());\nINSERT INTO users (username, password, role) VALUES ('cv', 'cv', 'admin') ON CONFLICT (username) DO NOTHING;"
+    echo "Seeding database sivi_db on localhost:5432 (apply schema then seed)"
 
-    psql "postgresql://sivi_user:sivi_pass@localhost:5432/sivi_db" -c "$SEED_SQL"
-    echo "Seed complete."
-    ;;
+    if [ -f "../db/schema.sql" ]; then
+      echo "Applying schema from db/schema.sql"
+      psql "postgresql://sivi_user:sivi_pass@localhost:5432/sivi_db" -f ../db/schema.sql || echo "Schema apply failed (or already applied)"
+    else
+      echo "No db/schema.sql found; skipping schema apply"
+    fi
+
+    if [ -f "../db/seed.sql" ]; then
+      echo "Applying seed from db/seed.sql"
+      psql "postgresql://sivi_user:sivi_pass@localhost:5432/sivi_db" -f ../db/seed.sql || echo "Seed applied (or seed command failed)"
+    else
+      echo "No db/seed.sql found; skipping seed"
+    fi
+
+    echo "Seed complete."    ;;
   help|*)
     usage
     ;;
