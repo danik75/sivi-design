@@ -2,17 +2,17 @@ version: '3.8'
 services:
   db:
     image: postgres:15-alpine
-    container_name: cv_design_db
+    container_name: sivi_design_db_container
     restart: unless-stopped
     environment:
-      POSTGRES_USER: cv_user
-      POSTGRES_PASSWORD: cv_pass
-      POSTGRES_DB: cv_db
+      POSTGRES_USER: sivi_user
+      POSTGRES_PASSWORD: sivi_pass
+      POSTGRES_DB: sivi_db
     volumes:
-      - cv_design_data:/var/lib/postgresql/data
+      - sivi_design_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
 
 volumes:
-  cv_design_data:
-    name: cv_design_data
+  sivi_design_data:
+    name: sivi_design_data
