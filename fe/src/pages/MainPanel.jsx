@@ -95,7 +95,7 @@ export default function MainPanel({ onLogout }) {
     const isActive = activeId === item.id;
     return (
       <Button
-        variant="ghost"
+        variant="nav"
         onClick={() => {
           setActiveId(item.id);
           setMobileOpen(false);

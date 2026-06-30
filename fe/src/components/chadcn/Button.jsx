@@ -9,6 +9,7 @@ export default function Button({ children, className = '', variant = 'primary', 
       'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-md hover:from-indigo-500 hover:to-violet-500 hover:shadow-lg focus:ring-indigo-500',
     ghost: 'bg-transparent text-slate-600 hover:bg-slate-100 focus:ring-slate-400',
     danger: 'bg-transparent text-rose-600 hover:bg-rose-50 focus:ring-rose-400',
+    nav: 'focus:ring-indigo-300',
   };
 
   return (
@@ -21,5 +22,5 @@ export default function Button({ children, className = '', variant = 'primary', 
 Button.propTypes = {
   children: PropTypes.node,
   className: PropTypes.string,
-  variant: PropTypes.oneOf(['primary', 'ghost', 'danger']),
+  variant: PropTypes.oneOf(['primary', 'ghost', 'danger', 'nav']),
 };
