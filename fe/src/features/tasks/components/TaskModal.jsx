@@ -45,14 +45,19 @@ function normDate(val) {
   return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
 }
 
+function normTime(val) {
+  if (!val) return '00:00';
+  return String(val).slice(0, 5);
+}
+
 function buildInitialState(task) {
   return {
     name: task?.name ?? '',
     description: task?.description ?? '',
     startDate: normDate(task?.startDate) ?? todayDateStr(),
-    startTime: task?.startTime ?? '00:00',
+    startTime: normTime(task?.startTime),
     endDate: normDate(task?.endDate) ?? weekFromTodayStr(),
-    endTime: task?.endTime ?? '00:00',
+    endTime: normTime(task?.endTime),
     status: task?.status ?? DEFAULT_STATUS,
     customerId: task?.customerId != null ? String(task.customerId) : '',
     estimatedHours: task?.estimatedHours != null ? String(task.estimatedHours) : '',
@@ -94,13 +99,24 @@ export default function TaskModal({ isOpen, onClose, task, onSuccess }) {
     setFields((prev) => {
       const next = { ...prev, [field]: value };
       // Auto-set times when start === end date
-      if ((field === 'startDate' || field === 'endDate')) {
+      if (field === 'startDate' || field === 'endDate') {
         const s = field === 'startDate' ? value : prev.startDate;
         const e = field === 'endDate' ? value : prev.endDate;
         if (s && e && s === e) {
           next.startTime = '00:00';
           next.endTime = '23:59';
         }
+      }
+      // Auto-set status from percentComplete (skip if cancelled)
+      if (field === 'percentComplete' && prev.status !== 'cancelled') {
+        const pct = Number(value);
+        if (pct === 0) next.status = 'pending';
+        else if (pct === 100) next.status = 'done';
+        else next.status = 'in_progress';
+      }
+      // Auto-set percentComplete to 100 when status set to done
+      if (field === 'status' && value === 'done') {
+        next.percentComplete = 100;
       }
       return next;
     });

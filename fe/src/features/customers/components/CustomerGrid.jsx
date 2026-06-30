@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import Button from '@/components/chadcn/Button';
 import EmptyState from '@/components/chadcn/EmptyState';
 import SearchInput from '@/components/chadcn/SearchInput';
@@ -8,58 +8,51 @@ import CustomerRow from '@/features/customers/components/CustomerRow';
 import { CUSTOMER_TEXT, getApiErrorMessage } from '@/features/customers/constants';
 import useCustomers from '@/features/customers/hooks/useCustomers';
 
+const PAGE_SIZE = 8;
+
 export default function CustomerGrid({ onCreate, onEdit, onDelete, selectedCustomerId, onSelectCustomer }) {
   const [search, setSearch] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [page, setPage] = useState(1);
 
-  useEffect(() => {
-    const timeoutId = window.setTimeout(() => {
-      setDebouncedSearch(search.trim());
-    }, 300);
+  const { data, error, isError, isLoading, refetch } = useCustomers({ limit: 10000 });
 
-    return () => window.clearTimeout(timeoutId);
-  }, [search]);
+  const allCustomers = data?.data ?? [];
 
-  const { data, error, isError, isLoading, isFetching, refetch } = useCustomers({
-    search: debouncedSearch,
-    page,
-  });
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return allCustomers;
+    return allCustomers.filter((c) =>
+      c.name?.toLowerCase().includes(q) ||
+      c.email?.toLowerCase().includes(q) ||
+      c.phone?.toLowerCase().includes(q)
+    );
+  }, [allCustomers, search]);
 
-  const customers = data?.data ?? [];
-  const total = data?.total ?? 0;
-  const limit = data?.limit ?? 25;
-  const totalPages = Math.max(1, Math.ceil(total / limit));
-  const hasSearch = Boolean(debouncedSearch);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const customers = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+  const hasSearch = Boolean(search.trim());
 
-  useEffect(() => {
-    if (page > totalPages) {
-      setPage(totalPages);
-    }
-  }, [page, totalPages]);
-
-  const emptyStateAction = useMemo(() => {
-    if (hasSearch) {
-      return (
-        <Button type="button" variant="ghost" onClick={() => setSearch('')}>
-          {CUSTOMER_TEXT.clearSearch}
-        </Button>
-      );
-    }
-
-    return <Button onClick={onCreate}>{CUSTOMER_TEXT.addCustomer}</Button>;
-  }, [hasSearch, onCreate]);
-
-  const handleSearchChange = (event) => {
-    setSearch(event.target.value);
+  const handleSearchChange = (e) => {
+    setSearch(e.target.value);
     setPage(1);
   };
 
   const handleSearchClear = () => {
     setSearch('');
-    setDebouncedSearch('');
     setPage(1);
   };
+
+  const emptyStateAction = useMemo(() => {
+    if (hasSearch) {
+      return (
+        <Button type="button" variant="ghost" onClick={handleSearchClear}>
+          {CUSTOMER_TEXT.clearSearch}
+        </Button>
+      );
+    }
+    return <Button onClick={onCreate}>{CUSTOMER_TEXT.addCustomer}</Button>;
+  }, [hasSearch, onCreate]);
 
   return (
     <section className="space-y-6">
@@ -97,7 +90,7 @@ export default function CustomerGrid({ onCreate, onEdit, onDelete, selectedCusto
         <div className="rounded-2xl bg-white px-6 py-12 text-center text-sm text-slate-500 shadow-sm ring-1 ring-slate-100">
           {CUSTOMER_TEXT.loading}
         </div>
-      ) : customers.length ? (
+      ) : filtered.length ? (
         <div className="space-y-4">
           <Table>
             <TableHead>
@@ -124,22 +117,22 @@ export default function CustomerGrid({ onCreate, onEdit, onDelete, selectedCusto
 
           <div className="flex flex-col gap-3 rounded-2xl bg-white px-4 py-3 shadow-sm ring-1 ring-slate-100 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-slate-500">
-              {CUSTOMER_TEXT.pagination.label(page, totalPages)}
+              {CUSTOMER_TEXT.pagination.label(safePage, totalPages)}
             </p>
             <div className="flex items-center gap-2">
               <Button
                 type="button"
                 variant="ghost"
-                onClick={() => setPage((currentPage) => Math.max(1, currentPage - 1))}
-                disabled={page === 1 || isFetching}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={safePage === 1}
               >
                 {CUSTOMER_TEXT.pagination.previous}
               </Button>
               <Button
                 type="button"
                 variant="ghost"
-                onClick={() => setPage((currentPage) => Math.min(totalPages, currentPage + 1))}
-                disabled={page >= totalPages || isFetching}
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={safePage >= totalPages}
               >
                 {CUSTOMER_TEXT.pagination.next}
               </Button>
@@ -150,16 +143,10 @@ export default function CustomerGrid({ onCreate, onEdit, onDelete, selectedCusto
         <EmptyState
           icon={hasSearch ? '🔎' : '👥'}
           title={hasSearch ? CUSTOMER_TEXT.noResultsTitle : CUSTOMER_TEXT.noDataTitle}
-          description={
-            hasSearch ? CUSTOMER_TEXT.noResultsDescription : CUSTOMER_TEXT.noDataDescription
-          }
+          description={hasSearch ? CUSTOMER_TEXT.noResultsDescription : CUSTOMER_TEXT.noDataDescription}
           action={emptyStateAction}
         />
       )}
-
-      {!isLoading && isFetching ? (
-        <div className="text-right text-xs text-slate-400">{CUSTOMER_TEXT.loading}</div>
-      ) : null}
     </section>
   );
 }
