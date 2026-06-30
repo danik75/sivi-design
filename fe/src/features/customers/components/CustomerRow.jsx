@@ -5,15 +5,20 @@ import TrashIcon from '@/components/chadcn/icons/TrashIcon';
 import { TableCell, TableRow } from '@/components/chadcn/Table';
 import { CUSTOMER_TEXT, getPrimaryContact } from '@/features/customers/constants';
 
-export default function CustomerRow({ customer, onEdit, onDelete }) {
+export default function CustomerRow({ customer, onEdit, onDelete, onSelect, isSelected }) {
   const primaryContact = getPrimaryContact(customer);
 
   return (
     <TableRow>
-      <TableCell className="font-semibold text-slate-900">{customer.name}</TableCell>
-      <TableCell>{primaryContact.email || CUSTOMER_TEXT.placeholder}</TableCell>
-      <TableCell>{primaryContact.phone || CUSTOMER_TEXT.placeholder}</TableCell>
-      <TableCell>
+      <TableCell
+        className={`font-semibold text-slate-900${isSelected ? ' bg-indigo-50' : ''}${onSelect ? ' cursor-pointer' : ''}`}
+        onClick={onSelect ? () => onSelect(customer) : undefined}
+      >
+        {customer.name}
+      </TableCell>
+      <TableCell className={isSelected ? 'bg-indigo-50' : ''}>{primaryContact.email || CUSTOMER_TEXT.placeholder}</TableCell>
+      <TableCell className={isSelected ? 'bg-indigo-50' : ''}>{primaryContact.phone || CUSTOMER_TEXT.placeholder}</TableCell>
+      <TableCell className={isSelected ? 'bg-indigo-50' : ''}>
         <div className="flex items-center justify-end gap-2">
           <Button
             type="button"
@@ -47,4 +52,11 @@ CustomerRow.propTypes = {
   }).isRequired,
   onEdit: PropTypes.func.isRequired,
   onDelete: PropTypes.func.isRequired,
+  onSelect: PropTypes.func,
+  isSelected: PropTypes.bool,
+};
+
+CustomerRow.defaultProps = {
+  onSelect: undefined,
+  isSelected: false,
 };

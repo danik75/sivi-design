@@ -1,6 +1,7 @@
 import PropTypes from 'prop-types';
 import { useEffect, useMemo, useState } from 'react';
 import Button from '@/components/chadcn/Button';
+import DatePicker from '@/components/chadcn/DatePicker';
 import Dialog from '@/components/chadcn/Dialog';
 import Form from '@/components/chadcn/Form';
 import FormField from '@/components/chadcn/FormField';
@@ -17,6 +18,18 @@ import useUpdateTask from '@/features/tasks/hooks/useUpdateTask';
 
 const FORM_ID = 'task-modal-form';
 
+function toDateStr(d) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+const todayDateStr = () => toDateStr(new Date());
+const weekFromTodayStr = () => { const d = new Date(); d.setDate(d.getDate() + 7); return toDateStr(d); };
+
+const PRESET_COLORS = [
+  '#64748b', '#6366f1', '#22c55e', '#f43f5e',
+  '#f97316', '#eab308', '#14b8a6', '#8b5cf6',
+  '#ec4899', '#0ea5e9', '#a16207', '#dc2626',
+];
+
 const selectClass =
   'block w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 shadow-sm transition-all duration-150 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200';
 
@@ -27,14 +40,15 @@ function buildInitialState(task) {
   return {
     name: task?.name ?? '',
     description: task?.description ?? '',
-    startDate: task?.startDate ?? '',
-    startTime: task?.startTime ?? '',
-    endDate: task?.endDate ?? '',
-    endTime: task?.endTime ?? '',
+    startDate: task?.startDate ?? todayDateStr(),
+    startTime: task?.startTime ?? '00:00',
+    endDate: task?.endDate ?? weekFromTodayStr(),
+    endTime: task?.endTime ?? '00:00',
     status: task?.status ?? DEFAULT_STATUS,
     customerId: task?.customerId != null ? String(task.customerId) : '',
     estimatedHours: task?.estimatedHours != null ? String(task.estimatedHours) : '',
     percentComplete: task?.percentComplete ?? 0,
+    color: task?.color ?? '',
   };
 }
 
@@ -119,6 +133,7 @@ export default function TaskModal({ isOpen, onClose, task, onSuccess }) {
       customerId: fields.customerId || null,
       estimatedHours: fields.estimatedHours !== '' ? Number(fields.estimatedHours) : null,
       percentComplete: task ? Number(fields.percentComplete) : 0,
+      color: fields.color || null,
     };
 
     const onError = (error) => {
@@ -190,11 +205,9 @@ export default function TaskModal({ isOpen, onClose, task, onSuccess }) {
           {/* Start date + time */}
           <div className="grid grid-cols-2 gap-3">
             <FormField label={TASK_TEXT.modal.startDateLabel}>
-              <Input
-                type="date"
+              <DatePicker
                 value={fields.startDate}
-                onChange={set('startDate')}
-                aria-invalid={Boolean(errors.startDate)}
+                onChange={(v) => set('startDate')(v)}
               />
               {errors.startDate ? (
                 <p className="text-xs font-medium text-rose-600">{errors.startDate}</p>
@@ -213,11 +226,9 @@ export default function TaskModal({ isOpen, onClose, task, onSuccess }) {
           {/* End date + time */}
           <div className="grid grid-cols-2 gap-3">
             <FormField label={TASK_TEXT.modal.endDateLabel}>
-              <Input
-                type="date"
+              <DatePicker
                 value={fields.endDate}
-                onChange={set('endDate')}
-                aria-invalid={Boolean(errors.endDate)}
+                onChange={(v) => set('endDate')(v)}
               />
               {errors.endDate ? (
                 <p className="text-xs font-medium text-rose-600">{errors.endDate}</p>
@@ -254,6 +265,39 @@ export default function TaskModal({ isOpen, onClose, task, onSuccess }) {
                 </option>
               ))}
             </select>
+          </FormField>
+
+          {/* Task color */}
+          <FormField label="Task Color">
+            <div className="flex flex-wrap gap-2">
+              {PRESET_COLORS.map((hex) => (
+                <button
+                  key={hex}
+                  type="button"
+                  onClick={() => set('color')(fields.color === hex ? '' : hex)}
+                  className="h-7 w-7 rounded-full border-2 transition-transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-1"
+                  style={{
+                    backgroundColor: hex,
+                    borderColor: fields.color === hex ? '#1e293b' : 'transparent',
+                  }}
+                  title={hex}
+                />
+              ))}
+              {fields.color ? (
+                <button
+                  type="button"
+                  onClick={() => set('color')('')}
+                  className="h-7 rounded px-2 text-xs text-slate-500 hover:text-slate-800"
+                >
+                  Clear
+                </button>
+              ) : null}
+            </div>
+            {fields.color ? (
+              <p className="mt-1 text-xs text-slate-400">Selected: {fields.color}</p>
+            ) : (
+              <p className="mt-1 text-xs text-slate-400">No color — status color will be used.</p>
+            )}
           </FormField>
 
           {/* Estimated hours */}
@@ -314,6 +358,7 @@ TaskModal.propTypes = {
     customerId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     estimatedHours: PropTypes.number,
     percentComplete: PropTypes.number,
+    color: PropTypes.string,
   }),
   onSuccess: PropTypes.func.isRequired,
 };

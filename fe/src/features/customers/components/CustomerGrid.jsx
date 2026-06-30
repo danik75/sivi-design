@@ -8,7 +8,7 @@ import CustomerRow from '@/features/customers/components/CustomerRow';
 import { CUSTOMER_TEXT, getApiErrorMessage } from '@/features/customers/constants';
 import useCustomers from '@/features/customers/hooks/useCustomers';
 
-export default function CustomerGrid({ onCreate, onEdit, onDelete }) {
+export default function CustomerGrid({ onCreate, onEdit, onDelete, selectedCustomerId, onSelectCustomer }) {
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [page, setPage] = useState(1);
@@ -115,6 +115,8 @@ export default function CustomerGrid({ onCreate, onEdit, onDelete }) {
                   customer={customer}
                   onEdit={onEdit}
                   onDelete={onDelete}
+                  onSelect={onSelectCustomer}
+                  isSelected={customer.id === selectedCustomerId}
                 />
               ))}
             </TableBody>
@@ -166,4 +168,11 @@ CustomerGrid.propTypes = {
   onCreate: PropTypes.func.isRequired,
   onEdit: PropTypes.func.isRequired,
   onDelete: PropTypes.func.isRequired,
+  selectedCustomerId: PropTypes.string,
+  onSelectCustomer: PropTypes.func,
+};
+
+CustomerGrid.defaultProps = {
+  selectedCustomerId: null,
+  onSelectCustomer: null,
 };

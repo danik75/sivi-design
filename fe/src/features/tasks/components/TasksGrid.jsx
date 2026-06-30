@@ -41,9 +41,9 @@ ProgressBar.propTypes = {
   value: PropTypes.number,
 };
 
-function TaskRow({ task, onEdit, onDelete }) {
+function TaskRow({ task, onEdit, onDelete, onDoubleClick }) {
   return (
-    <TableRow>
+    <TableRow onDoubleClick={onDoubleClick}>
       <TableCell>
         <span className="font-medium text-slate-900">{task.name}</span>
         {task.description ? (
@@ -51,8 +51,8 @@ function TaskRow({ task, onEdit, onDelete }) {
         ) : null}
       </TableCell>
       <TableCell>{task.customerName ?? TASK_TEXT.placeholder}</TableCell>
-      <TableCell>{task.startDate ?? TASK_TEXT.placeholder}</TableCell>
-      <TableCell>{task.endDate ?? TASK_TEXT.placeholder}</TableCell>
+      <TableCell>{task.startDate ? fmtDate(task.startDate) : TASK_TEXT.placeholder}</TableCell>
+      <TableCell>{task.endDate ? fmtDate(task.endDate) : TASK_TEXT.placeholder}</TableCell>
       <TableCell>
         <StatusBadge status={task.status} />
       </TableCell>
@@ -100,9 +100,16 @@ TaskRow.propTypes = {
   }).isRequired,
   onEdit: PropTypes.func.isRequired,
   onDelete: PropTypes.func.isRequired,
+  onDoubleClick: PropTypes.func.isRequired,
 };
 
-export default function TasksGrid({ onCreate, onEdit, onDelete }) {
+function fmtDate(str) {
+  if (!str) return '—';
+  const [y, m, d] = str.split('-');
+  return `${d}/${m}/${String(y).slice(-2)}`;
+}
+
+export default function TasksGrid({ onCreate, onEdit, onDelete, visibleStatuses }) {
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [page, setPage] = useState(1);
@@ -120,7 +127,10 @@ export default function TasksGrid({ onCreate, onEdit, onDelete }) {
     page,
   });
 
-  const tasks = data?.data ?? [];
+  const rawTasks = data?.data ?? [];
+  const tasks = visibleStatuses
+    ? rawTasks.filter((t) => visibleStatuses.has(t.status))
+    : rawTasks;
   const total = data?.total ?? 0;
   const limit = data?.limit ?? 25;
   const totalPages = Math.max(1, Math.ceil(total / limit));
@@ -208,7 +218,7 @@ export default function TasksGrid({ onCreate, onEdit, onDelete }) {
             </TableHead>
             <TableBody>
               {tasks.map((task) => (
-                <TaskRow key={task.id} task={task} onEdit={onEdit} onDelete={onDelete} />
+                <TaskRow key={task.id} task={task} onEdit={onEdit} onDelete={onDelete} onDoubleClick={() => onEdit(task)} />
               ))}
             </TableBody>
           </Table>
@@ -259,4 +269,5 @@ TasksGrid.propTypes = {
   onCreate: PropTypes.func.isRequired,
   onEdit: PropTypes.func.isRequired,
   onDelete: PropTypes.func.isRequired,
+  visibleStatuses: PropTypes.instanceOf(Set),
 };

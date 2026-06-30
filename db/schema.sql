@@ -41,6 +41,7 @@ CREATE TABLE IF NOT EXISTS tasks (
   end_time         TIME,
   estimated_hours  NUMERIC(6,2),
   percent_complete INTEGER NOT NULL DEFAULT 0 CHECK (percent_complete BETWEEN 0 AND 100),
+  color            TEXT,
   created_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
   CONSTRAINT tasks_dates_valid CHECK (end_date >= start_date)

@@ -16,6 +16,7 @@ export class TaskRepository {
              t.status, t.customer_id AS "customerId", c.name AS "customerName",
              t.start_time AS "startTime", t.end_time AS "endTime",
              t.estimated_hours AS "estimatedHours", t.percent_complete AS "percentComplete",
+             t.color,
              t.created_at AS "createdAt", t.updated_at AS "updatedAt"
       FROM tasks t
       LEFT JOIN customers c ON c.id = t.customer_id
@@ -55,6 +56,7 @@ export class TaskRepository {
                t.status, t.customer_id AS "customerId", c.name AS "customerName",
                t.start_time AS "startTime", t.end_time AS "endTime",
                t.estimated_hours AS "estimatedHours", t.percent_complete AS "percentComplete",
+               t.color,
                t.created_at AS "createdAt", t.updated_at AS "updatedAt"
         FROM tasks t
         LEFT JOIN customers c ON c.id = t.customer_id
@@ -76,8 +78,8 @@ export class TaskRepository {
     const res = await pool.query(
       `
         INSERT INTO tasks (name, description, start_date, end_date, status, customer_id,
-                           start_time, end_time, estimated_hours)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+                           start_time, end_time, estimated_hours, color)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
         RETURNING id
       `,
       [
@@ -90,6 +92,7 @@ export class TaskRepository {
         dto.startTime ?? null,
         dto.endTime ?? null,
         dto.estimatedHours ?? null,
+        dto.color ?? null,
       ],
     );
 
@@ -150,6 +153,10 @@ export class TaskRepository {
     if (dto.percentComplete !== undefined) {
       values.push(dto.percentComplete);
       setClauses.push(`percent_complete = $${values.length}`);
+    }
+    if (dto.color !== undefined) {
+      values.push(dto.color ?? null);
+      setClauses.push(`color = $${values.length}`);
     }
     // Completing a task always sets percent_complete to 100
     if (dto.status === 'done' && dto.percentComplete === undefined) {

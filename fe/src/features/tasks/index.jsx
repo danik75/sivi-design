@@ -5,9 +5,10 @@ import TaskDeleteDialog from '@/features/tasks/components/TaskDeleteDialog';
 import TaskModal from '@/features/tasks/components/TaskModal';
 import TasksGantt from '@/features/tasks/components/TasksGantt';
 import TasksGrid from '@/features/tasks/components/TasksGrid';
-import { TASK_TEXT } from '@/features/tasks/constants';
+import { STATUS_CONFIG, STATUS_OPTIONS, TASK_TEXT } from '@/features/tasks/constants';
 
 const STORAGE_KEY = 'sivi_tasks_view';
+const ALL_STATUSES = STATUS_OPTIONS.map((o) => o.value);
 
 function loadView() {
   try {
@@ -21,16 +22,14 @@ function loadView() {
 
 function ViewSwitcher({ view, onView }) {
   return (
-    <div className="flex rounded-lg border border-slate-200 overflow-hidden">
+    <div className="flex overflow-hidden rounded-lg border border-slate-200">
       {['gantt', 'grid'].map((v) => (
         <button
           key={v}
           type="button"
           onClick={() => onView(v)}
-          className={`px-4 py-2 text-sm font-semibold transition-colors capitalize ${
-            view === v
-              ? 'bg-indigo-600 text-white'
-              : 'bg-white text-slate-600 hover:bg-slate-50'
+          className={`px-4 py-2 text-sm font-semibold capitalize transition-colors ${
+            view === v ? 'bg-indigo-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'
           }`}
         >
           {TASK_TEXT.views[v]}
@@ -45,12 +44,54 @@ ViewSwitcher.propTypes = {
   onView: PropTypes.func.isRequired,
 };
 
+function StatusFilterBar({ visibleStatuses, onToggle, onToggleAll }) {
+  const allChecked = ALL_STATUSES.every((s) => visibleStatuses.has(s));
+  const someChecked = ALL_STATUSES.some((s) => visibleStatuses.has(s));
+
+  return (
+    <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+      <label className="flex cursor-pointer select-none items-center gap-1.5">
+        <input
+          type="checkbox"
+          checked={allChecked}
+          ref={(el) => {
+            if (el) el.indeterminate = someChecked && !allChecked;
+          }}
+          onChange={onToggleAll}
+          className="h-3.5 w-3.5 accent-indigo-600"
+        />
+        <span className="text-xs font-semibold text-slate-700">All</span>
+      </label>
+      <span className="text-slate-200 select-none">|</span>
+      {STATUS_OPTIONS.map(({ value, label }) => (
+        <label key={value} className="flex cursor-pointer select-none items-center gap-1.5">
+          <input
+            type="checkbox"
+            checked={visibleStatuses.has(value)}
+            onChange={() => onToggle(value)}
+            className="h-3.5 w-3.5 accent-indigo-600"
+          />
+          <span className={`h-2 w-2 rounded-full ${STATUS_CONFIG[value].barClass}`} />
+          <span className="text-xs text-slate-600">{label}</span>
+        </label>
+      ))}
+    </div>
+  );
+}
+
+StatusFilterBar.propTypes = {
+  visibleStatuses: PropTypes.instanceOf(Set).isRequired,
+  onToggle: PropTypes.func.isRequired,
+  onToggleAll: PropTypes.func.isRequired,
+};
+
 export default function TasksFeature() {
   const { showToast } = useToast();
   const [view, setView] = useState(loadView);
   const [showCreate, setShowCreate] = useState(false);
   const [editTask, setEditTask] = useState(null);
   const [deleteTask, setDeleteTask] = useState(null);
+  const [visibleStatuses, setVisibleStatuses] = useState(() => new Set(ALL_STATUSES));
 
   const handleViewChange = (nextView) => {
     setView(nextView);
@@ -68,27 +109,51 @@ export default function TasksFeature() {
     setDeleteTask(null);
   };
 
+  const toggleStatus = (status) => {
+    setVisibleStatuses((prev) => {
+      const next = new Set(prev);
+      if (next.has(status)) {
+        next.delete(status);
+      } else {
+        next.add(status);
+      }
+      return next;
+    });
+  };
+
+  const toggleAll = () => {
+    setVisibleStatuses((prev) => {
+      const allChecked = ALL_STATUSES.every((s) => prev.has(s));
+      return allChecked ? new Set() : new Set(ALL_STATUSES);
+    });
+  };
+
   return (
     <>
-      {/* View switcher — floated top-right via absolute overlay */}
-      <div className="relative">
-        <div className="absolute right-0 top-0 z-10">
-          <ViewSwitcher view={view} onView={handleViewChange} />
-        </div>
-
-        {view === 'gantt' ? (
-          <TasksGantt
-            onCreate={() => setShowCreate(true)}
-            onEdit={(task) => setEditTask(task)}
-          />
-        ) : (
-          <TasksGrid
-            onCreate={() => setShowCreate(true)}
-            onEdit={(task) => setEditTask(task)}
-            onDelete={(task) => setDeleteTask(task)}
-          />
-        )}
+      {/* Filter + view switcher bar */}
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-white px-4 py-3 shadow-sm ring-1 ring-slate-100">
+        <StatusFilterBar
+          visibleStatuses={visibleStatuses}
+          onToggle={toggleStatus}
+          onToggleAll={toggleAll}
+        />
+        <ViewSwitcher view={view} onView={handleViewChange} />
       </div>
+
+      {view === 'gantt' ? (
+        <TasksGantt
+          onCreate={() => setShowCreate(true)}
+          onEdit={(task) => setEditTask(task)}
+          visibleStatuses={visibleStatuses}
+        />
+      ) : (
+        <TasksGrid
+          onCreate={() => setShowCreate(true)}
+          onEdit={(task) => setEditTask(task)}
+          onDelete={(task) => setDeleteTask(task)}
+          visibleStatuses={visibleStatuses}
+        />
+      )}
 
       <TaskModal
         isOpen={showCreate}
