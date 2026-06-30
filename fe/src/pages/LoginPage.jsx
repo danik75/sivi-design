@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types';
 import LoginForm from '../components/LoginForm';
 import useLogin from '../hooks/useLogin';
 
@@ -8,9 +9,7 @@ export default function LoginPage({ onSuccess }) {
     mutation.mutate({ username, password });
   };
 
-  // call onSuccess when login succeeds
   if (mutation.isSuccess && typeof onSuccess === 'function') {
-    // slight delay to allow UI update
     setTimeout(() => onSuccess(), 10);
   }
 
@@ -20,30 +19,15 @@ export default function LoginPage({ onSuccess }) {
         <div>
           <LoginForm
             onSubmit={handleSubmit}
-            isLoading={mutation.isLoading}
-            error={mutation.error?.message || mutation.error}
+            isLoading={mutation.isLoading || mutation.isPending}
+            error={mutation.error?.response?.data?.message || mutation.error?.message}
           />
-
-          {mutation.isSuccess && (
-            <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded">
-              <strong>Logged in — token stored in localStorage.</strong>
-            </div>
-          )}
-
-          {mutation.isError && (
-            <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded text-red-700">
-              {String(mutation.error?.message || mutation.error)}
-            </div>
-          )}
-        </div>
-
-        <div className="hidden md:block p-6 bg-white rounded shadow">
-          <h3 className="text-lg font-medium mb-2">About</h3>
-          <p className="text-sm text-gray-600">
-            Simple local login page for development. Not for production.
-          </p>
         </div>
       </div>
     </div>
   );
 }
+
+LoginPage.propTypes = {
+  onSuccess: PropTypes.func,
+};
