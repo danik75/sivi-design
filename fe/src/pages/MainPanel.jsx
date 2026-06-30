@@ -22,6 +22,37 @@ const NAV_ITEMS = [
   { id: 'billing', label: 'Billing', Icon: CreditCardIcon },
 ];
 
+function SidebarNav({ activeModule, onSelect }) {
+  return (
+    <nav className="space-y-1">
+      {NAV_ITEMS.map(({ id, label, Icon }) => {
+        const isActive = activeModule === id;
+        return (
+          <Button
+            key={id}
+            type="button"
+            variant="ghost"
+            onClick={() => onSelect(id)}
+            className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
+              isActive
+                ? 'bg-indigo-600 text-white hover:bg-indigo-500'
+                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+            }`}
+          >
+            <Icon className="h-4 w-4 shrink-0" />
+            {label}
+          </Button>
+        );
+      })}
+    </nav>
+  );
+}
+
+SidebarNav.propTypes = {
+  activeModule: PropTypes.string.isRequired,
+  onSelect: PropTypes.func.isRequired,
+};
+
 export default function MainPanel({ onLogout }) {
   const [activeModule, setActiveModule] = useState('customers');
   const [isSidebarOpen, setIsSidebarOpen] = useState(
@@ -80,45 +111,34 @@ export default function MainPanel({ onLogout }) {
       </header>
 
       <div className="relative flex min-h-0 flex-1 overflow-hidden">
+        {/* Mobile backdrop */}
         {isSidebarOpen && (
           <button
             type="button"
-            className="fixed inset-0 top-[57px] z-20 bg-slate-900/20 md:hidden"
+            className="fixed inset-0 z-20 bg-slate-900/20 md:hidden"
             onClick={() => setIsSidebarOpen(false)}
             aria-label={PANEL_TEXT.closeSidebar}
           />
         )}
 
+        {/* Mobile sidebar — fixed overlay, slide in/out */}
         <aside
-          className={[
-            'fixed inset-y-0 left-0 top-[57px] z-30 overflow-hidden bg-white transition-all duration-200',
-            'md:static md:top-0 md:translate-x-0 md:shadow-none',
-            isSidebarOpen
-              ? 'w-56 translate-x-0 border-r border-slate-100 px-3 py-4 shadow-xl md:shadow-none'
-              : 'w-56 -translate-x-full px-3 py-4 md:w-0 md:px-0 md:py-0 md:border-0',
-          ].join(' ')}
+          className={`fixed inset-y-0 left-0 z-30 w-56 shrink-0 border-r border-slate-100 bg-white px-3 py-4 shadow-xl transition-transform duration-200 md:hidden ${
+            isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+          }`}
         >
-          <nav className="space-y-1">
-            {NAV_ITEMS.map(({ id, label, Icon }) => {
-              const isActive = activeModule === id;
-              return (
-                <Button
-                  key={id}
-                  type="button"
-                  variant="ghost"
-                  onClick={() => setActiveModule(id)}
-                  className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
-                    isActive
-                      ? 'bg-indigo-600 text-white hover:bg-indigo-500'
-                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-                  }`}
-                >
-                  <Icon className="h-4 w-4 shrink-0" />
-                  {label}
-                </Button>
-              );
-            })}
-          </nav>
+          <SidebarNav activeModule={activeModule} onSelect={setActiveModule} />
+        </aside>
+
+        {/* Desktop sidebar — inline, collapse via width */}
+        <aside
+          className={`hidden shrink-0 overflow-hidden border-slate-100 bg-white transition-all duration-200 md:block ${
+            isSidebarOpen ? 'w-56 border-r px-3 py-4' : 'w-0 border-0 px-0 py-0'
+          }`}
+        >
+          <div className="w-56">
+            <SidebarNav activeModule={activeModule} onSelect={setActiveModule} />
+          </div>
         </aside>
 
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">{renderModule()}</main>
