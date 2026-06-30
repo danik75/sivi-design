@@ -2,9 +2,9 @@ import PropTypes from 'prop-types';
 import { useMemo, useState } from 'react';
 import UserMenu from '@/components/UserMenu';
 import Button from '@/components/chadcn/Button';
+import ChevronDownIcon from '@/components/chadcn/icons/ChevronDownIcon';
 import ClipboardIcon from '@/components/chadcn/icons/ClipboardIcon';
 import CreditCardIcon from '@/components/chadcn/icons/CreditCardIcon';
-import MenuIcon from '@/components/chadcn/icons/MenuIcon';
 import UsersIcon from '@/components/chadcn/icons/UsersIcon';
 import CustomersFeature from '@/features/customers';
 
@@ -89,15 +89,6 @@ export default function MainPanel({ onLogout }) {
     <div className="flex h-screen w-full flex-col bg-slate-50">
       <header className="flex w-full shrink-0 items-center justify-between border-b border-slate-100 bg-white px-4 py-3 shadow-sm sm:px-6">
         <div className="flex items-center gap-3">
-          <Button
-            type="button"
-            variant="ghost"
-            className="h-10 w-10 p-0"
-            onClick={() => setIsSidebarOpen((o) => !o)}
-            aria-label={PANEL_TEXT.toggleSidebar}
-          >
-            <MenuIcon className="h-5 w-5" />
-          </Button>
           <div className="flex items-center gap-2">
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600">
               <span className="text-xs font-bold text-white">S</span>
@@ -127,19 +118,50 @@ export default function MainPanel({ onLogout }) {
             isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
           }`}
         >
+          <div className="mb-4 flex justify-end">
+            <button
+              type="button"
+              onClick={() => setIsSidebarOpen(false)}
+              className="flex h-6 w-6 items-center justify-center rounded-full border border-slate-200 bg-white shadow-sm hover:bg-slate-50"
+              aria-label={PANEL_TEXT.closeSidebar}
+            >
+              <ChevronDownIcon className="h-3 w-3 rotate-90" />
+            </button>
+          </div>
           <SidebarNav activeModule={activeModule} onSelect={setActiveModule} />
         </aside>
 
-        {/* Desktop sidebar — inline, collapse via width */}
-        <aside
-          className={`hidden shrink-0 overflow-hidden border-slate-100 bg-white transition-all duration-200 md:block ${
-            isSidebarOpen ? 'w-56 border-r px-3 py-4' : 'w-0 border-0 px-0 py-0'
-          }`}
-        >
-          <div className="w-56">
-            <SidebarNav activeModule={activeModule} onSelect={setActiveModule} />
+        {/* Mobile open tab — shown when sidebar is closed */}
+        {!isSidebarOpen && (
+          <button
+            type="button"
+            onClick={() => setIsSidebarOpen(true)}
+            className="fixed left-0 top-1/2 z-30 flex h-10 w-5 -translate-y-1/2 items-center justify-center rounded-r-lg border border-l-0 border-slate-200 bg-white shadow-sm hover:bg-slate-50 md:hidden"
+            aria-label={PANEL_TEXT.toggleSidebar}
+          >
+            <ChevronDownIcon className="h-3 w-3 -rotate-90" />
+          </button>
+        )}
+
+        {/* Desktop sidebar — inline, collapse via width; arrow widget at right edge */}
+        <div className={`relative hidden shrink-0 transition-all duration-200 md:block ${isSidebarOpen ? 'w-56' : 'w-0'}`}>
+          <div className={`h-full overflow-hidden bg-white transition-all duration-200 ${isSidebarOpen ? 'w-56 border-r border-slate-100 px-3 py-4' : 'w-0'}`}>
+            <div className="w-56">
+              <SidebarNav activeModule={activeModule} onSelect={setActiveModule} />
+            </div>
           </div>
-        </aside>
+          {/* Arrow toggle button — sits at the sidebar right edge, always visible */}
+          <button
+            type="button"
+            onClick={() => setIsSidebarOpen((o) => !o)}
+            className="absolute right-0 top-6 z-40 flex h-6 w-6 translate-x-1/2 items-center justify-center rounded-full border border-slate-200 bg-white shadow-md hover:bg-slate-50"
+            aria-label={isSidebarOpen ? PANEL_TEXT.closeSidebar : PANEL_TEXT.toggleSidebar}
+          >
+            <ChevronDownIcon
+              className={`h-3 w-3 transition-transform duration-200 ${isSidebarOpen ? 'rotate-90' : '-rotate-90'}`}
+            />
+          </button>
+        </div>
 
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">{renderModule()}</main>
       </div>

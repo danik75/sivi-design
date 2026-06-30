@@ -27,7 +27,7 @@ function TableHeader({ children }) {
 }
 
 function TableCell({ children, className = '' }) {
-  return <td className={`px-4 py-3 text-slate-700 ${className}`}>{children}</td>;
+  return <td className={`px-4 py-3 text-left text-slate-700 ${className}`}>{children}</td>;
 }
 
 const childrenProp = PropTypes.node;
