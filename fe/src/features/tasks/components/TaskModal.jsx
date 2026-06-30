@@ -36,13 +36,22 @@ const selectClass =
 const textareaClass =
   'block w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 shadow-sm transition-all duration-150 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 resize-none';
 
+function normDate(val) {
+  if (!val) return null;
+  const s = String(val);
+  if (!s.includes('T')) return s;
+  // ISO datetime — extract local date to avoid UTC off-by-one in non-UTC timezones
+  const dt = new Date(s);
+  return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+}
+
 function buildInitialState(task) {
   return {
     name: task?.name ?? '',
     description: task?.description ?? '',
-    startDate: task?.startDate ?? todayDateStr(),
+    startDate: normDate(task?.startDate) ?? todayDateStr(),
     startTime: task?.startTime ?? '00:00',
-    endDate: task?.endDate ?? weekFromTodayStr(),
+    endDate: normDate(task?.endDate) ?? weekFromTodayStr(),
     endTime: task?.endTime ?? '00:00',
     status: task?.status ?? DEFAULT_STATUS,
     customerId: task?.customerId != null ? String(task.customerId) : '',
@@ -82,7 +91,19 @@ export default function TaskModal({ isOpen, onClose, task, onSuccess }) {
           ? eventOrValue.target.checked
           : eventOrValue.target.value
         : eventOrValue;
-    setFields((prev) => ({ ...prev, [field]: value }));
+    setFields((prev) => {
+      const next = { ...prev, [field]: value };
+      // Auto-set times when start === end date
+      if ((field === 'startDate' || field === 'endDate')) {
+        const s = field === 'startDate' ? value : prev.startDate;
+        const e = field === 'endDate' ? value : prev.endDate;
+        if (s && e && s === e) {
+          next.startTime = '00:00';
+          next.endTime = '23:59';
+        }
+      }
+      return next;
+    });
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: '' }));
     }

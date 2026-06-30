@@ -105,6 +105,10 @@ TaskRow.propTypes = {
 
 function fmtDate(str) {
   if (!str) return '—';
+  if (str.includes('T')) {
+    const dt = new Date(str);
+    return `${String(dt.getDate()).padStart(2, '0')}/${String(dt.getMonth() + 1).padStart(2, '0')}/${String(dt.getFullYear()).slice(-2)}`;
+  }
   const [y, m, d] = str.split('-');
   return `${d}/${m}/${String(y).slice(-2)}`;
 }
