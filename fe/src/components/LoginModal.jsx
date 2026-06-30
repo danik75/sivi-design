@@ -39,18 +39,7 @@ export default function LoginModal({ onLoginSuccess }) {
             <div className="text-indigo-200 text-sm">Collaborative design platform</div>
           </div>
 
-          <div className="space-y-4">
-            {[
-              { icon: '✦', text: 'Beautiful, component-first UI' },
-              { icon: '⚡', text: 'Fast, reactive data layer' },
-              { icon: '🔒', text: 'Secure, token-based auth' },
-            ].map(({ icon, text }) => (
-              <div key={text} className="flex items-center gap-3 text-sm text-indigo-100">
-                <span className="text-lg">{icon}</span>
-                <span>{text}</span>
-              </div>
-            ))}
-          </div>
+          <div className="space-y-4" />
 
           <p className="text-xs text-indigo-300">© {new Date().getFullYear()} sivi‑design</p>
         </div>
