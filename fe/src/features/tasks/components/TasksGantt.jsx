@@ -9,7 +9,10 @@ import useUpdateTask from '@/features/tasks/hooks/useUpdateTask';
 // Date helpers — pure functions, no external libraries
 // ---------------------------------------------------------------------------
 const MS = 86400000;
-function parseDate(str) { const [y, m, d] = str.split('-').map(Number); return new Date(y, m - 1, d); }
+function parseDate(str) {
+  if (str.includes('T')) { const dt = new Date(str); return new Date(dt.getFullYear(), dt.getMonth(), dt.getDate()); }
+  const [y, m, d] = str.split('-').map(Number); return new Date(y, m - 1, d);
+}
 function addDays(date, n) { return new Date(date.getTime() + n * MS); }
 function diffDays(a, b) { return Math.round((b.getTime() - a.getTime()) / MS); }
 function startOfDay(d) { return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
@@ -145,12 +148,18 @@ function GanttBar({ task, rangeStart, totalDays, rangeEnd, onEdit, onDragEnd }) 
     >
       {/* percent-complete fill */}
       {barBg !== null ? (
-        <div className="absolute inset-y-0 left-0" style={{ width: `${fillPct}%`, backgroundColor: barBg, opacity: 0.5 }} />
+        <div className="absolute inset-y-0 left-0 bg-white/20" style={{ width: `${fillPct}%` }} />
       ) : (
         <div className={`absolute inset-y-0 left-0 ${config.barFillClass}`} style={{ width: `${fillPct}%` }} />
       )}
+      {/* status dot — only when a custom color is set */}
+      {barBg !== null && (
+        <span
+          className={`absolute left-3 top-1/2 z-10 h-2.5 w-2.5 shrink-0 -translate-y-1/2 rounded-full ring-1 ring-white/60 ${config.barClass}`}
+        />
+      )}
       {/* label */}
-      <span className="relative z-10 px-4 text-xs font-medium text-white leading-none truncate flex items-center h-full">
+      <span className={`relative z-10 text-xs font-medium text-white leading-none truncate flex items-center h-full ${barBg !== null ? 'pl-7 pr-4' : 'px-4'}`}>
         {task.name}
       </span>
       {/* Left resize handle */}
@@ -207,7 +216,8 @@ export default function TasksGantt({ onCreate, onEdit, visibleStatuses }) {
 
   const handleDragEnd = (task, action) => {
     const shift = (dateStr, n) => {
-      const [y, m, d] = dateStr.split('-').map(Number);
+      const base = parseDate(dateStr);
+      const [y, m, d] = [base.getFullYear(), base.getMonth() + 1, base.getDate()];
       const dt = new Date(y, m - 1, d + n);
       return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
     };

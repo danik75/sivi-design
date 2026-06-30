@@ -21,7 +21,7 @@ function TableBody({ children }) {
 function TableRow({ children, onClick, onDoubleClick }) {
   return (
     <tr
-      className={`transition-colors hover:bg-slate-50/60${onClick ? ' cursor-pointer' : ''}`}
+      className={`transition-colors hover:bg-slate-50/60${(onClick || onDoubleClick) ? ' cursor-pointer' : ''}`}
       onClick={onClick}
       onDoubleClick={onDoubleClick}
     >

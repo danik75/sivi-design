@@ -17,7 +17,12 @@ function toStr(y, m, d) {
 
 function parseVal(str) {
   if (!str) return null;
+  if (str.includes('T')) {
+    const dt = new Date(str);
+    return isNaN(dt.getTime()) ? null : new Date(dt.getFullYear(), dt.getMonth(), dt.getDate());
+  }
   const [y, m, d] = str.split('-').map(Number);
+  if (!y || isNaN(d)) return null;
   return new Date(y, m - 1, d);
 }
 
