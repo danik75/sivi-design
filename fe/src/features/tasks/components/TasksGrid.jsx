@@ -1,47 +1,52 @@
 import PropTypes from 'prop-types';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import Button from '@/components/chadcn/Button';
 import EmptyState from '@/components/chadcn/EmptyState';
 import SearchInput from '@/components/chadcn/SearchInput';
 import Table, { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/chadcn/Table';
 import { STATUS_CONFIG, TASK_TEXT, getApiErrorMessage } from '@/features/tasks/constants';
 import useTasks from '@/features/tasks/hooks/useTasks';
+import useUpdateTask from '@/features/tasks/hooks/useUpdateTask';
+
+const PAGE_SIZE = 8;
 
 function StatusBadge({ status }) {
   const config = STATUS_CONFIG[status] ?? STATUS_CONFIG.pending;
   return (
-    <span
-      className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${config.badgeClass}`}
-    >
+    <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${config.badgeClass}`}>
       {config.label}
     </span>
   );
 }
 
-StatusBadge.propTypes = {
-  status: PropTypes.string,
-};
+StatusBadge.propTypes = { status: PropTypes.string };
 
 function ProgressBar({ value }) {
   const pct = Math.min(100, Math.max(0, value ?? 0));
   return (
     <div className="flex items-center gap-2">
       <div className="h-1.5 w-20 overflow-hidden rounded-full bg-slate-100">
-        <div
-          className="h-full rounded-full bg-indigo-500 transition-all"
-          style={{ width: `${pct}%` }}
-        />
+        <div className="h-full rounded-full bg-indigo-500 transition-all" style={{ width: `${pct}%` }} />
       </div>
       <span className="text-xs text-slate-500">{pct}%</span>
     </div>
   );
 }
 
-ProgressBar.propTypes = {
-  value: PropTypes.number,
-};
+ProgressBar.propTypes = { value: PropTypes.number };
 
-function TaskRow({ task, onEdit, onDelete, onDoubleClick }) {
+function fmtDate(str) {
+  if (!str) return '—';
+  if (str.includes('T')) {
+    const dt = new Date(str);
+    return `${String(dt.getDate()).padStart(2, '0')}/${String(dt.getMonth() + 1).padStart(2, '0')}/${String(dt.getFullYear()).slice(-2)}`;
+  }
+  const [y, m, d] = str.split('-');
+  return `${d}/${m}/${String(y).slice(-2)}`;
+}
+
+function TaskRow({ task, onEdit, onAbort, onDoubleClick }) {
+  const isAborted = task.status === 'cancelled';
   return (
     <TableRow onDoubleClick={onDoubleClick}>
       <TableCell>
@@ -53,33 +58,19 @@ function TaskRow({ task, onEdit, onDelete, onDoubleClick }) {
       <TableCell>{task.customerName ?? TASK_TEXT.placeholder}</TableCell>
       <TableCell>{task.startDate ? fmtDate(task.startDate) : TASK_TEXT.placeholder}</TableCell>
       <TableCell>{task.endDate ? fmtDate(task.endDate) : TASK_TEXT.placeholder}</TableCell>
-      <TableCell>
-        <StatusBadge status={task.status} />
-      </TableCell>
+      <TableCell><StatusBadge status={task.status} /></TableCell>
       <TableCell>{task.estimatedHours != null ? task.estimatedHours : TASK_TEXT.placeholder}</TableCell>
-      <TableCell>
-        <ProgressBar value={task.percentComplete} />
-      </TableCell>
+      <TableCell><ProgressBar value={task.percentComplete} /></TableCell>
       <TableCell>
         <div className="flex items-center gap-1">
-          <Button
-            type="button"
-            variant="ghost"
-            className="px-2 py-1 text-xs"
-            onClick={() => onEdit(task)}
-            aria-label={TASK_TEXT.rowActions.edit}
-          >
+          <Button type="button" variant="ghost" className="px-2 py-1 text-xs" onClick={() => onEdit(task)}>
             Edit
           </Button>
-          <Button
-            type="button"
-            variant="danger"
-            className="px-2 py-1 text-xs"
-            onClick={() => onDelete(task)}
-            aria-label={TASK_TEXT.rowActions.delete}
-          >
-            Delete
-          </Button>
+          {!isAborted && (
+            <Button type="button" variant="danger" className="px-2 py-1 text-xs" onClick={() => onAbort(task)}>
+              Abort
+            </Button>
+          )}
         </div>
       </TableCell>
     </TableRow>
@@ -99,75 +90,57 @@ TaskRow.propTypes = {
     percentComplete: PropTypes.number,
   }).isRequired,
   onEdit: PropTypes.func.isRequired,
-  onDelete: PropTypes.func.isRequired,
+  onAbort: PropTypes.func.isRequired,
   onDoubleClick: PropTypes.func.isRequired,
 };
 
-function fmtDate(str) {
-  if (!str) return '—';
-  if (str.includes('T')) {
-    const dt = new Date(str);
-    return `${String(dt.getDate()).padStart(2, '0')}/${String(dt.getMonth() + 1).padStart(2, '0')}/${String(dt.getFullYear()).slice(-2)}`;
-  }
-  const [y, m, d] = str.split('-');
-  return `${d}/${m}/${String(y).slice(-2)}`;
-}
-
-export default function TasksGrid({ onCreate, onEdit, onDelete, visibleStatuses }) {
+export default function TasksGrid({ onCreate, onEdit, visibleStatuses }) {
   const [search, setSearch] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [page, setPage] = useState(1);
+  const abortMutation = useUpdateTask();
 
-  useEffect(() => {
-    const timeoutId = window.setTimeout(() => {
-      setDebouncedSearch(search.trim());
-    }, 300);
+  const { data, error, isError, isLoading, refetch } = useTasks({ limit: 10000 });
 
-    return () => window.clearTimeout(timeoutId);
-  }, [search]);
+  const allTasks = data?.data ?? [];
 
-  const { data, error, isError, isLoading, isFetching, refetch } = useTasks({
-    search: debouncedSearch,
-    page,
-  });
-
-  const rawTasks = data?.data ?? [];
-  const tasks = visibleStatuses
-    ? rawTasks.filter((t) => visibleStatuses.has(t.status))
-    : rawTasks;
-  const total = data?.total ?? 0;
-  const limit = data?.limit ?? 25;
-  const totalPages = Math.max(1, Math.ceil(total / limit));
-  const hasSearch = Boolean(debouncedSearch);
-
-  useEffect(() => {
-    if (page > totalPages) {
-      setPage(totalPages);
-    }
-  }, [page, totalPages]);
-
-  const emptyStateAction = useMemo(() => {
-    if (hasSearch) {
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return allTasks.filter((t) => {
+      if (visibleStatuses && !visibleStatuses.has(t.status)) return false;
+      if (!q) return true;
       return (
-        <Button type="button" variant="ghost" onClick={() => setSearch('')}>
-          {TASK_TEXT.clearSearch}
-        </Button>
+        t.name?.toLowerCase().includes(q) ||
+        t.description?.toLowerCase().includes(q) ||
+        t.customerName?.toLowerCase().includes(q)
       );
-    }
+    });
+  }, [allTasks, search, visibleStatuses]);
 
-    return <Button onClick={onCreate}>{TASK_TEXT.addTask}</Button>;
-  }, [hasSearch, onCreate]);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const tasks = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+  const hasSearch = Boolean(search.trim());
 
-  const handleSearchChange = (event) => {
-    setSearch(event.target.value);
+  const handleSearchChange = (e) => {
+    setSearch(e.target.value);
     setPage(1);
   };
 
   const handleSearchClear = () => {
     setSearch('');
-    setDebouncedSearch('');
     setPage(1);
   };
+
+  const emptyStateAction = useMemo(() => {
+    if (hasSearch) {
+      return (
+        <Button type="button" variant="ghost" onClick={handleSearchClear}>
+          {TASK_TEXT.clearSearch}
+        </Button>
+      );
+    }
+    return <Button onClick={onCreate}>{TASK_TEXT.addTask}</Button>;
+  }, [hasSearch, onCreate]);
 
   return (
     <section className="space-y-6">
@@ -205,7 +178,7 @@ export default function TasksGrid({ onCreate, onEdit, onDelete, visibleStatuses 
         <div className="rounded-2xl bg-white px-6 py-12 text-center text-sm text-slate-500 shadow-sm ring-1 ring-slate-100">
           {TASK_TEXT.loading}
         </div>
-      ) : tasks.length ? (
+      ) : filtered.length ? (
         <div className="space-y-4">
           <Table>
             <TableHead>
@@ -222,21 +195,27 @@ export default function TasksGrid({ onCreate, onEdit, onDelete, visibleStatuses 
             </TableHead>
             <TableBody>
               {tasks.map((task) => (
-                <TaskRow key={task.id} task={task} onEdit={onEdit} onDelete={onDelete} onDoubleClick={() => onEdit(task)} />
+                <TaskRow
+                  key={task.id}
+                  task={task}
+                  onEdit={onEdit}
+                  onAbort={(t) => abortMutation.mutate({ id: t.id, data: { status: 'cancelled' } })}
+                  onDoubleClick={() => onEdit(task)}
+                />
               ))}
             </TableBody>
           </Table>
 
           <div className="flex flex-col gap-3 rounded-2xl bg-white px-4 py-3 shadow-sm ring-1 ring-slate-100 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-slate-500">
-              {TASK_TEXT.pagination.label(page, totalPages)}
+              {TASK_TEXT.pagination.label(safePage, totalPages)}
             </p>
             <div className="flex items-center gap-2">
               <Button
                 type="button"
                 variant="ghost"
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page === 1 || isFetching}
+                disabled={safePage === 1}
               >
                 {TASK_TEXT.pagination.previous}
               </Button>
@@ -244,7 +223,7 @@ export default function TasksGrid({ onCreate, onEdit, onDelete, visibleStatuses 
                 type="button"
                 variant="ghost"
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                disabled={page >= totalPages || isFetching}
+                disabled={safePage >= totalPages}
               >
                 {TASK_TEXT.pagination.next}
               </Button>
@@ -255,16 +234,10 @@ export default function TasksGrid({ onCreate, onEdit, onDelete, visibleStatuses 
         <EmptyState
           icon={hasSearch ? '🔎' : '📋'}
           title={hasSearch ? TASK_TEXT.noResultsTitle : TASK_TEXT.noDataTitle}
-          description={
-            hasSearch ? TASK_TEXT.noResultsDescription : TASK_TEXT.noDataDescription
-          }
+          description={hasSearch ? TASK_TEXT.noResultsDescription : TASK_TEXT.noDataDescription}
           action={emptyStateAction}
         />
       )}
-
-      {!isLoading && isFetching ? (
-        <div className="text-right text-xs text-slate-400">{TASK_TEXT.loading}</div>
-      ) : null}
     </section>
   );
 }
@@ -272,6 +245,5 @@ export default function TasksGrid({ onCreate, onEdit, onDelete, visibleStatuses 
 TasksGrid.propTypes = {
   onCreate: PropTypes.func.isRequired,
   onEdit: PropTypes.func.isRequired,
-  onDelete: PropTypes.func.isRequired,
   visibleStatuses: PropTypes.instanceOf(Set),
 };

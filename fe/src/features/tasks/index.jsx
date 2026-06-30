@@ -1,7 +1,6 @@
 import PropTypes from 'prop-types';
 import { useState } from 'react';
 import useToast from '@/components/chadcn/useToast';
-import TaskDeleteDialog from '@/features/tasks/components/TaskDeleteDialog';
 import TaskModal from '@/features/tasks/components/TaskModal';
 import TasksGantt from '@/features/tasks/components/TasksGantt';
 import TasksGrid from '@/features/tasks/components/TasksGrid';
@@ -111,7 +110,6 @@ export default function TasksFeature() {
   const [view, setView] = useState(loadView);
   const [showCreate, setShowCreate] = useState(false);
   const [editTask, setEditTask] = useState(null);
-  const [deleteTask, setDeleteTask] = useState(null);
   const [visibleStatuses, setVisibleStatuses] = useState(() => new Set(ALL_STATUSES));
 
   const handleViewChange = (nextView) => {
@@ -127,7 +125,6 @@ export default function TasksFeature() {
     showToast(message, 'success');
     setShowCreate(false);
     setEditTask(null);
-    setDeleteTask(null);
   };
 
   const toggleStatus = (status) => {
@@ -171,7 +168,6 @@ export default function TasksFeature() {
         <TasksGrid
           onCreate={() => setShowCreate(true)}
           onEdit={(task) => setEditTask(task)}
-          onDelete={(task) => setDeleteTask(task)}
           visibleStatuses={visibleStatuses}
         />
       )}
@@ -190,12 +186,6 @@ export default function TasksFeature() {
         onSuccess={handleSuccess}
       />
 
-      <TaskDeleteDialog
-        isOpen={Boolean(deleteTask)}
-        onClose={() => setDeleteTask(null)}
-        task={deleteTask}
-        onSuccess={handleSuccess}
-      />
     </>
   );
 }

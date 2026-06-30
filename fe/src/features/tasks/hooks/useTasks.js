@@ -3,7 +3,7 @@ import { fetchTasks } from '@/features/tasks/services/tasksApi';
 
 export default function useTasks({ search, status, customerId, from, to, page, limit = 25 } = {}) {
   return useQuery(
-    ['tasks', search, status, customerId, from, to, page],
+    ['tasks', search, status, customerId, from, to, page, limit],
     () => fetchTasks({ search, status, customerId, from, to, page, limit }),
     { keepPreviousData: true }
   );
