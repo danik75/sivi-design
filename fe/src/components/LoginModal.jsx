@@ -7,6 +7,13 @@ export default function LoginModal({ isOpen, onLoginSuccess }) {
   const mutation = useLogin();
   const firstInputRef = useRef(null);
 
+    // Reset stale mutation state (e.g. isSuccess from a previous session) each
+    // time the modal opens, so logout → re-open does not immediately re-authenticate.
+    useEffect(() => {
+      if (isOpen) mutation.reset();
+      // intentionally omit mutation from deps — mutation.reset is stable
+    }, [isOpen]); // eslint-disable-line
+
   useEffect(() => {
     if (isOpen && firstInputRef.current) {
       firstInputRef.current.focus();
