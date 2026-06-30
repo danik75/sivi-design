@@ -105,10 +105,7 @@ export default function CustomerGrid({ onCreate, onEdit, onDelete }) {
                 <TableHeader>{CUSTOMER_TEXT.headers.name}</TableHeader>
                 <TableHeader>{CUSTOMER_TEXT.headers.email}</TableHeader>
                 <TableHeader>{CUSTOMER_TEXT.headers.phone}</TableHeader>
-                <TableHeader>{CUSTOMER_TEXT.headers.contacts}</TableHeader>
-                <TableHeader>
-                  <div className="text-right">{CUSTOMER_TEXT.headers.actions}</div>
-                </TableHeader>
+                <TableHeader />
               </TableRow>
             </TableHead>
             <TableBody>
