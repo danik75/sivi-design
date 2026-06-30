@@ -1,12 +1,18 @@
 import LoginForm from '../components/LoginForm';
 import useLogin from '../hooks/useLogin';
 
-export default function LoginPage() {
+export default function LoginPage({ onSuccess }) {
   const mutation = useLogin();
 
   const handleSubmit = ({ username, password }) => {
     mutation.mutate({ username, password });
   };
+
+  // call onSuccess when login succeeds
+  if (mutation.isSuccess && typeof onSuccess === 'function') {
+    // slight delay to allow UI update
+    setTimeout(() => onSuccess(), 10);
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-6">
