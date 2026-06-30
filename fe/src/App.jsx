@@ -13,17 +13,17 @@ function getInitialAuth() {
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(getInitialAuth);
 
-  const handleLoginSuccess = () => {
-    setIsAuthenticated(true);
-  };
+  const handleLoginSuccess = () => setIsAuthenticated(true);
+  const handleLogout = () => setIsAuthenticated(false);
 
   return (
     <QueryClientProvider client={queryClient}>
       <div className="app-root">
-        {/* main panel is hidden/inert until authenticated */}
-        <main aria-hidden={!isAuthenticated}>
-          {isAuthenticated ? <MainPanel /> : <div className="min-h-screen" />}
-        </main>
+        {isAuthenticated ? (
+          <MainPanel onLogout={handleLogout} />
+        ) : (
+          <div className="min-h-screen" aria-hidden="true" />
+        )}
 
         {/* Login modal overlays the entire app when not authenticated */}
         <LoginModal isOpen={!isAuthenticated} onLoginSuccess={handleLoginSuccess} />
