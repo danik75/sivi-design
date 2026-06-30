@@ -1,25 +1,20 @@
 import './App.css';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useState, useEffect } from 'react';
-import LoginPage from './pages/LoginPage';
+import { useState } from 'react';
 import LoginModal from './components/LoginModal';
 import MainPanel from './pages/MainPanel';
 
 const queryClient = new QueryClient();
 
-export default function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [showLogin, setShowLogin] = useState(false);
+function getInitialAuth() {
+  return !!localStorage.getItem('sivi_token');
+}
 
-  useEffect(() => {
-    const token = localStorage.getItem('sivi_token');
-    if (token) setIsAuthenticated(true);
-    else setShowLogin(true);
-  }, []);
+export default function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(getInitialAuth);
 
   const handleLoginSuccess = () => {
     setIsAuthenticated(true);
-    setShowLogin(false);
   };
 
   return (
@@ -31,10 +26,7 @@ export default function App() {
         </main>
 
         {/* Login modal overlays the entire app when not authenticated */}
-        <LoginModal isOpen={!isAuthenticated && showLogin} onClose={() => setShowLogin(false)} />
-
-        {/* Provide LoginPage for direct route if needed (kept for compatibility) */}
-        {!isAuthenticated && !showLogin && <LoginPage onSuccess={handleLoginSuccess} />}
+        <LoginModal isOpen={!isAuthenticated} onLoginSuccess={handleLoginSuccess} />
       </div>
     </QueryClientProvider>
   );

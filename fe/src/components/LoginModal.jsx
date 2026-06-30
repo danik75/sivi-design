@@ -3,7 +3,7 @@ import LoginForm from './LoginForm';
 import useLogin from '../hooks/useLogin';
 import { useRef, useEffect } from 'react';
 
-export default function LoginModal({ isOpen, onClose }) {
+export default function LoginModal({ isOpen, onLoginSuccess }) {
   const mutation = useLogin();
   const firstInputRef = useRef(null);
 
@@ -19,9 +19,9 @@ export default function LoginModal({ isOpen, onClose }) {
 
   useEffect(() => {
     if (mutation.isSuccess) {
-      onClose();
+      onLoginSuccess();
     }
-  }, [mutation.isSuccess, onClose]);
+  }, [mutation.isSuccess, onLoginSuccess]);
 
   if (!isOpen) return null;
 
@@ -31,27 +31,21 @@ export default function LoginModal({ isOpen, onClose }) {
       aria-modal="true"
       className="fixed inset-0 z-50 flex items-center justify-center"
     >
+      {/* full-screen backdrop — blocks all background interaction */}
       <div className="fixed inset-0 bg-black bg-opacity-60" aria-hidden="true" />
 
       <div className="relative z-10 w-full max-w-md p-6 bg-white rounded shadow">
-        <h2 className="text-xl font-semibold mb-4">Sign in</h2>
         <LoginForm
           onSubmit={handleSubmit}
-          isLoading={mutation.isLoading}
-          error={mutation.error?.message || mutation.error}
+          isLoading={mutation.isLoading || mutation.isPending}
+          error={mutation.error?.response?.data?.message || mutation.error?.message}
         />
-
-        <div className="mt-4 text-right">
-          <Button onClick={onClose} className="px-3 py-1 bg-gray-200 text-gray-800" aria-label="Close sign in">
-            Close
-          </Button>
-        </div>
       </div>
     </div>
   );
 }
 
 LoginModal.propTypes = {
-  isOpen: PropTypes.bool,
-  onClose: PropTypes.func,
+  isOpen: PropTypes.bool.isRequired,
+  onLoginSuccess: PropTypes.func.isRequired,
 };
