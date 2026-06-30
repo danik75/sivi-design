@@ -71,3 +71,17 @@ Conventions summary
 - Use React Query for data fetching, axios for HTTP, and i18next for translations.
 
 If anything is unclear, ask for a brief example PR and the FE maintainer will provide a starter commit.
+
+## Team Decisions (2026-06-30)
+
+The team agreed the FE React agent and developers should follow these decisions for all new and refactor work:
+
+- Enforce linting and formatting on all frontend code: ESLint + Prettier. Run lint and format in pre-commit or CI.
+- One component per file: every React component lives in its own file and is exported as default. Keep tests/styles colocated with the component when practical.
+- Extract all side-effect and logic into hooks under fe/src/hooks/ (e.g., useLogin, useAuth, useApi). Components should be presentational and delegate to hooks.
+- Adopt ChadCN as the component design system for shared UI primitives (buttons, inputs, modals, cards). Create fe/src/components/chadcn/ wrappers that normalize usage.
+- Keep files organized with a feature-first hierarchy: features/{feature}/components, hooks, styles, tests; shared primitives in components/ and chadcn/; services (api clients) in services/.
+- Modal/login UX: login should be a modal popup that overlays and blocks interaction with the background until successful login.
+
+These decisions are recorded as team directives and should be referenced by FE maintainers and any onboarding documentation.
+
