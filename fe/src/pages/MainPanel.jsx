@@ -1,42 +1,126 @@
 import PropTypes from 'prop-types';
-import UserMenu from '../components/UserMenu';
+import { useMemo, useState } from 'react';
+import UserMenu from '@/components/UserMenu';
+import Button from '@/components/chadcn/Button';
+import MenuIcon from '@/components/chadcn/icons/MenuIcon';
+import CustomersFeature from '@/features/customers';
+
+const PANEL_TEXT = {
+  brand: 'sivi‑design',
+  toggleNavigation: 'Toggle navigation',
+  comingSoon: 'Coming soon',
+  placeholderDescription: 'This area is reserved for a future module.',
+};
+
+const NAV_ITEMS = [
+  { id: 'customers', label: 'Customers', disabled: false },
+  { id: 'tasks', label: 'Tasks', disabled: true },
+  { id: 'billing', label: 'Billing', disabled: true },
+];
 
 export default function MainPanel({ onLogout }) {
+  const [activeModule, setActiveModule] = useState('customers');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  const activeItem = useMemo(
+    () => NAV_ITEMS.find((item) => item.id === activeModule) ?? NAV_ITEMS[0],
+    [activeModule]
+  );
+
+  const renderModule = () => {
+    if (activeModule === 'customers') {
+      return <CustomersFeature />;
+    }
+
+    return (
+      <div className="rounded-3xl border border-slate-100 bg-white p-8 shadow-sm">
+        <span className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
+          {PANEL_TEXT.comingSoon}
+        </span>
+        <h1 className="mt-4 text-3xl font-bold text-slate-900">{activeItem.label}</h1>
+        <p className="mt-2 text-sm text-slate-500">{PANEL_TEXT.placeholderDescription}</p>
+      </div>
+    );
+  };
+
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50">
-      <header className="w-full bg-white border-b border-slate-100 px-6 py-3 flex items-center justify-between shadow-sm">
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center">
-            <span className="text-white text-xs font-bold">S</span>
+    <div className="flex min-h-screen flex-col bg-slate-50 text-left">
+      <header className="flex w-full items-center justify-between border-b border-slate-100 bg-white px-4 py-3 shadow-sm sm:px-6">
+        <div className="flex items-center gap-3">
+          <Button
+            type="button"
+            variant="ghost"
+            className="h-10 w-10 p-0 md:hidden"
+            onClick={() => setIsSidebarOpen((current) => !current)}
+            aria-label={PANEL_TEXT.toggleNavigation}
+          >
+            <MenuIcon className="h-5 w-5" />
+          </Button>
+          <div className="flex items-center gap-2">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600">
+              <span className="text-xs font-bold text-white">S</span>
+            </div>
+            <span className="text-base font-bold tracking-tight text-slate-800">
+              {PANEL_TEXT.brand}
+            </span>
           </div>
-          <span className="text-base font-bold text-slate-800 tracking-tight">sivi‑design</span>
         </div>
         <UserMenu onLogout={onLogout} />
       </header>
 
-      <main className="flex-1 p-8">
-        <div className="max-w-5xl mx-auto">
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">Dashboard</h1>
-          <p className="text-slate-500 mb-8">Welcome to sivi‑design. Your workspace is ready.</p>
+      <div className="relative flex flex-1 overflow-hidden">
+        {isSidebarOpen && (
+          <Button
+            type="button"
+            variant="ghost"
+            className="fixed inset-0 top-[73px] z-20 h-auto w-full rounded-none bg-slate-900/20 p-0 md:hidden"
+            onClick={() => setIsSidebarOpen(false)}
+            aria-label={PANEL_TEXT.toggleNavigation}
+          />
+        )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-            {[
-              { label: 'Projects', value: '—', icon: '📐' },
-              { label: 'Components', value: '—', icon: '⚛️' },
-              { label: 'Team members', value: '—', icon: '👥' },
-            ].map(({ label, value, icon }) => (
-              <div
-                key={label}
-                className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 flex flex-col gap-2"
-              >
-                <span className="text-2xl">{icon}</span>
-                <span className="text-2xl font-bold text-slate-900">{value}</span>
-                <span className="text-sm text-slate-400">{label}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </main>
+        <aside
+          className={`fixed inset-y-0 left-0 top-[73px] z-30 w-56 border-r border-slate-100 bg-white px-4 py-6 shadow-xl transition-transform duration-200 md:static md:top-0 md:translate-x-0 md:shadow-none ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
+        >
+          <nav className="space-y-1">
+            {NAV_ITEMS.map((item) => {
+              const isActive = activeModule === item.id;
+              return (
+                <Button
+                  key={item.id}
+                  type="button"
+                  variant="ghost"
+                  disabled={item.disabled}
+                  onClick={() => {
+                    if (item.disabled) {
+                      return;
+                    }
+
+                    setActiveModule(item.id);
+                    setIsSidebarOpen(false);
+                  }}
+                  className={`w-full justify-between rounded-2xl px-4 py-3 text-sm font-semibold transition-colors ${
+                    isActive
+                      ? 'bg-indigo-600 text-white hover:bg-indigo-500'
+                      : item.disabled
+                        ? 'cursor-not-allowed text-slate-300'
+                        : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                  }`}
+                >
+                  <span>{item.label}</span>
+                  {item.disabled ? (
+                    <span className={`text-xs ${isActive ? 'text-indigo-100' : 'text-slate-300'}`}>
+                      •
+                    </span>
+                  ) : null}
+                </Button>
+              );
+            })}
+          </nav>
+        </aside>
+
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">{renderModule()}</main>
+      </div>
     </div>
   );
 }

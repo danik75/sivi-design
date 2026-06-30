@@ -1,9 +1,9 @@
 import PropTypes from 'prop-types';
 import { useState, useRef } from 'react';
-import Input from './chadcn/Input';
-import Button from './chadcn/Button';
-import Form from './chadcn/Form';
-import FormField from './chadcn/FormField';
+import Input from '@/components/chadcn/Input';
+import Button from '@/components/chadcn/Button';
+import Form from '@/components/chadcn/Form';
+import FormField from '@/components/chadcn/FormField';
 
 export default function LoginForm({ onSubmit, isLoading, error }) {
   const [username, setUsername] = useState('');
