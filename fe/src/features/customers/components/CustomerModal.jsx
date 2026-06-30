@@ -126,7 +126,7 @@ export default function CustomerModal({ isOpen, onClose, customer, onSuccess }) 
   };
 
   return (
-    <Dialog isOpen={isOpen} onClose={onClose} title={dialogTitle} footer={footer}>
+    <Dialog isOpen={isOpen} onClose={onClose} title={dialogTitle} footer={footer} size="lg">
       <Form id={FORM_ID} onSubmit={handleSubmit} className="space-y-5">
         <FormField label={CUSTOMER_TEXT.modal.nameLabel}>
           <Input
