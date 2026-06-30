@@ -1,7 +1,6 @@
 import PropTypes from 'prop-types';
 import { useMemo, useState } from 'react';
 import UserMenu from '@/components/UserMenu';
-import Button from '@/components/chadcn/Button';
 import ChevronDownIcon from '@/components/chadcn/icons/ChevronDownIcon';
 import ClipboardIcon from '@/components/chadcn/icons/ClipboardIcon';
 import CreditCardIcon from '@/components/chadcn/icons/CreditCardIcon';
@@ -28,20 +27,19 @@ function SidebarNav({ activeModule, onSelect }) {
       {NAV_ITEMS.map(({ id, label, Icon }) => {
         const isActive = activeModule === id;
         return (
-          <Button
+          <button
             key={id}
             type="button"
-            variant="ghost"
             onClick={() => onSelect(id)}
-            className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
+            className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors focus:outline-none ${
               isActive
-                ? 'bg-indigo-600 text-white hover:bg-indigo-500'
+                ? 'bg-indigo-600 text-white'
                 : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
             }`}
           >
             <Icon className="h-4 w-4 shrink-0" />
             {label}
-          </Button>
+          </button>
         );
       })}
     </nav>
