@@ -42,13 +42,9 @@ export default function LoginModal({ isOpen, onClose }) {
         />
 
         <div className="mt-4 text-right">
-          <button
-            onClick={onClose}
-            className="px-3 py-1 text-sm text-gray-600 hover:text-gray-800"
-            aria-label="Close sign in"
-          >
+          <Button onClick={onClose} className="px-3 py-1 bg-gray-200 text-gray-800" aria-label="Close sign in">
             Close
-          </button>
+          </Button>
         </div>
       </div>
     </div>
