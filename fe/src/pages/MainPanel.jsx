@@ -21,7 +21,7 @@ const NAV_ITEMS = [
   { id: 'billing', label: 'Billing', Icon: CreditCardIcon },
 ];
 
-function SidebarNav({ activeModule, onSelect }) {
+function SidebarNav({ activeModule, onSelect, collapsed }) {
   return (
     <nav className="space-y-1">
       {NAV_ITEMS.map(({ id, label, Icon }) => {
@@ -31,14 +31,13 @@ function SidebarNav({ activeModule, onSelect }) {
             key={id}
             type="button"
             onClick={() => onSelect(id)}
-            className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors focus:outline-none ${
-              isActive
-                ? 'bg-indigo-600 text-white'
-                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-            }`}
+            title={collapsed ? label : undefined}
+            className={`flex items-center rounded-xl text-sm font-medium transition-colors focus:outline-none ${
+              collapsed ? 'mx-auto h-10 w-10 justify-center' : 'w-full gap-3 px-3 py-2.5'
+            } ${isActive ? 'bg-indigo-600 text-white' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`}
           >
             <Icon className="h-4 w-4 shrink-0" />
-            {label}
+            {!collapsed && label}
           </button>
         );
       })}
@@ -49,6 +48,7 @@ function SidebarNav({ activeModule, onSelect }) {
 SidebarNav.propTypes = {
   activeModule: PropTypes.string.isRequired,
   onSelect: PropTypes.func.isRequired,
+  collapsed: PropTypes.bool,
 };
 
 export default function MainPanel({ onLogout }) {
@@ -141,18 +141,25 @@ export default function MainPanel({ onLogout }) {
           </button>
         )}
 
-        {/* Desktop sidebar — inline, collapse via width; arrow widget at right edge */}
-        <div className={`relative hidden shrink-0 transition-all duration-200 md:block ${isSidebarOpen ? 'w-56' : 'w-0'}`}>
-          <div className={`h-full overflow-hidden bg-white transition-all duration-200 ${isSidebarOpen ? 'w-56 border-r border-slate-100 px-3 py-4' : 'w-0'}`}>
-            <div className="w-56">
-              <SidebarNav activeModule={activeModule} onSelect={setActiveModule} />
-            </div>
+        {/* Desktop sidebar — collapses to icon-only strip (w-14); arrow widget at right edge */}
+        <div
+          className={`relative hidden shrink-0 border-r border-slate-100 bg-white transition-all duration-200 md:block ${
+            isSidebarOpen ? 'w-56' : 'w-14'
+          }`}
+        >
+          <div className="px-2 py-3">
+            <SidebarNav
+              activeModule={activeModule}
+              onSelect={setActiveModule}
+              collapsed={!isSidebarOpen}
+            />
           </div>
-          {/* Arrow toggle button — sits at the sidebar right edge, always visible */}
+
+          {/* Arrow toggle — floats at sidebar right edge */}
           <button
             type="button"
             onClick={() => setIsSidebarOpen((o) => !o)}
-            className="absolute right-0 top-6 z-40 flex h-6 w-6 translate-x-1/2 items-center justify-center rounded-full border border-slate-200 bg-white shadow-md hover:bg-slate-50"
+            className="absolute right-0 top-5 z-40 flex h-6 w-6 translate-x-1/2 items-center justify-center rounded-full border border-slate-200 bg-white shadow-md hover:bg-slate-50"
             aria-label={isSidebarOpen ? PANEL_TEXT.closeSidebar : PANEL_TEXT.toggleSidebar}
           >
             <ChevronDownIcon
