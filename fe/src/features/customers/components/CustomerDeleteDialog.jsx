@@ -1,9 +1,9 @@
 import PropTypes from 'prop-types';
 import { useEffect, useMemo, useState } from 'react';
-import Button from '../../../components/chadcn/Button';
-import Dialog from '../../../components/chadcn/Dialog';
-import { CUSTOMER_TEXT, getApiErrorMessage } from '../constants';
-import useDeleteCustomer from '../hooks/useDeleteCustomer';
+import Button from '@/components/chadcn/Button';
+import Dialog from '@/components/chadcn/Dialog';
+import { CUSTOMER_TEXT, getApiErrorMessage } from '@/features/customers/constants';
+import useDeleteCustomer from '@/features/customers/hooks/useDeleteCustomer';
 
 export default function CustomerDeleteDialog({ isOpen, onClose, customer, onSuccess }) {
   const deleteMutation = useDeleteCustomer();

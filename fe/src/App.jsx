@@ -1,10 +1,10 @@
-import './App.css';
+import '@/App.css';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useState } from 'react';
-import LoginModal from './components/LoginModal';
-import { ToastContainer } from './components/chadcn/Toast';
-import { ToastProvider } from './components/chadcn/useToast';
-import MainPanel from './pages/MainPanel';
+import LoginModal from '@/components/LoginModal';
+import { ToastContainer } from '@/components/chadcn/Toast';
+import { ToastProvider } from '@/components/chadcn/useToast';
+import MainPanel from '@/pages/MainPanel';
 
 const queryClient = new QueryClient();
 

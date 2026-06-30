@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { deleteCustomer } from '../services/customersApi';
+import { deleteCustomer } from '@/features/customers/services/customersApi';
 
 export default function useDeleteCustomer(providedQueryClient) {
   const queryClient = providedQueryClient ?? useQueryClient();

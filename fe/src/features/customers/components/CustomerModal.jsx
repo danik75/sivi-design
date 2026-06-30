@@ -1,19 +1,19 @@
 import PropTypes from 'prop-types';
 import { useEffect, useMemo, useState } from 'react';
-import Button from '../../../components/chadcn/Button';
-import Dialog from '../../../components/chadcn/Dialog';
-import Form from '../../../components/chadcn/Form';
-import FormField from '../../../components/chadcn/FormField';
-import Input from '../../../components/chadcn/Input';
-import ContactCard from './ContactCard';
+import Button from '@/components/chadcn/Button';
+import Dialog from '@/components/chadcn/Dialog';
+import Form from '@/components/chadcn/Form';
+import FormField from '@/components/chadcn/FormField';
+import Input from '@/components/chadcn/Input';
+import ContactCard from '@/features/customers/components/ContactCard';
 import {
   CUSTOMER_TEXT,
   createEmptyContact,
   getApiErrorMessage,
   normalizeCustomerPayload,
-} from '../constants';
-import useCreateCustomer from '../hooks/useCreateCustomer';
-import useUpdateCustomer from '../hooks/useUpdateCustomer';
+} from '@/features/customers/constants';
+import useCreateCustomer from '@/features/customers/hooks/useCreateCustomer';
+import useUpdateCustomer from '@/features/customers/hooks/useUpdateCustomer';
 
 const FORM_ID = 'customer-modal-form';
 

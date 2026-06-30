@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import useToast from '../../components/chadcn/useToast';
-import CustomerDeleteDialog from './components/CustomerDeleteDialog';
-import CustomerGrid from './components/CustomerGrid';
-import CustomerModal from './components/CustomerModal';
+import useToast from '@/components/chadcn/useToast';
+import CustomerDeleteDialog from '@/features/customers/components/CustomerDeleteDialog';
+import CustomerGrid from '@/features/customers/components/CustomerGrid';
+import CustomerModal from '@/features/customers/components/CustomerModal';
 
 export default function CustomersFeature() {
   const { showToast } = useToast();

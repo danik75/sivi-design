@@ -1,5 +1,7 @@
 import PropTypes from 'prop-types';
 import { useEffect } from 'react';
+import Button from '@/components/chadcn/Button';
+import XIcon from '@/components/chadcn/icons/XIcon';
 
 const DIALOG_TEXT = {
   close: 'Close dialog',
@@ -39,22 +41,15 @@ export default function Dialog({ isOpen, onClose, title, children, footer }) {
       >
         <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
           <h2 className="text-lg font-semibold text-slate-900">{title}</h2>
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            className="p-2 text-slate-400 hover:text-slate-600"
             onClick={onClose}
-            className="rounded-lg p-2 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-200"
             aria-label={DIALOG_TEXT.close}
           >
-            <svg
-              className="h-4 w-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+            <XIcon />
+          </Button>
         </div>
         <div className="px-6 py-5">{children}</div>
         {footer ? (

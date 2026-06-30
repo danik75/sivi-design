@@ -1,9 +1,9 @@
 import PropTypes from 'prop-types';
-import Badge from '../../../components/chadcn/Badge';
-import Button from '../../../components/chadcn/Button';
-import FormField from '../../../components/chadcn/FormField';
-import Input from '../../../components/chadcn/Input';
-import { CUSTOMER_TEXT } from '../constants';
+import Badge from '@/components/chadcn/Badge';
+import Button from '@/components/chadcn/Button';
+import FormField from '@/components/chadcn/FormField';
+import Input from '@/components/chadcn/Input';
+import { CUSTOMER_TEXT } from '@/features/customers/constants';
 
 export default function ContactCard({ contact, index, onChange, onRemove }) {
   return (

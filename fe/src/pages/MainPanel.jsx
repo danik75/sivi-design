@@ -1,7 +1,9 @@
 import PropTypes from 'prop-types';
 import { useMemo, useState } from 'react';
-import UserMenu from '../components/UserMenu';
-import CustomersFeature from '../features/customers';
+import UserMenu from '@/components/UserMenu';
+import Button from '@/components/chadcn/Button';
+import MenuIcon from '@/components/chadcn/icons/MenuIcon';
+import CustomersFeature from '@/features/customers';
 
 const PANEL_TEXT = {
   brand: 'sivi‑design',
@@ -45,22 +47,15 @@ export default function MainPanel({ onLogout }) {
     <div className="flex min-h-screen flex-col bg-slate-50 text-left">
       <header className="flex w-full items-center justify-between border-b border-slate-100 bg-white px-4 py-3 shadow-sm sm:px-6">
         <div className="flex items-center gap-3">
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            className="h-10 w-10 p-0 md:hidden"
             onClick={() => setIsSidebarOpen((current) => !current)}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 text-slate-600 transition-colors hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-200 md:hidden"
             aria-label={PANEL_TEXT.toggleNavigation}
           >
-            <svg
-              className="h-5 w-5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          </button>
+            <MenuIcon className="h-5 w-5" />
+          </Button>
           <div className="flex items-center gap-2">
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600">
               <span className="text-xs font-bold text-white">S</span>
@@ -74,36 +69,39 @@ export default function MainPanel({ onLogout }) {
       </header>
 
       <div className="relative flex flex-1 overflow-hidden">
-        {isSidebarOpen ? (
-          <button
+        {isSidebarOpen && (
+          <Button
             type="button"
-            className="fixed inset-0 top-[73px] z-20 bg-slate-900/20 md:hidden"
+            variant="ghost"
+            className="fixed inset-0 top-[73px] z-20 h-auto w-full rounded-none bg-slate-900/20 p-0 md:hidden"
             onClick={() => setIsSidebarOpen(false)}
             aria-label={PANEL_TEXT.toggleNavigation}
           />
-        ) : null}
+        )}
 
         <aside
           className={`fixed inset-y-0 left-0 top-[73px] z-30 w-56 border-r border-slate-100 bg-white px-4 py-6 shadow-xl transition-transform duration-200 md:static md:top-0 md:translate-x-0 md:shadow-none ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
         >
-          <nav className="space-y-2">
+          <nav className="space-y-1">
             {NAV_ITEMS.map((item) => {
               const isActive = activeModule === item.id;
               return (
-                <button
+                <Button
                   key={item.id}
                   type="button"
+                  variant="ghost"
+                  disabled={item.disabled}
                   onClick={() => {
                     if (item.disabled) {
                       return;
                     }
+
                     setActiveModule(item.id);
                     setIsSidebarOpen(false);
                   }}
-                  disabled={item.disabled}
-                  className={`flex w-full items-center justify-between rounded-2xl px-4 py-3 text-left text-sm font-semibold transition-colors ${
+                  className={`w-full justify-between rounded-2xl px-4 py-3 text-sm font-semibold transition-colors ${
                     isActive
-                      ? 'bg-indigo-600 text-white shadow-sm'
+                      ? 'bg-indigo-600 text-white hover:bg-indigo-500'
                       : item.disabled
                         ? 'cursor-not-allowed text-slate-300'
                         : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
@@ -115,7 +113,7 @@ export default function MainPanel({ onLogout }) {
                       •
                     </span>
                   ) : null}
-                </button>
+                </Button>
               );
             })}
           </nav>

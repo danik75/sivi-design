@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types';
-import LoginForm from './LoginForm';
-import useLogin from '../hooks/useLogin';
+import LoginForm from '@/components/LoginForm';
+import useLogin from '@/hooks/useLogin';
 import { useRef, useEffect } from 'react';
 
 export default function LoginModal({ onLoginSuccess }) {

@@ -1,17 +1,12 @@
 import PropTypes from 'prop-types';
 import { useEffect, useMemo, useState } from 'react';
-import Button from '../../../components/chadcn/Button';
-import EmptyState from '../../../components/chadcn/EmptyState';
-import SearchInput from '../../../components/chadcn/SearchInput';
-import Table, {
-  TableBody,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '../../../components/chadcn/Table';
-import CustomerRow from './CustomerRow';
-import { CUSTOMER_TEXT, getApiErrorMessage } from '../constants';
-import useCustomers from '../hooks/useCustomers';
+import Button from '@/components/chadcn/Button';
+import EmptyState from '@/components/chadcn/EmptyState';
+import SearchInput from '@/components/chadcn/SearchInput';
+import Table, { TableBody, TableHead, TableHeader, TableRow } from '@/components/chadcn/Table';
+import CustomerRow from '@/features/customers/components/CustomerRow';
+import { CUSTOMER_TEXT, getApiErrorMessage } from '@/features/customers/constants';
+import useCustomers from '@/features/customers/hooks/useCustomers';
 
 export default function CustomerGrid({ onCreate, onEdit, onDelete }) {
   const [search, setSearch] = useState('');
