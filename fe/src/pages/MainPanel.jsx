@@ -6,6 +6,7 @@ import ClipboardIcon from '@/components/chadcn/icons/ClipboardIcon';
 import CreditCardIcon from '@/components/chadcn/icons/CreditCardIcon';
 import UsersIcon from '@/components/chadcn/icons/UsersIcon';
 import CustomersFeature from '@/features/customers';
+import TasksFeature from '@/features/tasks';
 
 const PANEL_TEXT = {
   brand: 'sivi‑design',
@@ -65,6 +66,10 @@ export default function MainPanel({ onLogout }) {
   const renderModule = () => {
     if (activeModule === 'customers') {
       return <CustomersFeature />;
+    }
+
+    if (activeModule === 'tasks') {
+      return <TasksFeature />;
     }
 
     return (

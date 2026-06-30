@@ -18,8 +18,16 @@ function TableBody({ children }) {
   return <tbody className="divide-y divide-slate-50">{children}</tbody>;
 }
 
-function TableRow({ children }) {
-  return <tr className="transition-colors hover:bg-slate-50/60">{children}</tr>;
+function TableRow({ children, onClick, onDoubleClick }) {
+  return (
+    <tr
+      className={`transition-colors hover:bg-slate-50/60${onClick ? ' cursor-pointer' : ''}`}
+      onClick={onClick}
+      onDoubleClick={onDoubleClick}
+    >
+      {children}
+    </tr>
+  );
 }
 
 function TableHeader({ children }) {
@@ -46,6 +54,8 @@ TableBody.propTypes = {
 
 TableRow.propTypes = {
   children: childrenProp,
+  onClick: PropTypes.func,
+  onDoubleClick: PropTypes.func,
 };
 
 TableHeader.propTypes = {
