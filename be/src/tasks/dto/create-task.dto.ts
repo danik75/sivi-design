@@ -1,4 +1,4 @@
-import { IsDateString, IsEnum, IsNotEmpty, IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
+import { IsDateString, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID, Matches, MaxLength, Min } from 'class-validator';
 
 export type TaskStatus = 'pending' | 'in_progress' | 'done' | 'cancelled';
 
@@ -26,4 +26,17 @@ export class CreateTaskDto {
   @IsOptional()
   @IsUUID()
   customerId?: string;
+
+  @IsOptional()
+  @Matches(/^\d{2}:\d{2}$/)
+  startTime?: string;
+
+  @IsOptional()
+  @Matches(/^\d{2}:\d{2}$/)
+  endTime?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  estimatedHours?: number;
 }

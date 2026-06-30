@@ -36,9 +36,13 @@ CREATE TABLE IF NOT EXISTS tasks (
   start_date   DATE NOT NULL,
   end_date     DATE NOT NULL,
   status       TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','in_progress','done','cancelled')),
-  customer_id  UUID REFERENCES customers(id) ON DELETE SET NULL,
-  created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+  customer_id      UUID REFERENCES customers(id) ON DELETE SET NULL,
+  start_time       TIME,
+  end_time         TIME,
+  estimated_hours  NUMERIC(6,2),
+  percent_complete INTEGER NOT NULL DEFAULT 0 CHECK (percent_complete BETWEEN 0 AND 100),
+  created_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
   CONSTRAINT tasks_dates_valid CHECK (end_date >= start_date)
 );
 

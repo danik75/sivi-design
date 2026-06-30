@@ -14,6 +14,8 @@ export class TaskRepository {
     const query = `
       SELECT t.id, t.name, t.description, t.start_date AS "startDate", t.end_date AS "endDate",
              t.status, t.customer_id AS "customerId", c.name AS "customerName",
+             t.start_time AS "startTime", t.end_time AS "endTime",
+             t.estimated_hours AS "estimatedHours", t.percent_complete AS "percentComplete",
              t.created_at AS "createdAt", t.updated_at AS "updatedAt"
       FROM tasks t
       LEFT JOIN customers c ON c.id = t.customer_id
@@ -51,6 +53,8 @@ export class TaskRepository {
       `
         SELECT t.id, t.name, t.description, t.start_date AS "startDate", t.end_date AS "endDate",
                t.status, t.customer_id AS "customerId", c.name AS "customerName",
+               t.start_time AS "startTime", t.end_time AS "endTime",
+               t.estimated_hours AS "estimatedHours", t.percent_complete AS "percentComplete",
                t.created_at AS "createdAt", t.updated_at AS "updatedAt"
         FROM tasks t
         LEFT JOIN customers c ON c.id = t.customer_id
@@ -71,11 +75,22 @@ export class TaskRepository {
 
     const res = await pool.query(
       `
-        INSERT INTO tasks (name, description, start_date, end_date, status, customer_id)
-        VALUES ($1, $2, $3, $4, $5, $6)
+        INSERT INTO tasks (name, description, start_date, end_date, status, customer_id,
+                           start_time, end_time, estimated_hours)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
         RETURNING id
       `,
-      [dto.name, dto.description ?? null, dto.startDate, dto.endDate, dto.status ?? 'pending', dto.customerId ?? null],
+      [
+        dto.name,
+        dto.description ?? null,
+        dto.startDate,
+        dto.endDate,
+        dto.status ?? 'pending',
+        dto.customerId ?? null,
+        dto.startTime ?? null,
+        dto.endTime ?? null,
+        dto.estimatedHours ?? null,
+      ],
     );
 
     return this.findOne(res.rows[0].id);
@@ -94,7 +109,7 @@ export class TaskRepository {
     this.validateDateRange(nextStartDate, nextEndDate);
 
     const setClauses: string[] = [];
-    const values: Array<string | null> = [];
+    const values: Array<string | number | null> = [];
 
     if (dto.name !== undefined) {
       values.push(dto.name);
@@ -119,6 +134,26 @@ export class TaskRepository {
     if (dto.customerId !== undefined) {
       values.push(dto.customerId ?? null);
       setClauses.push(`customer_id = $${values.length}`);
+    }
+    if (dto.startTime !== undefined) {
+      values.push(dto.startTime ?? null);
+      setClauses.push(`start_time = $${values.length}`);
+    }
+    if (dto.endTime !== undefined) {
+      values.push(dto.endTime ?? null);
+      setClauses.push(`end_time = $${values.length}`);
+    }
+    if (dto.estimatedHours !== undefined) {
+      values.push(dto.estimatedHours ?? null);
+      setClauses.push(`estimated_hours = $${values.length}`);
+    }
+    if (dto.percentComplete !== undefined) {
+      values.push(dto.percentComplete);
+      setClauses.push(`percent_complete = $${values.length}`);
+    }
+    // Completing a task always sets percent_complete to 100
+    if (dto.status === 'done' && dto.percentComplete === undefined) {
+      setClauses.push(`percent_complete = 100`);
     }
 
     if (!setClauses.length) {
