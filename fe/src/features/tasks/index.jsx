@@ -44,6 +44,40 @@ ViewSwitcher.propTypes = {
   onView: PropTypes.func.isRequired,
 };
 
+function Checkbox({ checked, indeterminate, onChange }) {
+  return (
+    <div className="relative h-4 w-4 shrink-0">
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={onChange}
+        className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+      />
+      <div
+        className={`flex h-4 w-4 items-center justify-center rounded border-2 transition-colors ${
+          checked || indeterminate
+            ? 'border-indigo-600 bg-indigo-600'
+            : 'border-slate-300 bg-white'
+        }`}
+      >
+        {indeterminate && !checked ? (
+          <span className="block h-0.5 w-2 bg-white rounded" />
+        ) : checked ? (
+          <svg className="h-2.5 w-2.5 text-white" viewBox="0 0 12 10" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="1,5 4,9 11,1" />
+          </svg>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+Checkbox.propTypes = {
+  checked: PropTypes.bool.isRequired,
+  indeterminate: PropTypes.bool,
+  onChange: PropTypes.func.isRequired,
+};
+
 function StatusFilterBar({ visibleStatuses, onToggle, onToggleAll }) {
   const allChecked = ALL_STATUSES.every((s) => visibleStatuses.has(s));
   const someChecked = ALL_STATUSES.some((s) => visibleStatuses.has(s));
@@ -51,26 +85,13 @@ function StatusFilterBar({ visibleStatuses, onToggle, onToggleAll }) {
   return (
     <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
       <label className="flex cursor-pointer select-none items-center gap-1.5">
-        <input
-          type="checkbox"
-          checked={allChecked}
-          ref={(el) => {
-            if (el) el.indeterminate = someChecked && !allChecked;
-          }}
-          onChange={onToggleAll}
-          className="h-3.5 w-3.5 accent-indigo-600"
-        />
+        <Checkbox checked={allChecked} indeterminate={someChecked && !allChecked} onChange={onToggleAll} />
         <span className="text-xs font-semibold text-slate-700">All</span>
       </label>
-      <span className="text-slate-200 select-none">|</span>
+      <span className="select-none text-slate-200">|</span>
       {STATUS_OPTIONS.map(({ value, label }) => (
         <label key={value} className="flex cursor-pointer select-none items-center gap-1.5">
-          <input
-            type="checkbox"
-            checked={visibleStatuses.has(value)}
-            onChange={() => onToggle(value)}
-            className="h-3.5 w-3.5 accent-indigo-600"
-          />
+          <Checkbox checked={visibleStatuses.has(value)} onChange={() => onToggle(value)} />
           <span className={`h-2 w-2 rounded-full ${STATUS_CONFIG[value].barClass}`} />
           <span className="text-xs text-slate-600">{label}</span>
         </label>

@@ -56,90 +56,115 @@ ViewToggle.propTypes = {
   onView: PropTypes.func.isRequired,
 };
 
-function GanttBar({ task, rangeStart, totalDays, rangeEnd, onEdit, onDragEnd }) {
-  const [dragDelta, setDragDelta] = useState(0);
-  const config = STATUS_CONFIG[task.status] ?? STATUS_CONFIG.pending;
-  const taskStart = parseDate(task.startDate);
-  const taskEnd = parseDate(task.endDate);
+function useDrag(totalDays, onEnd) {
+  const [delta, setDelta] = useState(0);
+  const [active, setActive] = useState(false);
 
-  // Compute after hooks so hooks are never skipped
-  const isOutsideRange = taskEnd < rangeStart || taskStart > rangeEnd;
-
-  const clampedStart = taskStart < rangeStart ? rangeStart : taskStart;
-  const clampedEnd = taskEnd > rangeEnd ? rangeEnd : taskEnd;
-
-  const leftDays = diffDays(rangeStart, clampedStart);
-  const spanDays = diffDays(clampedStart, clampedEnd) + 1;
-
-  const effectiveLeftDays = leftDays + dragDelta;
-  const effectiveLeftPct = Math.max(0, (effectiveLeftDays / totalDays) * 100);
-  const widthPct = (spanDays / totalDays) * 100;
-  const fillPct = Math.min(100, Math.max(0, task.percentComplete ?? 0));
-
-  const barBg = task.color ?? null;
-
-  const handleMouseDown = (e) => {
+  function start(e) {
     e.preventDefault();
     e.stopPropagation();
 
-    const container = e.currentTarget.closest('[data-gantt-timeline]');
+    // Walk up from the mousedown target to find the timeline container
+    let container = e.currentTarget;
+    while (container && !container.dataset.ganttTimeline) {
+      container = container.parentElement;
+    }
     if (!container) return;
+
     const { width: containerWidth } = container.getBoundingClientRect();
     const pxPerDay = containerWidth / totalDays;
     const startX = e.clientX;
 
-    const onMouseMove = (moveEvent) => {
-      const deltaX = moveEvent.clientX - startX;
-      const days = Math.round(deltaX / pxPerDay);
-      setDragDelta(days);
+    const onMove = (mv) => {
+      mv.preventDefault();
+      setActive(true);
+      setDelta(Math.round((mv.clientX - startX) / pxPerDay));
     };
 
-    const onMouseUp = (upEvent) => {
-      document.removeEventListener('mousemove', onMouseMove);
-      document.removeEventListener('mouseup', onMouseUp);
-      const finalDays = Math.round((upEvent.clientX - startX) / pxPerDay);
-      setDragDelta(0);
-      if (Math.abs(upEvent.clientX - startX) < 4) {
-        onEdit(task);
-      } else if (finalDays !== 0) {
-        onDragEnd(task, finalDays);
-      }
+    const onUp = (up) => {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+      const finalDays = Math.round((up.clientX - startX) / pxPerDay);
+      setDelta(0);
+      setActive(false);
+      onEnd(finalDays, Math.abs(up.clientX - startX) < 4);
     };
 
-    document.addEventListener('mousemove', onMouseMove);
-    document.addEventListener('mouseup', onMouseUp);
-  };
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  }
+
+  return { delta, active, start };
+}
+
+function GanttBar({ task, rangeStart, totalDays, rangeEnd, onEdit, onDragEnd }) {
+  const config = STATUS_CONFIG[task.status] ?? STATUS_CONFIG.pending;
+  const taskStart = parseDate(task.startDate);
+  const taskEnd = parseDate(task.endDate);
+  const isOutsideRange = taskEnd < rangeStart || taskStart > rangeEnd;
+
+  const clampedStart = taskStart < rangeStart ? rangeStart : taskStart;
+  const clampedEnd = taskEnd > rangeEnd ? rangeEnd : taskEnd;
+  const leftDays = diffDays(rangeStart, clampedStart);
+  const spanDays = diffDays(clampedStart, clampedEnd) + 1;
+
+  const moveDrag = useDrag(totalDays, (days, wasClick) => {
+    if (wasClick) onEdit(task);
+    else if (days !== 0) onDragEnd(task, { type: 'move', days });
+  });
+  const leftDrag = useDrag(totalDays, (days) => {
+    if (days !== 0) onDragEnd(task, { type: 'resize-start', days });
+  });
+  const rightDrag = useDrag(totalDays, (days) => {
+    if (days !== 0) onDragEnd(task, { type: 'resize-end', days });
+  });
+
+  const isDragging = moveDrag.active || leftDrag.active || rightDrag.active;
+
+  const effectiveLeft = Math.max(0, leftDays + moveDrag.delta + leftDrag.delta);
+  const effectiveSpan = Math.max(1, spanDays - leftDrag.delta + rightDrag.delta);
+  const leftPct = (effectiveLeft / totalDays) * 100;
+  const widthPct = (effectiveSpan / totalDays) * 100;
+  const fillPct = Math.min(100, Math.max(0, task.percentComplete ?? 0));
+  const barBg = task.color ?? null;
 
   if (isOutsideRange) return null;
 
   return (
     <div
-      className={`absolute top-1.5 bottom-1.5 rounded select-none overflow-hidden shadow-sm${barBg === null ? ` ${config.barClass}` : ''}${dragDelta !== 0 ? ' opacity-80' : ''}`}
+      className={`absolute top-1.5 bottom-1.5 rounded select-none overflow-hidden shadow-sm${barBg === null ? ` ${config.barClass}` : ''}${isDragging ? ' opacity-75 shadow-lg' : ''}`}
       style={{
-        left: `${effectiveLeftPct}%`,
+        left: `${leftPct}%`,
         width: `${widthPct}%`,
         backgroundColor: barBg ?? undefined,
-        cursor: dragDelta !== 0 ? 'grabbing' : 'pointer',
+        cursor: isDragging ? 'grabbing' : 'grab',
+        touchAction: 'none',
       }}
-      onMouseDown={handleMouseDown}
+      onMouseDown={moveDrag.start}
       title={`${task.name} — ${fillPct}% complete`}
     >
       {/* percent-complete fill */}
       {barBg !== null ? (
-        <div
-          className="absolute inset-y-0 left-0"
-          style={{ width: `${fillPct}%`, backgroundColor: barBg, opacity: 0.5 }}
-        />
+        <div className="absolute inset-y-0 left-0" style={{ width: `${fillPct}%`, backgroundColor: barBg, opacity: 0.5 }} />
       ) : (
-        <div
-          className={`absolute inset-y-0 left-0 ${config.barFillClass}`}
-          style={{ width: `${fillPct}%` }}
-        />
+        <div className={`absolute inset-y-0 left-0 ${config.barFillClass}`} style={{ width: `${fillPct}%` }} />
       )}
       {/* label */}
-      <span className="relative z-10 px-1.5 text-xs font-medium text-white leading-none truncate flex items-center h-full">
+      <span className="relative z-10 px-4 text-xs font-medium text-white leading-none truncate flex items-center h-full">
         {task.name}
       </span>
+      {/* Left resize handle */}
+      <div
+        className="absolute inset-y-0 left-0 w-2 cursor-ew-resize z-20 hover:bg-black/10"
+        style={{ touchAction: 'none' }}
+        onMouseDown={(e) => { e.stopPropagation(); leftDrag.start(e); }}
+      />
+      {/* Right resize handle */}
+      <div
+        className="absolute inset-y-0 right-0 w-2 cursor-ew-resize z-20 hover:bg-black/10"
+        style={{ touchAction: 'none' }}
+        onMouseDown={(e) => { e.stopPropagation(); rightDrag.start(e); }}
+      />
     </div>
   );
 }
@@ -180,19 +205,25 @@ export default function TasksGantt({ onCreate, onEdit, visibleStatuses }) {
 
   const updateMutation = useUpdateTask();
 
-  const handleDragEnd = (task, days) => {
-    const addDaysToStr = (dateStr, n) => {
+  const handleDragEnd = (task, action) => {
+    const shift = (dateStr, n) => {
       const [y, m, d] = dateStr.split('-').map(Number);
       const dt = new Date(y, m - 1, d + n);
       return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
     };
-    updateMutation.mutate({
-      id: task.id,
-      data: {
-        startDate: addDaysToStr(task.startDate, days),
-        endDate: addDaysToStr(task.endDate, days),
-      },
-    });
+    let updates = {};
+    if (action.type === 'move') {
+      updates = { startDate: shift(task.startDate, action.days), endDate: shift(task.endDate, action.days) };
+    } else if (action.type === 'resize-start') {
+      const newStart = shift(task.startDate, action.days);
+      if (newStart <= task.endDate) updates = { startDate: newStart };
+    } else if (action.type === 'resize-end') {
+      const newEnd = shift(task.endDate, action.days);
+      if (newEnd >= task.startDate) updates = { endDate: newEnd };
+    }
+    if (Object.keys(updates).length) {
+      updateMutation.mutate({ id: task.id, data: updates });
+    }
   };
 
   // Build day columns
@@ -332,7 +363,7 @@ export default function TasksGantt({ onCreate, onEdit, visibleStatuses }) {
                     </div>
 
                     {/* Timeline area */}
-                    <div className="relative flex-1" data-gantt-timeline style={{ height: '48px' }}>
+                    <div className="relative flex-1" data-gantt-timeline="1" style={{ height: '48px' }}>
                       {/* Today highlight column */}
                       {days.map((day, i) => {
                         if (day.getTime() !== todayStr) return null;
