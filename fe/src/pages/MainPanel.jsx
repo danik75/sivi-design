@@ -2,7 +2,10 @@ import PropTypes from 'prop-types';
 import { useMemo, useState } from 'react';
 import UserMenu from '@/components/UserMenu';
 import Button from '@/components/chadcn/Button';
+import ClipboardIcon from '@/components/chadcn/icons/ClipboardIcon';
+import CreditCardIcon from '@/components/chadcn/icons/CreditCardIcon';
 import MenuIcon from '@/components/chadcn/icons/MenuIcon';
+import UsersIcon from '@/components/chadcn/icons/UsersIcon';
 import CustomersFeature from '@/features/customers';
 
 const PANEL_TEXT = {
@@ -10,13 +13,13 @@ const PANEL_TEXT = {
   toggleSidebar: 'Toggle sidebar',
   closeSidebar: 'Close sidebar',
   comingSoon: 'Coming soon',
-  placeholderDescription: 'This area is reserved for a future module.',
+  placeholderDescription: 'This module is not yet implemented.',
 };
 
 const NAV_ITEMS = [
-  { id: 'customers', label: 'Customers' },
-  { id: 'tasks', label: 'Tasks' },
-  { id: 'billing', label: 'Billing' },
+  { id: 'customers', label: 'Customers', Icon: UsersIcon },
+  { id: 'tasks', label: 'Tasks', Icon: ClipboardIcon },
+  { id: 'billing', label: 'Billing', Icon: CreditCardIcon },
 ];
 
 export default function MainPanel({ onLogout }) {
@@ -36,18 +39,23 @@ export default function MainPanel({ onLogout }) {
     }
 
     return (
-      <div className="rounded-3xl border border-slate-100 bg-white p-8 shadow-sm">
-        <span className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
-          {PANEL_TEXT.comingSoon}
-        </span>
-        <h1 className="mt-4 text-3xl font-bold text-slate-900">{activeItem.label}</h1>
-        <p className="mt-2 text-sm text-slate-500">{PANEL_TEXT.placeholderDescription}</p>
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold text-slate-900">{activeItem.label}</h1>
+          <p className="mt-2 text-sm text-slate-500">{PANEL_TEXT.placeholderDescription}</p>
+        </div>
+        <div className="flex items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-white py-24 shadow-sm">
+          <div className="text-center">
+            <activeItem.Icon className="mx-auto h-10 w-10 text-slate-300" />
+            <p className="mt-4 text-sm font-medium text-slate-400">{PANEL_TEXT.comingSoon}</p>
+          </div>
+        </div>
       </div>
     );
   };
 
   return (
-    <div className="flex h-screen flex-col bg-slate-50 text-left">
+    <div className="flex h-screen w-full flex-col bg-slate-50">
       <header className="flex w-full shrink-0 items-center justify-between border-b border-slate-100 bg-white px-4 py-3 shadow-sm sm:px-6">
         <div className="flex items-center gap-3">
           <Button
@@ -71,11 +79,11 @@ export default function MainPanel({ onLogout }) {
         <UserMenu onLogout={onLogout} />
       </header>
 
-      <div className="relative flex flex-1 overflow-hidden">
+      <div className="relative flex min-h-0 flex-1 overflow-hidden">
         {isSidebarOpen && (
           <button
             type="button"
-            className="fixed inset-0 top-[73px] z-20 bg-slate-900/20 md:hidden"
+            className="fixed inset-0 top-[57px] z-20 bg-slate-900/20 md:hidden"
             onClick={() => setIsSidebarOpen(false)}
             aria-label={PANEL_TEXT.closeSidebar}
           />
@@ -83,29 +91,30 @@ export default function MainPanel({ onLogout }) {
 
         <aside
           className={[
-            'fixed inset-y-0 left-0 top-[73px] z-30 overflow-hidden bg-white transition-all duration-200',
+            'fixed inset-y-0 left-0 top-[57px] z-30 overflow-hidden bg-white transition-all duration-200',
             'md:static md:top-0 md:translate-x-0 md:shadow-none',
             isSidebarOpen
-              ? 'w-56 translate-x-0 border-r border-slate-100 px-4 py-6 shadow-xl md:shadow-none'
-              : 'w-56 -translate-x-full px-4 py-6 md:w-0 md:px-0 md:py-0 md:border-0',
+              ? 'w-56 translate-x-0 border-r border-slate-100 px-3 py-4 shadow-xl md:shadow-none'
+              : 'w-56 -translate-x-full px-3 py-4 md:w-0 md:px-0 md:py-0 md:border-0',
           ].join(' ')}
         >
           <nav className="space-y-1">
-            {NAV_ITEMS.map((item) => {
-              const isActive = activeModule === item.id;
+            {NAV_ITEMS.map(({ id, label, Icon }) => {
+              const isActive = activeModule === id;
               return (
                 <Button
-                  key={item.id}
+                  key={id}
                   type="button"
                   variant="ghost"
-                  onClick={() => setActiveModule(item.id)}
-                  className={`w-full justify-start rounded-2xl px-4 py-3 text-sm font-semibold transition-colors ${
+                  onClick={() => setActiveModule(id)}
+                  className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
                     isActive
                       ? 'bg-indigo-600 text-white hover:bg-indigo-500'
                       : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
                   }`}
                 >
-                  {item.label}
+                  <Icon className="h-4 w-4 shrink-0" />
+                  {label}
                 </Button>
               );
             })}

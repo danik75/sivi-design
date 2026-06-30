@@ -1,5 +1,4 @@
 import PropTypes from 'prop-types';
-import Badge from '@/components/chadcn/Badge';
 import Button from '@/components/chadcn/Button';
 import PencilIcon from '@/components/chadcn/icons/PencilIcon';
 import TrashIcon from '@/components/chadcn/icons/TrashIcon';
@@ -8,16 +7,12 @@ import { CUSTOMER_TEXT, getPrimaryContact } from '@/features/customers/constants
 
 export default function CustomerRow({ customer, onEdit, onDelete }) {
   const primaryContact = getPrimaryContact(customer);
-  const contactCount = customer.contacts?.length ?? 0;
 
   return (
     <TableRow>
       <TableCell className="font-semibold text-slate-900">{customer.name}</TableCell>
       <TableCell>{primaryContact.email || CUSTOMER_TEXT.placeholder}</TableCell>
       <TableCell>{primaryContact.phone || CUSTOMER_TEXT.placeholder}</TableCell>
-      <TableCell>
-        <Badge variant="primary">{String(contactCount)}</Badge>
-      </TableCell>
       <TableCell>
         <div className="flex items-center justify-end gap-2">
           <Button
@@ -48,13 +43,7 @@ CustomerRow.propTypes = {
   customer: PropTypes.shape({
     id: PropTypes.string.isRequired,
     name: PropTypes.string.isRequired,
-    contacts: PropTypes.arrayOf(
-      PropTypes.shape({
-        email: PropTypes.string,
-        phone: PropTypes.string,
-        isPrimary: PropTypes.bool,
-      })
-    ),
+    contacts: PropTypes.arrayOf(PropTypes.shape({ email: PropTypes.string, phone: PropTypes.string, isPrimary: PropTypes.bool })),
   }).isRequired,
   onEdit: PropTypes.func.isRequired,
   onDelete: PropTypes.func.isRequired,
