@@ -7,20 +7,23 @@ import CustomersFeature from '@/features/customers';
 
 const PANEL_TEXT = {
   brand: 'sivi‑design',
-  toggleNavigation: 'Toggle navigation',
+  toggleSidebar: 'Toggle sidebar',
+  closeSidebar: 'Close sidebar',
   comingSoon: 'Coming soon',
   placeholderDescription: 'This area is reserved for a future module.',
 };
 
 const NAV_ITEMS = [
-  { id: 'customers', label: 'Customers', disabled: false },
-  { id: 'tasks', label: 'Tasks', disabled: true },
-  { id: 'billing', label: 'Billing', disabled: true },
+  { id: 'customers', label: 'Customers' },
+  { id: 'tasks', label: 'Tasks' },
+  { id: 'billing', label: 'Billing' },
 ];
 
 export default function MainPanel({ onLogout }) {
   const [activeModule, setActiveModule] = useState('customers');
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(
+    () => typeof window !== 'undefined' && window.innerWidth >= 768
+  );
 
   const activeItem = useMemo(
     () => NAV_ITEMS.find((item) => item.id === activeModule) ?? NAV_ITEMS[0],
@@ -44,15 +47,15 @@ export default function MainPanel({ onLogout }) {
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-slate-50 text-left">
-      <header className="flex w-full items-center justify-between border-b border-slate-100 bg-white px-4 py-3 shadow-sm sm:px-6">
+    <div className="flex h-screen flex-col bg-slate-50 text-left">
+      <header className="flex w-full shrink-0 items-center justify-between border-b border-slate-100 bg-white px-4 py-3 shadow-sm sm:px-6">
         <div className="flex items-center gap-3">
           <Button
             type="button"
             variant="ghost"
-            className="h-10 w-10 p-0 md:hidden"
-            onClick={() => setIsSidebarOpen((current) => !current)}
-            aria-label={PANEL_TEXT.toggleNavigation}
+            className="h-10 w-10 p-0"
+            onClick={() => setIsSidebarOpen((o) => !o)}
+            aria-label={PANEL_TEXT.toggleSidebar}
           >
             <MenuIcon className="h-5 w-5" />
           </Button>
@@ -70,17 +73,22 @@ export default function MainPanel({ onLogout }) {
 
       <div className="relative flex flex-1 overflow-hidden">
         {isSidebarOpen && (
-          <Button
+          <button
             type="button"
-            variant="ghost"
-            className="fixed inset-0 top-[73px] z-20 h-auto w-full rounded-none bg-slate-900/20 p-0 md:hidden"
+            className="fixed inset-0 top-[73px] z-20 bg-slate-900/20 md:hidden"
             onClick={() => setIsSidebarOpen(false)}
-            aria-label={PANEL_TEXT.toggleNavigation}
+            aria-label={PANEL_TEXT.closeSidebar}
           />
         )}
 
         <aside
-          className={`fixed inset-y-0 left-0 top-[73px] z-30 w-56 border-r border-slate-100 bg-white px-4 py-6 shadow-xl transition-transform duration-200 md:static md:top-0 md:translate-x-0 md:shadow-none ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
+          className={[
+            'fixed inset-y-0 left-0 top-[73px] z-30 overflow-hidden bg-white transition-all duration-200',
+            'md:static md:top-0 md:translate-x-0 md:shadow-none',
+            isSidebarOpen
+              ? 'w-56 translate-x-0 border-r border-slate-100 px-4 py-6 shadow-xl md:shadow-none'
+              : 'w-56 -translate-x-full px-4 py-6 md:w-0 md:px-0 md:py-0 md:border-0',
+          ].join(' ')}
         >
           <nav className="space-y-1">
             {NAV_ITEMS.map((item) => {
@@ -90,29 +98,14 @@ export default function MainPanel({ onLogout }) {
                   key={item.id}
                   type="button"
                   variant="ghost"
-                  disabled={item.disabled}
-                  onClick={() => {
-                    if (item.disabled) {
-                      return;
-                    }
-
-                    setActiveModule(item.id);
-                    setIsSidebarOpen(false);
-                  }}
-                  className={`w-full justify-between rounded-2xl px-4 py-3 text-sm font-semibold transition-colors ${
+                  onClick={() => setActiveModule(item.id)}
+                  className={`w-full justify-start rounded-2xl px-4 py-3 text-sm font-semibold transition-colors ${
                     isActive
                       ? 'bg-indigo-600 text-white hover:bg-indigo-500'
-                      : item.disabled
-                        ? 'cursor-not-allowed text-slate-300'
-                        : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
                   }`}
                 >
-                  <span>{item.label}</span>
-                  {item.disabled ? (
-                    <span className={`text-xs ${isActive ? 'text-indigo-100' : 'text-slate-300'}`}>
-                      •
-                    </span>
-                  ) : null}
+                  {item.label}
                 </Button>
               );
             })}
