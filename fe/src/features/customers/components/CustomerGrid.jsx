@@ -62,7 +62,7 @@ export default function CustomerGrid({ onCreate, onEdit, onDelete }) {
   };
 
   return (
-    <section className="space-y-6">
+    <section className="space-y-4">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <h1 className="text-3xl font-bold text-slate-900">{CUSTOMER_TEXT.title}</h1>
@@ -71,7 +71,7 @@ export default function CustomerGrid({ onCreate, onEdit, onDelete }) {
         <Button onClick={onCreate}>{CUSTOMER_TEXT.addCustomer}</Button>
       </div>
 
-      <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-100">
+      <div className="rounded-xl bg-white px-3 py-2.5 shadow-sm ring-1 ring-slate-100">
         <SearchInput
           value={search}
           onChange={handleSearchChange}

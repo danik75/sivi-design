@@ -74,7 +74,7 @@ export default function MainPanel({ onLogout }) {
   const [activeModule, setActiveModule] = useState('customers');
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   // Desktop: collapsed = icon-only rail
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(true);
 
   const activeItem = useMemo(
     () => NAV_ITEMS.find((item) => item.id === activeModule) ?? NAV_ITEMS[0],
@@ -210,7 +210,7 @@ export default function MainPanel({ onLogout }) {
         </aside>
 
         {/* Main content */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-5">{renderModule()}</main>
+        <main className="flex-1 overflow-y-auto px-3 py-4">{renderModule()}</main>
       </div>
     </div>
   );
