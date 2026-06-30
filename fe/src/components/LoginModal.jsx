@@ -3,34 +3,21 @@ import LoginForm from './LoginForm';
 import useLogin from '../hooks/useLogin';
 import { useRef, useEffect } from 'react';
 
-export default function LoginModal({ isOpen, onLoginSuccess }) {
+export default function LoginModal({ onLoginSuccess }) {
   const mutation = useLogin();
   const firstInputRef = useRef(null);
 
-    // Reset stale mutation state (e.g. isSuccess from a previous session) each
-    // time the modal opens, so logout → re-open does not immediately re-authenticate.
-    useEffect(() => {
-      if (isOpen) mutation.reset();
-      // intentionally omit mutation from deps — mutation.reset is stable
-    }, [isOpen]); // eslint-disable-line
+  useEffect(() => {
+    if (firstInputRef.current) firstInputRef.current.focus();
+  }, []);
 
   useEffect(() => {
-    if (isOpen && firstInputRef.current) {
-      firstInputRef.current.focus();
-    }
-  }, [isOpen]);
+    if (mutation.isSuccess) onLoginSuccess();
+  }, [mutation.isSuccess, onLoginSuccess]);
 
   const handleSubmit = ({ username, password }) => {
     mutation.mutate({ username, password });
   };
-
-  useEffect(() => {
-    if (mutation.isSuccess) {
-      onLoginSuccess();
-    }
-  }, [mutation.isSuccess, onLoginSuccess]);
-
-  if (!isOpen) return null;
 
   return (
     <div
@@ -53,6 +40,5 @@ export default function LoginModal({ isOpen, onLoginSuccess }) {
 }
 
 LoginModal.propTypes = {
-  isOpen: PropTypes.bool.isRequired,
   onLoginSuccess: PropTypes.func.isRequired,
 };

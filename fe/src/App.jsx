@@ -25,8 +25,7 @@ export default function App() {
           <div className="min-h-screen" aria-hidden="true" />
         )}
 
-        {/* Login modal overlays the entire app when not authenticated */}
-        <LoginModal isOpen={!isAuthenticated} onLoginSuccess={handleLoginSuccess} />
+        {!isAuthenticated && <LoginModal onLoginSuccess={handleLoginSuccess} />}
       </div>
     </QueryClientProvider>
   );
