@@ -2,10 +2,14 @@ import PropTypes from 'prop-types';
 
 export default function FormField({ label, children, hint, className = '' }) {
   return (
-    <div className={`flex flex-col ${className}`}>
-      {label && <label className="text-sm text-gray-600 mb-1">{label}</label>}
+    <div className={`flex flex-col gap-1 ${className}`}>
+      {label && (
+        <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+          {label}
+        </label>
+      )}
       {children}
-      {hint && <p className="text-xs text-gray-500 mt-1">{hint}</p>}
+      {hint && <p className="text-xs text-slate-400 mt-0.5">{hint}</p>}
     </div>
   );
 }

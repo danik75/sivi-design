@@ -16,13 +16,12 @@ export default function LoginForm({ onSubmit, isLoading, error }) {
   }
 
   return (
-    <Form onSubmit={handleSubmit} className="max-w-md mx-auto p-6 bg-white rounded shadow">
-      <h2 className="text-xl font-semibold mb-4">Sign in</h2>
-
+    <Form onSubmit={handleSubmit} className="w-full space-y-5">
       <FormField label="Username">
         <Input
           ref={userRef}
-          className="mt-1"
+          autoComplete="username"
+          placeholder="Enter your username"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
           required
@@ -32,17 +31,22 @@ export default function LoginForm({ onSubmit, isLoading, error }) {
       <FormField label="Password">
         <Input
           type="password"
-          className="mt-1"
+          autoComplete="current-password"
+          placeholder="••••••••"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
         />
       </FormField>
 
-      {error && <div className="text-red-600 mb-3">{String(error)}</div>}
+      {error && (
+        <p className="rounded-lg bg-rose-50 border border-rose-200 px-3 py-2 text-xs text-rose-600">
+          {String(error)}
+        </p>
+      )}
 
-      <Button type="submit" className="w-full" disabled={isLoading}>
-        {isLoading ? 'Signing in...' : 'Sign in'}
+      <Button type="submit" className="w-full py-3" disabled={isLoading}>
+        {isLoading ? 'Signing in…' : 'Sign in →'}
       </Button>
     </Form>
   );
