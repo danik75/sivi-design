@@ -27,19 +27,6 @@ export default function BillingFeature() {
     setPeriod(p);
     setYear(y);
     setMonth(m);
-    setSelectedCustomerId(null);
-  }
-
-  if (selectedCustomerId) {
-    return (
-      <CustomerBillingDetail
-        customerId={selectedCustomerId}
-        period={period}
-        year={year}
-        month={month}
-        onBack={() => setSelectedCustomerId(null)}
-      />
-    );
   }
 
   return (
@@ -159,6 +146,15 @@ export default function BillingFeature() {
           )}
         </>
       )}
+
+      <CustomerBillingDetail
+        isOpen={Boolean(selectedCustomerId)}
+        customerId={selectedCustomerId}
+        period={period}
+        year={year}
+        month={month}
+        onClose={() => setSelectedCustomerId(null)}
+      />
     </div>
   );
 }
