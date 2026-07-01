@@ -65,7 +65,7 @@ export default function InvoiceRow({
           <Button
             type="button"
             variant="ghost"
-            className="p-2"
+            className="h-8 w-8 !p-0 shrink-0"
             onClick={() => onView(invoice)}
             aria-label="View invoice"
           >
@@ -76,7 +76,7 @@ export default function InvoiceRow({
               <Button
                 type="button"
                 variant="ghost"
-                className="p-2"
+                className="h-8 w-8 !p-0 shrink-0"
                 onClick={() => onEdit(invoice)}
                 aria-label={INVOICE_TEXT.rowActions.editLabel}
               >
@@ -85,7 +85,7 @@ export default function InvoiceRow({
               <Button
                 type="button"
                 variant="danger"
-                className="p-2"
+                className="h-8 w-8 !p-0 shrink-0"
                 onClick={() => onDelete(invoice)}
                 aria-label={INVOICE_TEXT.rowActions.deleteLabel}
               >

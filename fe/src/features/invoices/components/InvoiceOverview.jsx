@@ -1,6 +1,7 @@
 import PropTypes from 'prop-types';
 import { useEffect } from 'react';
 import Badge from '@/components/chadcn/Badge';
+import Button from '@/components/chadcn/Button';
 import Table, {
   TableBody,
   TableCell,
@@ -13,6 +14,61 @@ import { formatAmount, getStatusVariant, INVOICE_TEXT } from '@/features/invoice
 import useInvoice from '@/features/invoices/hooks/useInvoice';
 
 const formatDate = (iso) => (iso ? new Date(iso).toLocaleDateString() : INVOICE_TEXT.placeholder);
+
+const MailIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+  </svg>
+);
+
+function buildGmailUrl(invoice) {
+  const to = invoice.customerEmail ?? '';
+  const subject = encodeURIComponent(`Invoice ID: ${invoice.invoiceNumber}`);
+
+  const lines = [
+    `Dear ${invoice.customerName ?? 'Customer'},`,
+    '',
+    `Please find below the details for invoice ${invoice.invoiceNumber}.`,
+    '',
+    `Issue Date:  ${formatDate(invoice.issueDate)}`,
+    `Due Date:    ${formatDate(invoice.dueDate)}`,
+    '',
+  ];
+
+  if (invoice.lineItems?.length) {
+    lines.push('Line Items:');
+    invoice.lineItems.forEach((item) => {
+      lines.push(
+        `  • ${item.description} — ${parseFloat(item.quantity).toFixed(2)} × ${parseFloat(item.unitPrice).toFixed(2)} = ${formatAmount(item.amount, invoice.currency)}`
+      );
+    });
+    lines.push('');
+  }
+
+  const subtotal = parseFloat(invoice.subtotal ?? 0);
+  const discountAmount = parseFloat(invoice.discountAmount ?? 0);
+  const taxRate = parseFloat(invoice.taxRate ?? 0);
+  const taxAmount = parseFloat(invoice.taxAmount ?? 0);
+  const total = parseFloat(invoice.total ?? 0);
+
+  lines.push(`Subtotal:    ${formatAmount(subtotal.toFixed(2), invoice.currency)}`);
+  if (discountAmount > 0) {
+    const label =
+      invoice.discountType === 'percentage'
+        ? `Discount (${parseFloat(invoice.discountValue)}%)`
+        : 'Discount';
+    lines.push(`${label}:  -${formatAmount(discountAmount.toFixed(2), invoice.currency)}`);
+  }
+  if (taxRate > 0) {
+    lines.push(`Tax (${taxRate}%): ${formatAmount(taxAmount.toFixed(2), invoice.currency)}`);
+  }
+  lines.push(`Total:       ${formatAmount(total.toFixed(2), invoice.currency)}`);
+  lines.push('');
+  lines.push('Thank you for your business.');
+
+  const body = encodeURIComponent(lines.join('\n'));
+  return `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(to)}&su=${subject}&body=${body}`;
+}
 
 function Field({ label, value }) {
   return (
@@ -75,14 +131,28 @@ export default function InvoiceOverview({ isOpen, invoiceId, onClose }) {
               <span className="text-lg font-semibold text-slate-900">Invoice Details</span>
             )}
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-400 shadow-sm hover:bg-slate-50 hover:text-slate-600 transition-colors"
-            aria-label="Close"
-          >
-            <XIcon className="h-4 w-4" />
-          </button>
+          <div className="flex items-center gap-2">
+            {invoice ? (
+              <Button
+                type="button"
+                variant="ghost"
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs"
+                onClick={() => window.open(buildGmailUrl(invoice), '_blank', 'noopener,noreferrer')}
+                aria-label="Send invoice by email"
+              >
+                <MailIcon />
+                Send Email
+              </Button>
+            ) : null}
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-400 shadow-sm hover:bg-slate-50 hover:text-slate-600 transition-colors"
+              aria-label="Close"
+            >
+              <XIcon className="h-4 w-4" />
+            </button>
+          </div>
         </div>
 
         {/* Body */}
