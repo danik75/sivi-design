@@ -30,140 +30,54 @@ function buildGmailUrl(invoice) {
   const taxRate = parseFloat(invoice.taxRate ?? 0);
   const taxAmount = parseFloat(invoice.taxAmount ?? 0);
   const total = parseFloat(invoice.total ?? 0);
-
-  const statusColors = {
-    draft: '#6366f1',
-    sent: '#f59e0b',
-    paid: '#10b981',
-    cancelled: '#ef4444',
-  };
-  const statusColor = statusColors[invoice.status] ?? '#64748b';
   const statusLabel = INVOICE_TEXT.status[invoice.status] ?? invoice.status;
 
-  const lineItemRows = (invoice.lineItems ?? [])
-    .map(
-      (item) => `
-      <tr>
-        <td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;color:#1e293b;">${item.description}</td>
-        <td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;color:#64748b;text-align:center;">${item.sourceType ? `<span style="background:#f1f5f9;border-radius:9999px;padding:2px 8px;font-size:11px;">${item.sourceType}</span>` : ''}</td>
-        <td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;color:#1e293b;text-align:right;font-variant-numeric:tabular-nums;">${parseFloat(item.quantity).toFixed(2)}</td>
-        <td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;color:#1e293b;text-align:right;font-variant-numeric:tabular-nums;">${parseFloat(item.unitPrice).toFixed(2)}</td>
-        <td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;color:#1e293b;text-align:right;font-weight:600;font-variant-numeric:tabular-nums;">${formatAmount(item.amount, invoice.currency)}</td>
-      </tr>`
-    )
-    .join('');
+  const sep = '─'.repeat(48);
 
-  const discountRow =
-    discountAmount > 0
-      ? `<tr>
-          <td style="padding:4px 0;color:#10b981;">
-            ${invoice.discountType === 'percentage' ? `Discount (${parseFloat(invoice.discountValue)}%)` : 'Discount'}
-          </td>
-          <td style="padding:4px 0;color:#10b981;text-align:right;font-variant-numeric:tabular-nums;">
-            &minus;&nbsp;${formatAmount(discountAmount.toFixed(2), invoice.currency)}
-          </td>
-        </tr>`
-      : '';
+  const lines = [
+    `Dear ${invoice.customerName ?? 'Customer'},`,
+    '',
+    `Please find below the details for invoice ${invoice.invoiceNumber}.`,
+    '',
+    `Status:      ${statusLabel}`,
+    `Customer:    ${invoice.customerName ?? '—'}`,
+    `Contract:    ${invoice.contractTypeLabel ?? '—'}`,
+    `Issue Date:  ${formatDate(invoice.issueDate)}`,
+    `Due Date:    ${formatDate(invoice.dueDate)}`,
+  ];
 
-  const taxRow =
-    taxRate > 0
-      ? `<tr>
-          <td style="padding:4px 0;color:#475569;">Tax (${taxRate}%)</td>
-          <td style="padding:4px 0;color:#475569;text-align:right;font-variant-numeric:tabular-nums;">${formatAmount(taxAmount.toFixed(2), invoice.currency)}</td>
-        </tr>`
-      : '';
+  if (invoice.notes) {
+    lines.push('', `Notes: ${invoice.notes}`);
+  }
 
-  const html = `
-<!DOCTYPE html>
-<html>
-<body style="margin:0;padding:0;background:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
-  <div style="max-width:680px;margin:32px auto;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+  if (invoice.lineItems?.length) {
+    lines.push('', sep, 'LINE ITEMS', sep);
+    invoice.lineItems.forEach((item) => {
+      const qty = parseFloat(item.quantity).toFixed(2);
+      const price = parseFloat(item.unitPrice).toFixed(2);
+      const src = item.sourceType ? ` [${item.sourceType}]` : '';
+      lines.push(`• ${item.description}${src}`);
+      lines.push(`  ${qty} × ${price} = ${formatAmount(item.amount, invoice.currency)}`);
+    });
+  }
 
-    <!-- Header -->
-    <div style="background:linear-gradient(135deg,#4f46e5,#7c3aed);padding:32px 40px;">
-      <div style="display:flex;align-items:center;justify-content:space-between;">
-        <div>
-          <p style="margin:0;color:rgba(255,255,255,0.7);font-size:12px;text-transform:uppercase;letter-spacing:0.08em;">Invoice</p>
-          <h1 style="margin:4px 0 0;color:#ffffff;font-size:28px;font-weight:700;font-family:monospace;">${invoice.invoiceNumber}</h1>
-        </div>
-        <span style="background:${statusColor};color:#fff;border-radius:9999px;padding:4px 14px;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;">${statusLabel}</span>
-      </div>
-    </div>
+  lines.push('', sep);
+  lines.push(`Subtotal:    ${formatAmount(subtotal.toFixed(2), invoice.currency)}`);
+  if (discountAmount > 0) {
+    const label =
+      invoice.discountType === 'percentage'
+        ? `Discount (${parseFloat(invoice.discountValue)}%)`
+        : 'Discount';
+    lines.push(`${label}: -${formatAmount(discountAmount.toFixed(2), invoice.currency)}`);
+  }
+  if (taxRate > 0) {
+    lines.push(`Tax (${taxRate}%): ${formatAmount(taxAmount.toFixed(2), invoice.currency)}`);
+  }
+  lines.push(sep);
+  lines.push(`TOTAL:       ${formatAmount(total.toFixed(2), invoice.currency)}`);
+  lines.push(sep, '', 'Thank you for your business.');
 
-    <!-- Meta -->
-    <div style="padding:28px 40px;border-bottom:1px solid #f1f5f9;">
-      <table style="width:100%;border-collapse:collapse;">
-        <tr>
-          <td style="padding:0 0 16px;vertical-align:top;width:25%;">
-            <p style="margin:0;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:#94a3b8;">Customer</p>
-            <p style="margin:4px 0 0;font-size:14px;color:#1e293b;">${invoice.customerName ?? '—'}</p>
-          </td>
-          <td style="padding:0 0 16px;vertical-align:top;width:25%;">
-            <p style="margin:0;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:#94a3b8;">Contract</p>
-            <p style="margin:4px 0 0;font-size:14px;color:#1e293b;">${invoice.contractTypeLabel ?? '—'}</p>
-          </td>
-          <td style="padding:0 0 16px;vertical-align:top;width:25%;">
-            <p style="margin:0;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:#94a3b8;">Issue Date</p>
-            <p style="margin:4px 0 0;font-size:14px;color:#1e293b;">${formatDate(invoice.issueDate)}</p>
-          </td>
-          <td style="padding:0 0 16px;vertical-align:top;width:25%;">
-            <p style="margin:0;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:#94a3b8;">Due Date</p>
-            <p style="margin:4px 0 0;font-size:14px;color:#1e293b;">${formatDate(invoice.dueDate)}</p>
-          </td>
-        </tr>
-      </table>
-      ${invoice.notes ? `<div style="margin-top:8px;padding:12px 16px;background:#f8fafc;border-radius:8px;font-size:13px;color:#475569;white-space:pre-line;">${invoice.notes}</div>` : ''}
-    </div>
-
-    <!-- Line items -->
-    ${
-      lineItemRows
-        ? `<div style="padding:28px 40px;border-bottom:1px solid #f1f5f9;">
-        <p style="margin:0 0 12px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:#94a3b8;">Line Items</p>
-        <table style="width:100%;border-collapse:collapse;">
-          <thead>
-            <tr style="background:#f8fafc;">
-              <th style="padding:8px 12px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;color:#94a3b8;">Description</th>
-              <th style="padding:8px 12px;text-align:center;font-size:11px;font-weight:600;text-transform:uppercase;color:#94a3b8;">Source</th>
-              <th style="padding:8px 12px;text-align:right;font-size:11px;font-weight:600;text-transform:uppercase;color:#94a3b8;">Qty</th>
-              <th style="padding:8px 12px;text-align:right;font-size:11px;font-weight:600;text-transform:uppercase;color:#94a3b8;">Unit Price</th>
-              <th style="padding:8px 12px;text-align:right;font-size:11px;font-weight:600;text-transform:uppercase;color:#94a3b8;">Amount</th>
-            </tr>
-          </thead>
-          <tbody>${lineItemRows}</tbody>
-        </table>
-      </div>`
-        : ''
-    }
-
-    <!-- Totals -->
-    <div style="padding:28px 40px;">
-      <div style="margin-left:auto;max-width:280px;">
-        <table style="width:100%;border-collapse:collapse;font-size:14px;">
-          <tr>
-            <td style="padding:4px 0;color:#475569;">Subtotal</td>
-            <td style="padding:4px 0;color:#475569;text-align:right;font-variant-numeric:tabular-nums;">${formatAmount(subtotal.toFixed(2), invoice.currency)}</td>
-          </tr>
-          ${discountRow}
-          ${taxRow}
-          <tr style="border-top:2px solid #e2e8f0;">
-            <td style="padding:12px 0 4px;font-size:16px;font-weight:700;color:#0f172a;">Total</td>
-            <td style="padding:12px 0 4px;font-size:16px;font-weight:700;color:#0f172a;text-align:right;font-variant-numeric:tabular-nums;">${formatAmount(total.toFixed(2), invoice.currency)}</td>
-          </tr>
-        </table>
-      </div>
-    </div>
-
-    <!-- Footer -->
-    <div style="background:#f8fafc;padding:20px 40px;text-align:center;border-top:1px solid #f1f5f9;">
-      <p style="margin:0;font-size:12px;color:#94a3b8;">Thank you for your business.</p>
-    </div>
-
-  </div>
-</body>
-</html>`;
-
-  const body = encodeURIComponent(html);
+  const body = encodeURIComponent(lines.join('\n'));
   return `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(to)}&su=${subject}&body=${body}`;
 }
 
