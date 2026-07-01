@@ -3,6 +3,8 @@ import PropTypes from 'prop-types';
 const BADGE_VARIANTS = {
   default: 'bg-slate-100 text-slate-600',
   primary: 'bg-indigo-100 text-indigo-700',
+  success: 'bg-emerald-100 text-emerald-700',
+  danger: 'bg-rose-100 text-rose-700',
 };
 
 export default function Badge({ children, variant = 'default' }) {
@@ -17,5 +19,5 @@ export default function Badge({ children, variant = 'default' }) {
 
 Badge.propTypes = {
   children: PropTypes.node,
-  variant: PropTypes.oneOf(['default', 'primary']),
+  variant: PropTypes.oneOf(['default', 'primary', 'success', 'danger']),
 };

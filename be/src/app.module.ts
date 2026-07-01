@@ -5,10 +5,11 @@ import { AuthModule } from './auth/auth.module';
 import { ContractsModule } from './contracts/contracts.module';
 import { CustomersModule } from './customers/customers.module';
 import { ExpensesModule } from './expenses/expenses.module';
+import { InvoicesModule } from './invoices/invoices.module';
 import { TasksModule } from './tasks/tasks.module';
 
 @Module({
-  imports: [AuthModule, CustomersModule, ContractsModule, ExpensesModule, TasksModule],
+  imports: [AuthModule, CustomersModule, ContractsModule, ExpensesModule, InvoicesModule, TasksModule],
   controllers: [AppController],
   providers: [AppService],
 })
