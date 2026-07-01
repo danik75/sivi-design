@@ -149,7 +149,7 @@ export default function ContractGrid({ onCreate, onDeactivate }) {
                 <TableHeader>{CONTRACT_TEXT.headers.status}</TableHeader>
                 <TableHeader>{CONTRACT_TEXT.headers.created}</TableHeader>
                 <TableHeader>{CONTRACT_TEXT.headers.expires}</TableHeader>
-                <TableHeader>{CONTRACT_TEXT.headers.actions}</TableHeader>
+                <TableHeader />
               </TableRow>
             </TableHead>
             <TableBody>

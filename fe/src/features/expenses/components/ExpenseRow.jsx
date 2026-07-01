@@ -32,7 +32,7 @@ export default function ExpenseRow({ expense, onDeactivate }) {
         <Badge variant={getStatusVariant(expense.status)}>{statusLabel}</Badge>
       </TableCell>
       <TableCell>
-        <div className="flex items-center justify-end gap-2">
+        <div className="flex items-center justify-center gap-2">
           {expense.status === 'active' ? (
             <Button
               type="button"

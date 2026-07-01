@@ -61,7 +61,7 @@ export default function InvoiceRow({
       <TableCell>{formatDate(invoice.dueDate)}</TableCell>
       <TableCell>{formatAmount(invoice.total, invoice.currency)}</TableCell>
       <TableCell>
-        <div className="flex items-center justify-end gap-2">
+        <div className="flex items-center justify-center gap-2">
           <Button
             type="button"
             variant="ghost"

@@ -147,7 +147,7 @@ export default function InvoiceGrid({ onCreate, onEdit, onDelete, onStatusTransi
                 <TableHeader>{INVOICE_TEXT.headers.issueDate}</TableHeader>
                 <TableHeader>{INVOICE_TEXT.headers.dueDate}</TableHeader>
                 <TableHeader>{INVOICE_TEXT.headers.total}</TableHeader>
-                <TableHeader>{INVOICE_TEXT.headers.actions}</TableHeader>
+                <TableHeader />
               </TableRow>
             </TableHead>
             <TableBody>
