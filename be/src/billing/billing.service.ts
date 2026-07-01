@@ -15,4 +15,12 @@ export class BillingService {
     const { startDate, endDate } = dto.getBounds();
     return this.repo.getCustomerDetail(customerId, startDate, endDate);
   }
+
+  getTrend(dto: BillingQueryDto) {
+    return this.repo.getTrend(dto.period, dto.year, dto.month);
+  }
+
+  getCustomerTrend(customerId: string, dto: BillingQueryDto) {
+    return this.repo.getCustomerTrend(customerId, dto.period, dto.year, dto.month);
+  }
 }

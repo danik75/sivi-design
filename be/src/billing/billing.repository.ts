@@ -1,6 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import pool from '../db';
 
+// Number of data points shown in the trend chart
+const MONTHLY_LOOKBACK = 12;
+const YEARLY_LOOKBACK = 5;
+
 @Injectable()
 export class BillingRepository {
   async getOverview(startDate: string, endDate: string) {
@@ -162,5 +166,193 @@ export class BillingRepository {
       tasks: tasksRes.rows,
       contracts: contractsRes.rows,
     };
+  }
+
+  async getTrend(period: 'monthly' | 'yearly', year: number, month?: number) {
+    if (period === 'monthly') {
+      const mm = String(month).padStart(2, '0');
+      const anchorDate = `${year}-${mm}-01`;
+
+      const res = await pool.query(
+        `
+        WITH months AS (
+          SELECT generate_series(
+            (DATE_TRUNC('month', $1::date) - INTERVAL '${MONTHLY_LOOKBACK - 1} months'),
+            DATE_TRUNC('month', $1::date),
+            INTERVAL '1 month'
+          )::date AS month_start
+        ),
+        paid AS (
+          SELECT DATE_TRUNC('month', issue_date)::date AS ms, SUM(total) AS total
+          FROM invoices
+          WHERE status = 'paid'
+            AND issue_date >= (DATE_TRUNC('month', $1::date) - INTERVAL '${MONTHLY_LOOKBACK - 1} months')::date
+            AND issue_date < (DATE_TRUNC('month', $1::date) + INTERVAL '1 month')::date
+          GROUP BY 1
+        ),
+        exp AS (
+          SELECT DATE_TRUNC('month', date)::date AS ms, SUM(amount) AS total
+          FROM expenses
+          WHERE status = 'active'
+            AND date >= (DATE_TRUNC('month', $1::date) - INTERVAL '${MONTHLY_LOOKBACK - 1} months')::date
+            AND date < (DATE_TRUNC('month', $1::date) + INTERVAL '1 month')::date
+          GROUP BY 1
+        )
+        SELECT
+          TO_CHAR(m.month_start, 'Mon ''YY') AS label,
+          COALESCE(p.total, 0) AS "paidTotal",
+          COALESCE(e.total, 0) AS "expensesTotal",
+          COALESCE(p.total, 0) - COALESCE(e.total, 0) AS balance
+        FROM months m
+        LEFT JOIN paid p ON p.ms = m.month_start
+        LEFT JOIN exp  e ON e.ms = m.month_start
+        ORDER BY m.month_start
+        `,
+        [anchorDate],
+      );
+
+      return res.rows.map((r) => ({
+        label: r.label,
+        paidTotal: parseFloat(r.paidTotal).toFixed(2),
+        expensesTotal: parseFloat(r.expensesTotal).toFixed(2),
+        balance: parseFloat(r.balance).toFixed(2),
+      }));
+    }
+
+    // Yearly
+    const res = await pool.query(
+      `
+      WITH years AS (
+        SELECT generate_series($1::int - ${YEARLY_LOOKBACK - 1}, $1::int) AS yr
+      ),
+      paid AS (
+        SELECT EXTRACT(YEAR FROM issue_date)::int AS yr, SUM(total) AS total
+        FROM invoices
+        WHERE status = 'paid'
+          AND EXTRACT(YEAR FROM issue_date) BETWEEN ($1::int - ${YEARLY_LOOKBACK - 1}) AND $1::int
+        GROUP BY 1
+      ),
+      exp AS (
+        SELECT EXTRACT(YEAR FROM date)::int AS yr, SUM(amount) AS total
+        FROM expenses
+        WHERE status = 'active'
+          AND EXTRACT(YEAR FROM date) BETWEEN ($1::int - ${YEARLY_LOOKBACK - 1}) AND $1::int
+        GROUP BY 1
+      )
+      SELECT
+        y.yr::text AS label,
+        COALESCE(p.total, 0) AS "paidTotal",
+        COALESCE(e.total, 0) AS "expensesTotal",
+        COALESCE(p.total, 0) - COALESCE(e.total, 0) AS balance
+      FROM years y
+      LEFT JOIN paid p ON p.yr = y.yr
+      LEFT JOIN exp  e ON e.yr = y.yr
+      ORDER BY y.yr
+      `,
+      [year],
+    );
+
+    return res.rows.map((r) => ({
+      label: r.label,
+      paidTotal: parseFloat(r.paidTotal).toFixed(2),
+      expensesTotal: parseFloat(r.expensesTotal).toFixed(2),
+      balance: parseFloat(r.balance).toFixed(2),
+    }));
+  }
+
+  async getCustomerTrend(customerId: string, period: 'monthly' | 'yearly', year: number, month?: number) {
+    if (period === 'monthly') {
+      const mm = String(month).padStart(2, '0');
+      const anchorDate = `${year}-${mm}-01`;
+
+      const res = await pool.query(
+        `
+        WITH months AS (
+          SELECT generate_series(
+            (DATE_TRUNC('month', $1::date) - INTERVAL '${MONTHLY_LOOKBACK - 1} months'),
+            DATE_TRUNC('month', $1::date),
+            INTERVAL '1 month'
+          )::date AS month_start
+        ),
+        paid AS (
+          SELECT DATE_TRUNC('month', issue_date)::date AS ms, SUM(total) AS total
+          FROM invoices
+          WHERE status = 'paid'
+            AND customer_id = $2
+            AND issue_date >= (DATE_TRUNC('month', $1::date) - INTERVAL '${MONTHLY_LOOKBACK - 1} months')::date
+            AND issue_date < (DATE_TRUNC('month', $1::date) + INTERVAL '1 month')::date
+          GROUP BY 1
+        ),
+        exp AS (
+          SELECT DATE_TRUNC('month', date)::date AS ms, SUM(amount) AS total
+          FROM expenses
+          WHERE status = 'active'
+            AND customer_id = $2
+            AND date >= (DATE_TRUNC('month', $1::date) - INTERVAL '${MONTHLY_LOOKBACK - 1} months')::date
+            AND date < (DATE_TRUNC('month', $1::date) + INTERVAL '1 month')::date
+          GROUP BY 1
+        )
+        SELECT
+          TO_CHAR(m.month_start, 'Mon ''YY') AS label,
+          COALESCE(p.total, 0) AS "paidTotal",
+          COALESCE(e.total, 0) AS "expensesTotal",
+          COALESCE(p.total, 0) - COALESCE(e.total, 0) AS balance
+        FROM months m
+        LEFT JOIN paid p ON p.ms = m.month_start
+        LEFT JOIN exp  e ON e.ms = m.month_start
+        ORDER BY m.month_start
+        `,
+        [anchorDate, customerId],
+      );
+
+      return res.rows.map((r) => ({
+        label: r.label,
+        paidTotal: parseFloat(r.paidTotal).toFixed(2),
+        expensesTotal: parseFloat(r.expensesTotal).toFixed(2),
+        balance: parseFloat(r.balance).toFixed(2),
+      }));
+    }
+
+    // Yearly
+    const res = await pool.query(
+      `
+      WITH years AS (
+        SELECT generate_series($1::int - ${YEARLY_LOOKBACK - 1}, $1::int) AS yr
+      ),
+      paid AS (
+        SELECT EXTRACT(YEAR FROM issue_date)::int AS yr, SUM(total) AS total
+        FROM invoices
+        WHERE status = 'paid'
+          AND customer_id = $2
+          AND EXTRACT(YEAR FROM issue_date) BETWEEN ($1::int - ${YEARLY_LOOKBACK - 1}) AND $1::int
+        GROUP BY 1
+      ),
+      exp AS (
+        SELECT EXTRACT(YEAR FROM date)::int AS yr, SUM(amount) AS total
+        FROM expenses
+        WHERE status = 'active'
+          AND customer_id = $2
+          AND EXTRACT(YEAR FROM date) BETWEEN ($1::int - ${YEARLY_LOOKBACK - 1}) AND $1::int
+        GROUP BY 1
+      )
+      SELECT
+        y.yr::text AS label,
+        COALESCE(p.total, 0) AS "paidTotal",
+        COALESCE(e.total, 0) AS "expensesTotal",
+        COALESCE(p.total, 0) - COALESCE(e.total, 0) AS balance
+      FROM years y
+      LEFT JOIN paid p ON p.yr = y.yr
+      LEFT JOIN exp  e ON e.yr = y.yr
+      ORDER BY y.yr
+      `,
+      [year, customerId],
+    );
+
+    return res.rows.map((r) => ({
+      label: r.label,
+      paidTotal: parseFloat(r.paidTotal).toFixed(2),
+      expensesTotal: parseFloat(r.expensesTotal).toFixed(2),
+      balance: parseFloat(r.balance).toFixed(2),
+    }));
   }
 }
