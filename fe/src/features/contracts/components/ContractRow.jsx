@@ -32,7 +32,7 @@ export default function ContractRow({ contract, onDeactivate }) {
       <TableCell>{formatDate(contract.createdAt)}</TableCell>
       <TableCell>{formatDate(contract.expiresAt)}</TableCell>
       <TableCell>
-        <div className="flex items-center justify-end gap-2">
+        <div className="flex items-center justify-center gap-2">
           {contract.status === 'active' ? (
             <Button
               type="button"

@@ -79,7 +79,7 @@ function TaskRow({ task, onEdit, onAbort, onDoubleClick }) {
         <ProgressBar value={task.percentComplete} />
       </TableCell>
       <TableCell>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center justify-center gap-1">
           <Button
             type="button"
             variant="ghost"

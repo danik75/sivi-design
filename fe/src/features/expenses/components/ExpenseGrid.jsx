@@ -174,7 +174,7 @@ export default function ExpenseGrid({ onCreate, onDeactivate }) {
                 <TableHeader>{EXPENSE_TEXT.headers.customer}</TableHeader>
                 <TableHeader>{EXPENSE_TEXT.headers.date}</TableHeader>
                 <TableHeader>{EXPENSE_TEXT.headers.status}</TableHeader>
-                <TableHeader>{EXPENSE_TEXT.headers.actions}</TableHeader>
+                <TableHeader />
               </TableRow>
             </TableHead>
             <TableBody>
