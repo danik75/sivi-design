@@ -10,9 +10,9 @@ types.setTypeParser(1082, (val) => val);
 const pool = new Pool({
   host: process.env.PGHOST || 'localhost',
   port: parseInt(process.env.PGPORT || '5432', 10),
-  user: process.env.PGUSER || 'postgres',
-  password: process.env.PGPASSWORD || '',
-  database: process.env.PGDATABASE || 'sivi_dev',
+  user: process.env.PGUSER || 'sivi_user',
+  password: process.env.PGPASSWORD || 'sivi_pass',
+  database: process.env.PGDATABASE || 'sivi_db',
 });
 
 export default pool;
