@@ -12,6 +12,12 @@ export class BillingController {
     return this.service.getOverview(dto);
   }
 
+  @Get('trend')
+  getTrend(@Query() query: Record<string, string>) {
+    const dto = BillingQueryDto.from(query);
+    return this.service.getTrend(dto);
+  }
+
   @Get('customer/:customerId')
   getCustomerDetail(
     @Param('customerId') customerId: string,

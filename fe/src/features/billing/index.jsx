@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import Table, {
   TableBody,
   TableCell,
@@ -8,11 +8,70 @@ import Table, {
 } from '@/components/chadcn/Table';
 import { balanceClass, CHART_COLORS, formatAmount } from '@/features/billing/constants';
 import useBillingOverview from '@/features/billing/hooks/useBillingOverview';
+import useBillingTrend from '@/features/billing/hooks/useBillingTrend';
 import CustomerBillingDetail from './components/CustomerBillingDetail';
 import IncomeChart from './components/IncomeChart';
 import PeriodSelector from './components/PeriodSelector';
+import ProfitabilityChart from './components/ProfitabilityChart';
 
 const now = new Date();
+
+function TotalCards({ customers }) {
+  const totals = useMemo(() => {
+    if (!customers?.length) return [];
+    const byCurrency = {};
+    for (const c of customers) {
+      for (const curr of c.currencies) {
+        if (!byCurrency[curr.currency]) {
+          byCurrency[curr.currency] = { currency: curr.currency, income: 0, expenses: 0 };
+        }
+        byCurrency[curr.currency].income += parseFloat(curr.paidInvoicesTotal);
+        byCurrency[curr.currency].expenses += parseFloat(curr.expensesTotal);
+      }
+    }
+    return Object.values(byCurrency).map((t) => ({
+      ...t,
+      balance: t.income - t.expenses,
+    }));
+  }, [customers]);
+
+  if (!totals.length) return null;
+
+  return (
+    <div className="grid grid-cols-3 gap-4">
+      {totals.map((t) => (
+        <div key={t.currency} className="contents">
+          <div className="flex flex-col gap-1 rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
+            <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+              Total Income
+            </span>
+            <span className="text-2xl font-bold text-slate-900 tabular-nums">
+              {t.income.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+              <span className="ml-1 text-sm font-normal text-slate-400">{t.currency}</span>
+            </span>
+          </div>
+          <div className="flex flex-col gap-1 rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
+            <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+              Total Expenses
+            </span>
+            <span className="text-2xl font-bold text-slate-900 tabular-nums">
+              {t.expenses.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+              <span className="ml-1 text-sm font-normal text-slate-400">{t.currency}</span>
+            </span>
+          </div>
+          <div className="flex flex-col gap-1 rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
+            <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+              Net Balance
+            </span>
+            <span className={`text-2xl font-bold tabular-nums ${balanceClass(t.balance)}`}>
+              {formatAmount(t.balance, t.currency)}
+            </span>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export default function BillingFeature() {
   const [period, setPeriod] = useState('monthly');
@@ -22,6 +81,7 @@ export default function BillingFeature() {
 
   const params = period === 'monthly' ? { period, year, month } : { period, year };
   const { data: customers, isLoading, isError, refetch } = useBillingOverview(params);
+  const { data: trendData, isLoading: trendLoading } = useBillingTrend(params);
 
   function handlePeriodChange({ period: p, year: y, month: m }) {
     setPeriod(p);
@@ -45,7 +105,15 @@ export default function BillingFeature() {
         />
       </div>
 
-      {/* Loading */}
+      {/* Period totals */}
+      {!isLoading && !isError && customers?.length > 0 && (
+        <TotalCards customers={customers} />
+      )}
+
+      {/* Trend chart — always shown (uses its own loading state) */}
+      <ProfitabilityChart data={trendData} isLoading={trendLoading} />
+
+      {/* Loading overview */}
       {isLoading && (
         <div className="space-y-3">
           {[...Array(4)].map((_, i) => (
@@ -58,32 +126,23 @@ export default function BillingFeature() {
       {isError && (
         <div className="flex items-center gap-3 rounded-xl bg-rose-50 px-4 py-3 text-sm text-rose-600">
           Failed to load billing data.
-          <button
-            type="button"
-            onClick={refetch}
-            className="font-medium underline"
-          >
+          <button type="button" onClick={refetch} className="font-medium underline">
             Retry
           </button>
         </div>
       )}
 
-      {/* Data */}
+      {/* Customer breakdown */}
       {!isLoading && !isError && customers && (
         <>
           {customers.length === 0 ? (
-            <div className="flex items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-white py-24">
+            <div className="flex items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-white py-16">
               <p className="text-sm text-slate-400">No paid invoices found for this period.</p>
             </div>
           ) : (
             <>
-              {/* Pie chart */}
-              <IncomeChart
-                customers={customers}
-                onSliceClick={setSelectedCustomerId}
-              />
+              <IncomeChart customers={customers} onSliceClick={setSelectedCustomerId} />
 
-              {/* Summary table */}
               <div className="rounded-2xl border border-slate-100 bg-white shadow-sm overflow-hidden">
                 <Table>
                   <TableHead>
@@ -111,10 +170,7 @@ export default function BillingFeature() {
                               <div className="flex items-center gap-2">
                                 <span
                                   className="inline-block h-2.5 w-2.5 shrink-0 rounded-full"
-                                  style={{
-                                    backgroundColor:
-                                      CHART_COLORS[ci % CHART_COLORS.length],
-                                  }}
+                                  style={{ backgroundColor: CHART_COLORS[ci % CHART_COLORS.length] }}
                                 />
                                 <span className="font-medium text-slate-800 hover:text-indigo-600">
                                   {customer.customerName}
