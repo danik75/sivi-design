@@ -121,9 +121,9 @@ export default function InvoiceOverview({ isOpen, invoiceId, onClose }) {
                     <TableRow>
                       <TableHeader>Description</TableHeader>
                       <TableHeader>Source</TableHeader>
-                      <TableHeader className="text-right">Qty</TableHeader>
-                      <TableHeader className="text-right">Unit Price</TableHeader>
-                      <TableHeader className="text-right">Amount</TableHeader>
+                      <TableHeader>Qty</TableHeader>
+                      <TableHeader>Unit Price</TableHeader>
+                      <TableHeader>Amount</TableHeader>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -137,13 +137,13 @@ export default function InvoiceOverview({ isOpen, invoiceId, onClose }) {
                             </span>
                           ) : null}
                         </TableCell>
-                        <TableCell className="text-right tabular-nums">
+                        <TableCell className="tabular-nums">
                           {parseFloat(item.quantity).toFixed(2)}
                         </TableCell>
-                        <TableCell className="text-right tabular-nums">
+                        <TableCell className="tabular-nums">
                           {parseFloat(item.unitPrice).toFixed(2)}
                         </TableCell>
-                        <TableCell className="text-right font-medium tabular-nums">
+                        <TableCell className="font-medium tabular-nums">
                           {formatAmount(item.amount, invoice.currency)}
                         </TableCell>
                       </TableRow>
