@@ -203,7 +203,11 @@ export default function InvoiceGrid({ onCreate, onEdit, onDelete, onStatusTransi
       )}
 
       {selectedInvoiceId ? (
-        <InvoiceOverview invoiceId={selectedInvoiceId} onClose={() => setSelectedInvoiceId(null)} />
+        <InvoiceOverview
+          isOpen={Boolean(selectedInvoiceId)}
+          invoiceId={selectedInvoiceId}
+          onClose={() => setSelectedInvoiceId(null)}
+        />
       ) : null}
     </section>
   );

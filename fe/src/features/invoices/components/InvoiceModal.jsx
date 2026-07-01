@@ -17,6 +17,7 @@ import {
   INVOICE_TEXT,
 } from '@/features/invoices/constants';
 import useCreateInvoice from '@/features/invoices/hooks/useCreateInvoice';
+import useInvoice from '@/features/invoices/hooks/useInvoice';
 import useInvoicePrefill from '@/features/invoices/hooks/useInvoicePrefill';
 import useUpdateInvoice from '@/features/invoices/hooks/useUpdateInvoice';
 
@@ -62,6 +63,9 @@ export default function InvoiceModal({ isOpen, onClose, invoice, onSuccess }) {
 
   const createMutation = useCreateInvoice();
   const updateMutation = useUpdateInvoice();
+
+  // Fetch full invoice (with line items) when editing — the list response omits lineItems
+  const { data: fullInvoice } = useInvoice(invoice?.id);
   const {
     data: customersData,
     isLoading: isCustomersLoading,
@@ -69,7 +73,7 @@ export default function InvoiceModal({ isOpen, onClose, invoice, onSuccess }) {
   } = useCustomers({ limit: 10000 });
   const { data: contractsData, isLoading: isContractsLoading } = useContracts({
     customerId: formState.customerId || undefined,
-    status: 'active',
+    status: invoice ? undefined : 'active', // edit mode: show all contracts so the existing one appears
   });
   const {
     data: prefillData,
@@ -153,6 +157,21 @@ export default function InvoiceModal({ isOpen, onClose, invoice, onSuccess }) {
     setFormState(createInitialState());
     setLineItems([]);
   }, [invoice, isOpen]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // In edit mode the list response has no lineItems — populate from the full detail fetch
+  useEffect(() => {
+    if (!isOpen || !invoice || !fullInvoice?.lineItems?.length) return;
+    setLineItems(
+      fullInvoice.lineItems.map((li) => ({
+        description: li.description,
+        quantity: String(li.quantity),
+        unitPrice: String(li.unitPrice),
+        amount: String(li.amount),
+        sourceType: li.sourceType,
+        sourceId: li.sourceId,
+      }))
+    );
+  }, [fullInvoice]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!formState.contractId) return;
