@@ -5,11 +5,13 @@ import ChevronDownIcon from '@/components/chadcn/icons/ChevronDownIcon';
 import ClipboardIcon from '@/components/chadcn/icons/ClipboardIcon';
 import CreditCardIcon from '@/components/chadcn/icons/CreditCardIcon';
 import DocumentTextIcon from '@/components/chadcn/icons/DocumentTextIcon';
+import FileInvoiceIcon from '@/components/chadcn/icons/FileInvoiceIcon';
 import ReceiptIcon from '@/components/chadcn/icons/ReceiptIcon';
 import UsersIcon from '@/components/chadcn/icons/UsersIcon';
 import ContractsFeature from '@/features/contracts';
 import CustomersFeature from '@/features/customers';
 import ExpensesFeature from '@/features/expenses';
+import InvoicesFeature from '@/features/invoices';
 import TasksFeature from '@/features/tasks';
 
 const PANEL_TEXT = {
@@ -25,6 +27,7 @@ const NAV_ITEMS = [
   { id: 'tasks', label: 'Tasks', Icon: ClipboardIcon },
   { id: 'contracts', label: 'Contracts', Icon: DocumentTextIcon },
   { id: 'expenses', label: 'Expenses', Icon: ReceiptIcon },
+  { id: 'invoices', label: 'Invoices', Icon: FileInvoiceIcon },
   { id: 'billing', label: 'Billing', Icon: CreditCardIcon },
 ];
 
@@ -84,6 +87,10 @@ export default function MainPanel({ onLogout }) {
 
     if (activeModule === 'expenses') {
       return <ExpensesFeature />;
+    }
+
+    if (activeModule === 'invoices') {
+      return <InvoicesFeature />;
     }
 
     return (
