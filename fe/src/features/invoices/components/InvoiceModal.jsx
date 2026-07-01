@@ -60,6 +60,7 @@ export default function InvoiceModal({ isOpen, onClose, invoice, onSuccess }) {
   const [errors, setErrors] = useState({});
   const [submitError, setSubmitError] = useState('');
   const skipAutoPrefillRef = useRef(false);
+  const lineItemsInitializedRef = useRef(false);
 
   const createMutation = useCreateInvoice();
   const updateMutation = useUpdateInvoice();
@@ -127,6 +128,7 @@ export default function InvoiceModal({ isOpen, onClose, invoice, onSuccess }) {
     setStep(1);
     setErrors({});
     setSubmitError('');
+    lineItemsInitializedRef.current = false; // reset so detail fetch can populate once
     createMutation.reset();
     updateMutation.reset();
 
@@ -158,9 +160,11 @@ export default function InvoiceModal({ isOpen, onClose, invoice, onSuccess }) {
     setLineItems([]);
   }, [invoice, isOpen]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // In edit mode the list response has no lineItems — populate from the full detail fetch
+  // In edit mode the list response has no lineItems — populate from the full detail fetch ONCE per open
   useEffect(() => {
     if (!isOpen || !invoice || !fullInvoice?.lineItems?.length) return;
+    if (lineItemsInitializedRef.current) return; // guard against background re-fetches resetting user edits
+    lineItemsInitializedRef.current = true;
     setLineItems(
       fullInvoice.lineItems.map((li) => ({
         description: li.description,
