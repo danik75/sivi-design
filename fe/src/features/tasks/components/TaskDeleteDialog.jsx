@@ -51,12 +51,7 @@ export default function TaskDeleteDialog({ isOpen, onClose, task, onSuccess }) {
   );
 
   return (
-    <Dialog
-      isOpen={isOpen}
-      onClose={onClose}
-      title={TASK_TEXT.deleteDialog.title}
-      footer={footer}
-    >
+    <Dialog isOpen={isOpen} onClose={onClose} title={TASK_TEXT.deleteDialog.title} footer={footer}>
       <div className="space-y-3">
         <p className="text-sm text-slate-600">
           {TASK_TEXT.deleteDialog.description(task?.name ?? '')}

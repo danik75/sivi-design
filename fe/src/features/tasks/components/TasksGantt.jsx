@@ -10,14 +10,28 @@ import useUpdateTask from '@/features/tasks/hooks/useUpdateTask';
 // ---------------------------------------------------------------------------
 const MS = 86400000;
 function parseDate(str) {
-  if (str.includes('T')) { const dt = new Date(str); return new Date(dt.getFullYear(), dt.getMonth(), dt.getDate()); }
-  const [y, m, d] = str.split('-').map(Number); return new Date(y, m - 1, d);
+  if (str.includes('T')) {
+    const dt = new Date(str);
+    return new Date(dt.getFullYear(), dt.getMonth(), dt.getDate());
+  }
+  const [y, m, d] = str.split('-').map(Number);
+  return new Date(y, m - 1, d);
 }
-function addDays(date, n) { return new Date(date.getTime() + n * MS); }
-function diffDays(a, b) { return Math.round((b.getTime() - a.getTime()) / MS); }
-function startOfDay(d) { return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
-function fmtShort(d) { return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); }
-function fmtMonth(d) { return d.toLocaleDateString('en-US', { month: 'short' }); }
+function addDays(date, n) {
+  return new Date(date.getTime() + n * MS);
+}
+function diffDays(a, b) {
+  return Math.round((b.getTime() - a.getTime()) / MS);
+}
+function startOfDay(d) {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+}
+function fmtShort(d) {
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+function fmtMonth(d) {
+  return d.toLocaleDateString('en-US', { month: 'short' });
+}
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -42,9 +56,7 @@ function ViewToggle({ view, onView }) {
           type="button"
           onClick={() => onView(key)}
           className={`px-3 py-1.5 text-xs font-semibold transition-colors ${
-            view === key
-              ? 'bg-indigo-600 text-white'
-              : 'bg-white text-slate-600 hover:bg-slate-50'
+            view === key ? 'bg-indigo-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'
           }`}
         >
           {label}
@@ -150,7 +162,10 @@ function GanttBar({ task, rangeStart, totalDays, rangeEnd, onEdit, onDragEnd }) 
       {barBg !== null ? (
         <div className="absolute inset-y-0 left-0 bg-white/20" style={{ width: `${fillPct}%` }} />
       ) : (
-        <div className={`absolute inset-y-0 left-0 ${config.barFillClass}`} style={{ width: `${fillPct}%` }} />
+        <div
+          className={`absolute inset-y-0 left-0 ${config.barFillClass}`}
+          style={{ width: `${fillPct}%` }}
+        />
       )}
       {/* status dot — only when a custom color is set */}
       {barBg !== null && (
@@ -159,20 +174,28 @@ function GanttBar({ task, rangeStart, totalDays, rangeEnd, onEdit, onDragEnd }) 
         />
       )}
       {/* label */}
-      <span className={`relative z-10 text-xs font-medium text-white leading-none truncate flex items-center h-full ${barBg !== null ? 'pl-7 pr-4' : 'px-4'}`}>
+      <span
+        className={`relative z-10 text-xs font-medium text-white leading-none truncate flex items-center h-full ${barBg !== null ? 'pl-7 pr-4' : 'px-4'}`}
+      >
         {task.name}
       </span>
       {/* Left resize handle */}
       <div
         className="absolute inset-y-0 left-0 w-2 cursor-ew-resize z-20 hover:bg-black/10"
         style={{ touchAction: 'none' }}
-        onMouseDown={(e) => { e.stopPropagation(); leftDrag.start(e); }}
+        onMouseDown={(e) => {
+          e.stopPropagation();
+          leftDrag.start(e);
+        }}
       />
       {/* Right resize handle */}
       <div
         className="absolute inset-y-0 right-0 w-2 cursor-ew-resize z-20 hover:bg-black/10"
         style={{ touchAction: 'none' }}
-        onMouseDown={(e) => { e.stopPropagation(); rightDrag.start(e); }}
+        onMouseDown={(e) => {
+          e.stopPropagation();
+          rightDrag.start(e);
+        }}
       />
     </div>
   );
@@ -208,9 +231,7 @@ export default function TasksGantt({ onCreate, onEdit, visibleStatuses }) {
 
   const { data, isLoading } = useTasks({ limit: 500 });
   const allTasks = data?.data ?? [];
-  const tasks = visibleStatuses
-    ? allTasks.filter((t) => visibleStatuses.has(t.status))
-    : allTasks;
+  const tasks = visibleStatuses ? allTasks.filter((t) => visibleStatuses.has(t.status)) : allTasks;
 
   const updateMutation = useUpdateTask();
 
@@ -223,7 +244,10 @@ export default function TasksGantt({ onCreate, onEdit, visibleStatuses }) {
     };
     let updates = {};
     if (action.type === 'move') {
-      updates = { startDate: shift(task.startDate, action.days), endDate: shift(task.endDate, action.days) };
+      updates = {
+        startDate: shift(task.startDate, action.days),
+        endDate: shift(task.endDate, action.days),
+      };
     } else if (action.type === 'resize-start') {
       const newStart = shift(task.startDate, action.days);
       if (newStart <= task.endDate) updates = { startDate: newStart };
@@ -329,9 +353,7 @@ export default function TasksGantt({ onCreate, onEdit, visibleStatuses }) {
                       <div
                         key={i}
                         className={`flex-1 border-r border-slate-50 py-2 text-center text-xs ${
-                          isToday
-                            ? 'bg-indigo-50 font-bold text-indigo-600'
-                            : 'text-slate-400'
+                          isToday ? 'bg-indigo-50 font-bold text-indigo-600' : 'text-slate-400'
                         }`}
                       >
                         {colLabel(day, i)}
@@ -373,7 +395,11 @@ export default function TasksGantt({ onCreate, onEdit, visibleStatuses }) {
                     </div>
 
                     {/* Timeline area */}
-                    <div className="relative flex-1" data-gantt-timeline="1" style={{ height: '48px' }}>
+                    <div
+                      className="relative flex-1"
+                      data-gantt-timeline="1"
+                      style={{ height: '48px' }}
+                    >
                       {/* Today highlight column */}
                       {days.map((day, i) => {
                         if (day.getTime() !== todayStr) return null;
@@ -426,7 +452,8 @@ export default function TasksGantt({ onCreate, onEdit, visibleStatuses }) {
           ))}
           {visibleTasks.length < tasks.length ? (
             <span className="text-xs text-slate-400">
-              ({tasks.length - visibleTasks.length} task{tasks.length - visibleTasks.length !== 1 ? 's' : ''} outside range)
+              ({tasks.length - visibleTasks.length} task
+              {tasks.length - visibleTasks.length !== 1 ? 's' : ''} outside range)
             </span>
           ) : null}
         </div>

@@ -3,7 +3,13 @@ import { useMemo, useState } from 'react';
 import Button from '@/components/chadcn/Button';
 import EmptyState from '@/components/chadcn/EmptyState';
 import SearchInput from '@/components/chadcn/SearchInput';
-import Table, { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/chadcn/Table';
+import Table, {
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/chadcn/Table';
 import { STATUS_CONFIG, TASK_TEXT, getApiErrorMessage } from '@/features/tasks/constants';
 import useTasks from '@/features/tasks/hooks/useTasks';
 import useUpdateTask from '@/features/tasks/hooks/useUpdateTask';
@@ -13,7 +19,9 @@ const PAGE_SIZE = 8;
 function StatusBadge({ status }) {
   const config = STATUS_CONFIG[status] ?? STATUS_CONFIG.pending;
   return (
-    <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${config.badgeClass}`}>
+    <span
+      className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${config.badgeClass}`}
+    >
       {config.label}
     </span>
   );
@@ -26,7 +34,10 @@ function ProgressBar({ value }) {
   return (
     <div className="flex items-center gap-2">
       <div className="h-1.5 w-20 overflow-hidden rounded-full bg-slate-100">
-        <div className="h-full rounded-full bg-indigo-500 transition-all" style={{ width: `${pct}%` }} />
+        <div
+          className="h-full rounded-full bg-indigo-500 transition-all"
+          style={{ width: `${pct}%` }}
+        />
       </div>
       <span className="text-xs text-slate-500">{pct}%</span>
     </div>
@@ -58,16 +69,32 @@ function TaskRow({ task, onEdit, onAbort, onDoubleClick }) {
       <TableCell>{task.customerName ?? TASK_TEXT.placeholder}</TableCell>
       <TableCell>{task.startDate ? fmtDate(task.startDate) : TASK_TEXT.placeholder}</TableCell>
       <TableCell>{task.endDate ? fmtDate(task.endDate) : TASK_TEXT.placeholder}</TableCell>
-      <TableCell><StatusBadge status={task.status} /></TableCell>
-      <TableCell>{task.estimatedHours != null ? task.estimatedHours : TASK_TEXT.placeholder}</TableCell>
-      <TableCell><ProgressBar value={task.percentComplete} /></TableCell>
+      <TableCell>
+        <StatusBadge status={task.status} />
+      </TableCell>
+      <TableCell>
+        {task.estimatedHours != null ? task.estimatedHours : TASK_TEXT.placeholder}
+      </TableCell>
+      <TableCell>
+        <ProgressBar value={task.percentComplete} />
+      </TableCell>
       <TableCell>
         <div className="flex items-center gap-1">
-          <Button type="button" variant="ghost" className="px-2 py-1 text-xs" onClick={() => onEdit(task)}>
+          <Button
+            type="button"
+            variant="ghost"
+            className="px-2 py-1 text-xs"
+            onClick={() => onEdit(task)}
+          >
             Edit
           </Button>
           {!isAborted && (
-            <Button type="button" variant="danger" className="px-2 py-1 text-xs" onClick={() => onAbort(task)}>
+            <Button
+              type="button"
+              variant="danger"
+              className="px-2 py-1 text-xs"
+              onClick={() => onAbort(task)}
+            >
               Abort
             </Button>
           )}

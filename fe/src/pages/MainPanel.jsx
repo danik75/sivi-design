@@ -4,8 +4,10 @@ import UserMenu from '@/components/UserMenu';
 import ChevronDownIcon from '@/components/chadcn/icons/ChevronDownIcon';
 import ClipboardIcon from '@/components/chadcn/icons/ClipboardIcon';
 import CreditCardIcon from '@/components/chadcn/icons/CreditCardIcon';
+import DocumentTextIcon from '@/components/chadcn/icons/DocumentTextIcon';
 import UsersIcon from '@/components/chadcn/icons/UsersIcon';
 import CustomersFeature from '@/features/customers';
+import ContractsFeature from '@/features/contracts';
 import TasksFeature from '@/features/tasks';
 
 const PANEL_TEXT = {
@@ -19,6 +21,7 @@ const PANEL_TEXT = {
 const NAV_ITEMS = [
   { id: 'customers', label: 'Customers', Icon: UsersIcon },
   { id: 'tasks', label: 'Tasks', Icon: ClipboardIcon },
+  { id: 'contracts', label: 'Contracts', Icon: DocumentTextIcon },
   { id: 'billing', label: 'Billing', Icon: CreditCardIcon },
 ];
 
@@ -70,6 +73,10 @@ export default function MainPanel({ onLogout }) {
 
     if (activeModule === 'tasks') {
       return <TasksFeature />;
+    }
+
+    if (activeModule === 'contracts') {
+      return <ContractsFeature />;
     }
 
     return (

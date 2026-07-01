@@ -16,8 +16,12 @@ export default function CustomerRow({ customer, onEdit, onDelete, onSelect, isSe
       >
         {customer.name}
       </TableCell>
-      <TableCell className={isSelected ? 'bg-indigo-50' : ''}>{primaryContact.email || CUSTOMER_TEXT.placeholder}</TableCell>
-      <TableCell className={isSelected ? 'bg-indigo-50' : ''}>{primaryContact.phone || CUSTOMER_TEXT.placeholder}</TableCell>
+      <TableCell className={isSelected ? 'bg-indigo-50' : ''}>
+        {primaryContact.email || CUSTOMER_TEXT.placeholder}
+      </TableCell>
+      <TableCell className={isSelected ? 'bg-indigo-50' : ''}>
+        {primaryContact.phone || CUSTOMER_TEXT.placeholder}
+      </TableCell>
       <TableCell className={isSelected ? 'bg-indigo-50' : ''}>
         <div className="flex items-center justify-end gap-2">
           <Button
@@ -48,7 +52,13 @@ CustomerRow.propTypes = {
   customer: PropTypes.shape({
     id: PropTypes.string.isRequired,
     name: PropTypes.string.isRequired,
-    contacts: PropTypes.arrayOf(PropTypes.shape({ email: PropTypes.string, phone: PropTypes.string, isPrimary: PropTypes.bool })),
+    contacts: PropTypes.arrayOf(
+      PropTypes.shape({
+        email: PropTypes.string,
+        phone: PropTypes.string,
+        isPrimary: PropTypes.bool,
+      })
+    ),
   }).isRequired,
   onEdit: PropTypes.func.isRequired,
   onDelete: PropTypes.func.isRequired,

@@ -2,8 +2,18 @@ import PropTypes from 'prop-types';
 import { useEffect, useRef, useState } from 'react';
 
 const MONTHS = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
 ];
 const DOW = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 
@@ -201,7 +211,13 @@ export default function DatePicker({ value, onChange, placeholder = 'Select date
 
               return (
                 <div key={idx} className="py-0.5">
-                  <div className={cls} onClick={() => handleDayClick(day)} role="button" tabIndex={0} onKeyDown={(e) => e.key === 'Enter' && handleDayClick(day)}>
+                  <div
+                    className={cls}
+                    onClick={() => handleDayClick(day)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => e.key === 'Enter' && handleDayClick(day)}
+                  >
                     {day}
                   </div>
                 </div>
