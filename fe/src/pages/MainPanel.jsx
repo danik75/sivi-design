@@ -8,6 +8,7 @@ import DocumentTextIcon from '@/components/chadcn/icons/DocumentTextIcon';
 import FileInvoiceIcon from '@/components/chadcn/icons/FileInvoiceIcon';
 import ReceiptIcon from '@/components/chadcn/icons/ReceiptIcon';
 import UsersIcon from '@/components/chadcn/icons/UsersIcon';
+import BillingFeature from '@/features/billing';
 import ContractsFeature from '@/features/contracts';
 import CustomersFeature from '@/features/customers';
 import ExpensesFeature from '@/features/expenses';
@@ -91,6 +92,10 @@ export default function MainPanel({ onLogout }) {
 
     if (activeModule === 'invoices') {
       return <InvoicesFeature />;
+    }
+
+    if (activeModule === 'billing') {
+      return <BillingFeature />;
     }
 
     return (
