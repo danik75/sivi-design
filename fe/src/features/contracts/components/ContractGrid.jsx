@@ -19,7 +19,7 @@ export default function ContractGrid({ onCreate, onDeactivate }) {
 
   const { data, error, isError, isLoading, refetch } = useContracts({
     customerId: selectedCustomerId || undefined,
-    status: showAll ? undefined : 'active',
+    status: showAll ? 'all' : 'active',
   });
   const {
     data: customersData,
