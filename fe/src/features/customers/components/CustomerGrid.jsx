@@ -10,7 +10,13 @@ import useCustomers from '@/features/customers/hooks/useCustomers';
 
 const PAGE_SIZE = 8;
 
-export default function CustomerGrid({ onCreate, onEdit, onDelete, selectedCustomerId, onSelectCustomer }) {
+export default function CustomerGrid({
+  onCreate,
+  onEdit,
+  onDelete,
+  selectedCustomerId,
+  onSelectCustomer,
+}) {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
 
@@ -21,10 +27,11 @@ export default function CustomerGrid({ onCreate, onEdit, onDelete, selectedCusto
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return allCustomers;
-    return allCustomers.filter((c) =>
-      c.name?.toLowerCase().includes(q) ||
-      c.email?.toLowerCase().includes(q) ||
-      c.phone?.toLowerCase().includes(q)
+    return allCustomers.filter(
+      (c) =>
+        c.name?.toLowerCase().includes(q) ||
+        c.email?.toLowerCase().includes(q) ||
+        c.phone?.toLowerCase().includes(q)
     );
   }, [allCustomers, search]);
 
@@ -143,7 +150,9 @@ export default function CustomerGrid({ onCreate, onEdit, onDelete, selectedCusto
         <EmptyState
           icon={hasSearch ? '🔎' : '👥'}
           title={hasSearch ? CUSTOMER_TEXT.noResultsTitle : CUSTOMER_TEXT.noDataTitle}
-          description={hasSearch ? CUSTOMER_TEXT.noResultsDescription : CUSTOMER_TEXT.noDataDescription}
+          description={
+            hasSearch ? CUSTOMER_TEXT.noResultsDescription : CUSTOMER_TEXT.noDataDescription
+          }
           action={emptyStateAction}
         />
       )}

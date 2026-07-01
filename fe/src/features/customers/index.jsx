@@ -22,7 +22,7 @@ export default function CustomersFeature() {
   };
 
   const handleSelectCustomer = (customer) => {
-    setSelectedCustomer((prev) => prev?.id === customer.id ? null : customer);
+    setSelectedCustomer((prev) => (prev?.id === customer.id ? null : customer));
   };
 
   return (
@@ -47,7 +47,10 @@ export default function CustomersFeature() {
         isOpen={Boolean(editTask)}
         onClose={() => setEditTask(null)}
         task={editTask}
-        onSuccess={(msg) => { handleSuccess(msg); setEditTask(null); }}
+        onSuccess={(msg) => {
+          handleSuccess(msg);
+          setEditTask(null);
+        }}
       />
 
       <CustomerModal

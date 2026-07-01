@@ -54,15 +54,21 @@ function Checkbox({ checked, indeterminate, onChange }) {
       />
       <div
         className={`flex h-4 w-4 items-center justify-center rounded border-2 transition-colors ${
-          checked || indeterminate
-            ? 'border-indigo-600 bg-indigo-600'
-            : 'border-slate-300 bg-white'
+          checked || indeterminate ? 'border-indigo-600 bg-indigo-600' : 'border-slate-300 bg-white'
         }`}
       >
         {indeterminate && !checked ? (
           <span className="block h-0.5 w-2 bg-white rounded" />
         ) : checked ? (
-          <svg className="h-2.5 w-2.5 text-white" viewBox="0 0 12 10" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg
+            className="h-2.5 w-2.5 text-white"
+            viewBox="0 0 12 10"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
             <polyline points="1,5 4,9 11,1" />
           </svg>
         ) : null}
@@ -84,7 +90,11 @@ function StatusFilterBar({ visibleStatuses, onToggle, onToggleAll }) {
   return (
     <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
       <label className="flex cursor-pointer select-none items-center gap-1.5">
-        <Checkbox checked={allChecked} indeterminate={someChecked && !allChecked} onChange={onToggleAll} />
+        <Checkbox
+          checked={allChecked}
+          indeterminate={someChecked && !allChecked}
+          onChange={onToggleAll}
+        />
         <span className="text-xs font-semibold text-slate-700">All</span>
       </label>
       <span className="select-none text-slate-200">|</span>
@@ -185,7 +195,6 @@ export default function TasksFeature() {
         task={editTask}
         onSuccess={handleSuccess}
       />
-
     </>
   );
 }

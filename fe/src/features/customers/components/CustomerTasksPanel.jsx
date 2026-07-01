@@ -1,7 +1,13 @@
 import PropTypes from 'prop-types';
 import { STATUS_CONFIG } from '@/features/tasks/constants';
 import useTasks from '@/features/tasks/hooks/useTasks';
-import Table, { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/chadcn/Table';
+import Table, {
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/chadcn/Table';
 
 export default function CustomerTasksPanel({ customer, onClose, onEditTask }) {
   const { data, isLoading } = useTasks({ customerId: customer.id, limit: 100 });
@@ -11,9 +17,7 @@ export default function CustomerTasksPanel({ customer, onClose, onEditTask }) {
     <div className="mt-6 rounded-2xl bg-white shadow-sm ring-1 ring-slate-100 overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
-        <h2 className="text-sm font-semibold text-slate-800">
-          Tasks for {customer.name}
-        </h2>
+        <h2 className="text-sm font-semibold text-slate-800">Tasks for {customer.name}</h2>
         <button
           type="button"
           onClick={onClose}
@@ -59,9 +63,7 @@ export default function CustomerTasksPanel({ customer, onClose, onEditTask }) {
                       {statusCfg.label}
                     </span>
                   </TableCell>
-                  <TableCell className="cursor-pointer">
-                    {task.percentComplete ?? 0}%
-                  </TableCell>
+                  <TableCell className="cursor-pointer">{task.percentComplete ?? 0}%</TableCell>
                 </TableRow>
               );
             })}

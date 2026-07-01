@@ -22,12 +22,25 @@ function toDateStr(d) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 const todayDateStr = () => toDateStr(new Date());
-const weekFromTodayStr = () => { const d = new Date(); d.setDate(d.getDate() + 7); return toDateStr(d); };
+const weekFromTodayStr = () => {
+  const d = new Date();
+  d.setDate(d.getDate() + 7);
+  return toDateStr(d);
+};
 
 const PRESET_COLORS = [
-  '#64748b', '#6366f1', '#22c55e', '#f43f5e',
-  '#f97316', '#eab308', '#14b8a6', '#8b5cf6',
-  '#ec4899', '#0ea5e9', '#a16207', '#dc2626',
+  '#64748b',
+  '#6366f1',
+  '#22c55e',
+  '#f43f5e',
+  '#f97316',
+  '#eab308',
+  '#14b8a6',
+  '#8b5cf6',
+  '#ec4899',
+  '#0ea5e9',
+  '#a16207',
+  '#dc2626',
 ];
 
 const selectClass =
@@ -242,10 +255,7 @@ export default function TaskModal({ isOpen, onClose, task, onSuccess }) {
           {/* Start date + time */}
           <div className="grid grid-cols-2 gap-3">
             <FormField label={TASK_TEXT.modal.startDateLabel}>
-              <DatePicker
-                value={fields.startDate}
-                onChange={(v) => set('startDate')(v)}
-              />
+              <DatePicker value={fields.startDate} onChange={(v) => set('startDate')(v)} />
               {errors.startDate ? (
                 <p className="text-xs font-medium text-rose-600">{errors.startDate}</p>
               ) : null}
@@ -263,10 +273,7 @@ export default function TaskModal({ isOpen, onClose, task, onSuccess }) {
           {/* End date + time */}
           <div className="grid grid-cols-2 gap-3">
             <FormField label={TASK_TEXT.modal.endDateLabel}>
-              <DatePicker
-                value={fields.endDate}
-                onChange={(v) => set('endDate')(v)}
-              />
+              <DatePicker value={fields.endDate} onChange={(v) => set('endDate')(v)} />
               {errors.endDate ? (
                 <p className="text-xs font-medium text-rose-600">{errors.endDate}</p>
               ) : null}

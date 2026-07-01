@@ -56,8 +56,7 @@ export const TASK_TEXT = {
   },
   deleteDialog: {
     title: 'Delete Task',
-    description: (name) =>
-      `Delete "${name}"? This action cannot be undone.`,
+    description: (name) => `Delete "${name}"? This action cannot be undone.`,
     cancel: 'Cancel',
     confirm: 'Delete',
     error: 'Unable to delete task.',
