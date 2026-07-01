@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Badge from '@/components/chadcn/Badge';
 import Button from '@/components/chadcn/Button';
 import Table, {
@@ -16,69 +16,120 @@ import useInvoice from '@/features/invoices/hooks/useInvoice';
 const formatDate = (iso) => (iso ? new Date(iso).toLocaleDateString() : INVOICE_TEXT.placeholder);
 
 const MailIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
     <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
   </svg>
 );
 
-function buildGmailUrl(invoice) {
-  const to = invoice.customerEmail ?? '';
-  const subject = encodeURIComponent(`Invoice ID: ${invoice.invoiceNumber}`);
+const STATUS_BADGE = {
+  draft:     { bg: '#e0e7ff', color: '#3730a3' },
+  sent:      { bg: '#fef3c7', color: '#92400e' },
+  paid:      { bg: '#d1fae5', color: '#065f46' },
+  cancelled: { bg: '#fee2e2', color: '#991b1b' },
+};
+
+function buildEmailHtml(invoice) {
+  const badge = STATUS_BADGE[invoice.status] ?? { bg: '#f1f5f9', color: '#475569' };
+  const statusLabel = INVOICE_TEXT.status[invoice.status] ?? invoice.status;
 
   const subtotal = parseFloat(invoice.subtotal ?? 0);
   const discountAmount = parseFloat(invoice.discountAmount ?? 0);
   const taxRate = parseFloat(invoice.taxRate ?? 0);
   const taxAmount = parseFloat(invoice.taxAmount ?? 0);
   const total = parseFloat(invoice.total ?? 0);
-  const statusLabel = INVOICE_TEXT.status[invoice.status] ?? invoice.status;
 
-  const sep = '─'.repeat(48);
+  const lineItemsHtml = (invoice.lineItems ?? [])
+    .map((item) => {
+      const tagStyle =
+        item.sourceType === 'contract'
+          ? 'background:#dbeafe;color:#1d4ed8;'
+          : item.sourceType === 'expense'
+          ? 'background:#fef3c7;color:#92400e;'
+          : '';
+      const tagHtml = item.sourceType
+        ? `<span style="font-size:11px;padding:2px 8px;border-radius:4px;${tagStyle}">${item.sourceType}</span>`
+        : '';
+      return `
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;padding:0.75rem 0;border-bottom:1px solid #f0f0f0;">
+        <div>
+          <div style="font-size:14px;color:#222;margin-bottom:4px;">${item.description}</div>
+          ${tagHtml}
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:14px;color:#222;">${formatAmount(item.amount, invoice.currency)}</div>
+          <div style="font-size:12px;color:#aaa;">${parseFloat(item.quantity).toFixed(2)} × ${parseFloat(item.unitPrice).toFixed(2)}</div>
+        </div>
+      </div>`;
+    })
+    .join('');
 
-  const lines = [
-    `Dear ${invoice.customerName ?? 'Customer'},`,
-    '',
-    `Please find below the details for invoice ${invoice.invoiceNumber}.`,
-    '',
-    `Status:      ${statusLabel}`,
-    `Customer:    ${invoice.customerName ?? '—'}`,
-    `Contract:    ${invoice.contractTypeLabel ?? '—'}`,
-    `Issue Date:  ${formatDate(invoice.issueDate)}`,
-    `Due Date:    ${formatDate(invoice.dueDate)}`,
-  ];
+  const discountHtml =
+    discountAmount > 0
+      ? `<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:14px;">
+          <span style="color:#666;">${invoice.discountType === 'percentage' ? `Discount (${parseFloat(invoice.discountValue)}%)` : 'Discount'}</span>
+          <span style="color:#dc2626;">−${formatAmount(discountAmount.toFixed(2), invoice.currency)}</span>
+        </div>`
+      : '';
 
-  if (invoice.notes) {
-    lines.push('', `Notes: ${invoice.notes}`);
-  }
+  const taxHtml =
+    taxRate > 0
+      ? `<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:14px;">
+          <span style="color:#666;">Tax (${taxRate}%)</span>
+          <span>${formatAmount(taxAmount.toFixed(2), invoice.currency)}</span>
+        </div>`
+      : '';
 
-  if (invoice.lineItems?.length) {
-    lines.push('', sep, 'LINE ITEMS', sep);
-    invoice.lineItems.forEach((item) => {
-      const qty = parseFloat(item.quantity).toFixed(2);
-      const price = parseFloat(item.unitPrice).toFixed(2);
-      const src = item.sourceType ? ` [${item.sourceType}]` : '';
-      lines.push(`• ${item.description}${src}`);
-      lines.push(`  ${qty} × ${price} = ${formatAmount(item.amount, invoice.currency)}`);
-    });
-  }
+  const lineItemsSection = lineItemsHtml
+    ? `<div style="padding:1.25rem 2rem;border-bottom:1px solid #e0e0e0;">
+        <div style="font-size:11px;font-weight:600;color:#aaa;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:1rem;">Line items</div>
+        ${lineItemsHtml}
+      </div>`
+    : '';
 
-  lines.push('', sep);
-  lines.push(`Subtotal:    ${formatAmount(subtotal.toFixed(2), invoice.currency)}`);
-  if (discountAmount > 0) {
-    const label =
-      invoice.discountType === 'percentage'
-        ? `Discount (${parseFloat(invoice.discountValue)}%)`
-        : 'Discount';
-    lines.push(`${label}: -${formatAmount(discountAmount.toFixed(2), invoice.currency)}`);
-  }
-  if (taxRate > 0) {
-    lines.push(`Tax (${taxRate}%): ${formatAmount(taxAmount.toFixed(2), invoice.currency)}`);
-  }
-  lines.push(sep);
-  lines.push(`TOTAL:       ${formatAmount(total.toFixed(2), invoice.currency)}`);
-  lines.push(sep, '', 'Thank you for your business.');
+  return `<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"/></head>
+<body style="font-family:Arial,sans-serif;background:#f4f4f4;padding:2rem;margin:0;">
+  <div style="max-width:600px;margin:auto;background:#fff;border-radius:12px;border:1px solid #e0e0e0;overflow:hidden;">
 
-  const body = encodeURIComponent(lines.join('\n'));
-  return `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(to)}&su=${subject}&body=${body}`;
+    <div style="padding:2rem;border-bottom:1px solid #e0e0e0;display:flex;justify-content:space-between;align-items:flex-start;">
+      <div>
+        <div style="font-size:22px;font-weight:600;margin-bottom:4px;">${invoice.invoiceNumber}</div>
+        <div style="font-size:13px;color:#888;">Issued ${formatDate(invoice.issueDate)} · Due ${formatDate(invoice.dueDate)}</div>
+      </div>
+      <span style="background:${badge.bg};color:${badge.color};font-size:12px;font-weight:600;padding:4px 12px;border-radius:6px;">${statusLabel}</span>
+    </div>
+
+    <div style="padding:1.25rem 2rem;border-bottom:1px solid #e0e0e0;display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+      <div>
+        <div style="font-size:11px;font-weight:600;color:#aaa;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;">Customer</div>
+        <div style="font-size:14px;color:#222;">${invoice.customerName ?? '—'}</div>
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:600;color:#aaa;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;">Contract type</div>
+        <div style="font-size:14px;color:#222;">${invoice.contractTypeLabel ?? '—'}</div>
+      </div>
+    </div>
+
+    ${lineItemsSection}
+
+    <div style="padding:1.25rem 2rem;border-bottom:1px solid #e0e0e0;">
+      <div style="display:flex;justify-content:space-between;padding:4px 0;font-size:14px;">
+        <span style="color:#666;">Subtotal</span>
+        <span>${formatAmount(subtotal.toFixed(2), invoice.currency)}</span>
+      </div>
+      ${discountHtml}
+      ${taxHtml}
+    </div>
+
+    <div style="padding:1.25rem 2rem;display:flex;justify-content:space-between;align-items:center;">
+      <span style="font-size:15px;font-weight:600;">Total</span>
+      <span style="font-size:24px;font-weight:700;">${formatAmount(total.toFixed(2), invoice.currency)}</span>
+    </div>
+
+  </div>
+</body>
+</html>`;
 }
 
 function Field({ label, value }) {
@@ -97,6 +148,29 @@ Field.propTypes = {
 
 export default function InvoiceOverview({ isOpen, invoiceId, onClose }) {
   const { data: invoice, isLoading, isError } = useInvoice(isOpen ? invoiceId : null);
+  const [emailLabel, setEmailLabel] = useState('Send Email');
+  const resetRef = useRef(null);
+
+  const handleSendEmail = async () => {
+    if (!invoice) return;
+    const html = buildEmailHtml(invoice);
+    try {
+      await navigator.clipboard.write([
+        new ClipboardItem({ 'text/html': new Blob([html], { type: 'text/html' }) }),
+      ]);
+    } catch {
+      // fallback: plain text copy so the button still works
+      await navigator.clipboard.writeText(html).catch(() => {});
+    }
+    const to = encodeURIComponent(invoice.customerEmail ?? '');
+    const su = encodeURIComponent(`Invoice ID: ${invoice.invoiceNumber}`);
+    window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=${to}&su=${su}`, '_blank', 'noopener,noreferrer');
+    setEmailLabel('Paste in Gmail (⌘V)');
+    clearTimeout(resetRef.current);
+    resetRef.current = setTimeout(() => setEmailLabel('Send Email'), 4000);
+  };
+
+  useEffect(() => () => clearTimeout(resetRef.current), []);
 
   useEffect(() => {
     if (!isOpen) return undefined;
@@ -148,11 +222,11 @@ export default function InvoiceOverview({ isOpen, invoiceId, onClose }) {
                 type="button"
                 variant="ghost"
                 className="flex items-center gap-1.5 px-3 py-1.5 text-xs"
-                onClick={() => window.open(buildGmailUrl(invoice), '_blank', 'noopener,noreferrer')}
+                onClick={handleSendEmail}
                 aria-label="Send invoice by email"
               >
                 <MailIcon />
-                Send Email
+                {emailLabel}
               </Button>
             ) : null}
             <button
