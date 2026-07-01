@@ -43,6 +43,9 @@ export default function InvoiceOverview({ isOpen, invoiceId, onClose }) {
   if (!isOpen) return null;
 
   const subtotal = invoice ? parseFloat(invoice.subtotal ?? 0) : 0;
+  const discountAmount = invoice ? parseFloat(invoice.discountAmount ?? 0) : 0;
+  const discountType = invoice?.discountType ?? null;
+  const discountValue = invoice?.discountValue ?? null;
   const taxAmount = invoice ? parseFloat(invoice.taxAmount ?? 0) : 0;
   const total = invoice ? parseFloat(invoice.total ?? 0) : 0;
   const taxRate = invoice ? parseFloat(invoice.taxRate ?? 0) : 0;
@@ -164,6 +167,19 @@ export default function InvoiceOverview({ isOpen, invoiceId, onClose }) {
                     {formatAmount(subtotal.toFixed(2), invoice.currency)}
                   </span>
                 </div>
+                {discountAmount > 0 ? (
+                  <div className="flex justify-between text-sm text-emerald-600">
+                    <span>
+                      {/* eslint-disable-next-line react/prop-types */}
+                      {invoice.discountType === 'percentage'
+                        ? `Discount (${parseFloat(invoice.discountValue)}%)`
+                        : 'Discount'}
+                    </span>
+                    <span className="tabular-nums">
+                      − {formatAmount(discountAmount.toFixed(2), invoice.currency)}
+                    </span>
+                  </div>
+                ) : null}
                 {taxRate > 0 ? (
                   <div className="flex justify-between text-sm text-slate-600">
                     <span>Tax ({taxRate}%)</span>

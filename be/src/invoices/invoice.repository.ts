@@ -153,6 +153,9 @@ export class InvoiceRepository {
           inv.subtotal,
           inv.tax_rate AS "taxRate",
           inv.tax_amount AS "taxAmount",
+          inv.discount_type AS "discountType",
+          inv.discount_value AS "discountValue",
+          inv.discount_amount AS "discountAmount",
           inv.total,
           inv.created_at AS "createdAt",
           inv.updated_at AS "updatedAt"
@@ -188,6 +191,9 @@ export class InvoiceRepository {
           inv.subtotal,
           inv.tax_rate AS "taxRate",
           inv.tax_amount AS "taxAmount",
+          inv.discount_type AS "discountType",
+          inv.discount_value AS "discountValue",
+          inv.discount_amount AS "discountAmount",
           inv.total,
           inv.created_at AS "createdAt",
           inv.updated_at AS "updatedAt"
@@ -241,7 +247,7 @@ export class InvoiceRepository {
       await this.ensureContractExistsForCustomer(client, dto.contractId, dto.customerId);
 
       const preparedLineItems = this.prepareLineItems(dto.lineItems);
-      const totals = this.calculateTotals(preparedLineItems, dto.taxRate);
+      const totals = this.calculateTotals(preparedLineItems, dto.taxRate, dto.discountType, dto.discountValue);
       const invoiceRes = await client.query(
         `
           INSERT INTO invoices (
@@ -254,9 +260,12 @@ export class InvoiceRepository {
             subtotal,
             tax_rate,
             tax_amount,
+            discount_type,
+            discount_value,
+            discount_amount,
             total
           )
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
           RETURNING id
         `,
         [
@@ -269,6 +278,9 @@ export class InvoiceRepository {
           totals.subtotal,
           dto.taxRate,
           totals.taxAmount,
+          dto.discountType ?? null,
+          dto.discountValue ?? null,
+          totals.discountAmount,
           totals.total,
         ],
       );
@@ -309,7 +321,7 @@ export class InvoiceRepository {
       await this.ensureContractExistsForCustomer(client, dto.contractId, dto.customerId);
 
       const preparedLineItems = this.prepareLineItems(dto.lineItems);
-      const totals = this.calculateTotals(preparedLineItems, dto.taxRate);
+      const totals = this.calculateTotals(preparedLineItems, dto.taxRate, dto.discountType, dto.discountValue);
 
       await client.query(
         `
@@ -323,9 +335,12 @@ export class InvoiceRepository {
               subtotal = $7,
               tax_rate = $8,
               tax_amount = $9,
-              total = $10,
+              discount_type = $10,
+              discount_value = $11,
+              discount_amount = $12,
+              total = $13,
               updated_at = now()
-          WHERE id = $11
+          WHERE id = $14
         `,
         [
           dto.customerId,
@@ -337,6 +352,9 @@ export class InvoiceRepository {
           totals.subtotal,
           dto.taxRate,
           totals.taxAmount,
+          dto.discountType ?? null,
+          dto.discountValue ?? null,
+          totals.discountAmount,
           totals.total,
           id,
         ],
@@ -587,12 +605,21 @@ export class InvoiceRepository {
     });
   }
 
-  private calculateTotals(lineItems: PreparedLineItem[], taxRate: number) {
+  private calculateTotals(lineItems: PreparedLineItem[], taxRate: number, discountType?: string, discountValue?: number) {
     const subtotal = this.roundMoney(lineItems.reduce((sum, item) => sum + item.amount, 0));
-    const taxAmount = this.roundMoney((subtotal * Number(taxRate)) / 100);
-    const total = this.roundMoney(subtotal + taxAmount);
 
-    return { subtotal, taxAmount, total };
+    let discountAmount = 0;
+    if (discountType && discountValue != null && discountValue > 0) {
+      discountAmount = discountType === 'percentage'
+        ? this.roundMoney((subtotal * discountValue) / 100)
+        : this.roundMoney(Math.min(discountValue, subtotal));
+    }
+
+    const discountedSubtotal = this.roundMoney(subtotal - discountAmount);
+    const taxAmount = this.roundMoney((discountedSubtotal * Number(taxRate)) / 100);
+    const total = this.roundMoney(discountedSubtotal + taxAmount);
+
+    return { subtotal, discountAmount, taxAmount, total };
   }
 
   private async insertLineItems(client: PoolClient, invoiceId: string, lineItems: PreparedLineItem[]) {

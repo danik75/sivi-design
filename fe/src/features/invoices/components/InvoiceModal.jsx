@@ -33,6 +33,8 @@ function createInitialState() {
     dueDate: '',
     currency: 'NIS',
     taxRate: 0,
+    discountType: '',
+    discountValue: '',
     notes: '',
   };
 }
@@ -141,6 +143,8 @@ export default function InvoiceModal({ isOpen, onClose, invoice, onSuccess }) {
         dueDate: invoice.dueDate,
         currency: invoice.currency,
         taxRate: parseFloat(invoice.taxRate) || 0,
+        discountType: invoice.discountType || '',
+        discountValue: invoice.discountValue != null ? String(invoice.discountValue) : '',
         notes: invoice.notes || '',
       });
       setLineItems(
@@ -205,8 +209,16 @@ export default function InvoiceModal({ isOpen, onClose, invoice, onSuccess }) {
   }, [prefillData]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const subtotal = lineItems.reduce((sum, lineItem) => sum + parseFloat(lineItem.amount || 0), 0);
-  const taxAmount = subtotal * ((parseFloat(formState.taxRate) || 0) / 100);
-  const total = subtotal + taxAmount;
+  const discountAmount = (() => {
+    const val = parseFloat(formState.discountValue) || 0;
+    if (!formState.discountType || val <= 0) return 0;
+    return formState.discountType === 'percentage'
+      ? Math.min((subtotal * val) / 100, subtotal)
+      : Math.min(val, subtotal);
+  })();
+  const discountedSubtotal = subtotal - discountAmount;
+  const taxAmount = discountedSubtotal * ((parseFloat(formState.taxRate) || 0) / 100);
+  const total = discountedSubtotal + taxAmount;
   const stepLabel =
     step === 1
       ? INVOICE_TEXT.modal.step1Title
@@ -300,6 +312,11 @@ export default function InvoiceModal({ isOpen, onClose, invoice, onSuccess }) {
       dueDate: formState.dueDate,
       currency: formState.currency,
       taxRate: parseFloat(formState.taxRate) || 0,
+      discountType: formState.discountType || undefined,
+      discountValue:
+        formState.discountType && parseFloat(formState.discountValue) > 0
+          ? parseFloat(formState.discountValue)
+          : undefined,
       notes: formState.notes.trim() || undefined,
       lineItems: lineItems.map((lineItem) => ({
         description: lineItem.description,
@@ -433,6 +450,37 @@ export default function InvoiceModal({ isOpen, onClose, invoice, onSuccess }) {
             />
           </FormField>
 
+          <FormField label={INVOICE_TEXT.modal.discountTypeLabel}>
+            <Select
+              value={formState.discountType}
+              onChange={(event) => handleFormChange('discountType', event.target.value)}
+            >
+              <option value="">{INVOICE_TEXT.modal.discountTypePlaceholder}</option>
+              <option value="percentage">Percentage (%)</option>
+              <option value="fixed">Fixed Amount</option>
+            </Select>
+          </FormField>
+
+          {formState.discountType ? (
+            <FormField
+              label={
+                formState.discountType === 'percentage'
+                  ? INVOICE_TEXT.modal.discountValuePercentLabel
+                  : INVOICE_TEXT.modal.discountValueFixedLabel
+              }
+            >
+              <Input
+                type="number"
+                min="0"
+                step="0.01"
+                max={formState.discountType === 'percentage' ? 100 : undefined}
+                value={formState.discountValue}
+                onChange={(event) => handleFormChange('discountValue', event.target.value)}
+                placeholder={formState.discountType === 'percentage' ? 'e.g. 10' : 'e.g. 100'}
+              />
+            </FormField>
+          ) : null}
+
           <FormField label={INVOICE_TEXT.modal.notesLabel} className="md:col-span-2">
             <textarea
               className={TEXTAREA_CLASS_NAME}
@@ -525,6 +573,16 @@ export default function InvoiceModal({ isOpen, onClose, invoice, onSuccess }) {
                 <span>{INVOICE_TEXT.modal.review.subtotal}</span>
                 <span>{formatAmount(subtotal, formState.currency)}</span>
               </div>
+              {discountAmount > 0 ? (
+                <div className="flex items-center justify-between text-emerald-600">
+                  <span>
+                    {formState.discountType === 'percentage'
+                      ? `Discount (${formState.discountValue}%)`
+                      : 'Discount'}
+                  </span>
+                  <span>− {formatAmount(discountAmount, formState.currency)}</span>
+                </div>
+              ) : null}
               <div className="flex items-center justify-between">
                 <span>{INVOICE_TEXT.modal.review.taxRate(parseFloat(formState.taxRate || 0))}</span>
                 <span>{formatAmount(taxAmount, formState.currency)}</span>
