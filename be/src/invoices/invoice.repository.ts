@@ -196,7 +196,8 @@ export class InvoiceRepository {
           inv.discount_amount AS "discountAmount",
           inv.total,
           inv.created_at AS "createdAt",
-          inv.updated_at AS "updatedAt"
+          inv.updated_at AS "updatedAt",
+          (SELECT co.email FROM contacts co WHERE co.customer_id = inv.customer_id AND co.is_primary = TRUE LIMIT 1) AS "customerEmail"
         FROM invoices inv
         LEFT JOIN customers c ON c.id = inv.customer_id
         JOIN contracts con ON con.id = inv.contract_id
