@@ -78,6 +78,7 @@ export default function BillingFeature() {
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth() + 1);
   const [selectedCustomerId, setSelectedCustomerId] = useState(null);
+  const [chartTab, setChartTab] = useState('trend');
 
   const params = period === 'monthly' ? { period, year, month } : { period, year };
   const { data: customers, isLoading, isError, refetch } = useBillingOverview(params);
@@ -110,8 +111,36 @@ export default function BillingFeature() {
         <TotalCards customers={customers} />
       )}
 
-      {/* Trend chart — always shown (uses its own loading state) */}
-      <ProfitabilityChart data={trendData} isLoading={trendLoading} />
+      {/* Charts tabbed pane */}
+      <div className="rounded-2xl border border-slate-100 bg-white shadow-sm overflow-hidden">
+        <div className="flex border-b border-slate-100">
+          {[
+            { key: 'trend', label: 'Profitability Trend' },
+            { key: 'distribution', label: 'Income Distribution' },
+          ].map(({ key, label }) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setChartTab(key)}
+              className={`px-5 py-3 text-sm font-medium transition-colors ${
+                chartTab === key
+                  ? 'border-b-2 border-indigo-600 text-indigo-600'
+                  : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        <div className="p-6">
+          {chartTab === 'trend' && (
+            <ProfitabilityChart data={trendData} isLoading={trendLoading} />
+          )}
+          {chartTab === 'distribution' && (
+            <IncomeChart customers={customers ?? []} onSliceClick={setSelectedCustomerId} />
+          )}
+        </div>
+      </div>
 
       {/* Loading overview */}
       {isLoading && (
@@ -141,7 +170,6 @@ export default function BillingFeature() {
             </div>
           ) : (
             <>
-              <IncomeChart customers={customers} onSliceClick={setSelectedCustomerId} />
 
               <div className="rounded-2xl border border-slate-100 bg-white shadow-sm overflow-hidden">
                 <Table>
