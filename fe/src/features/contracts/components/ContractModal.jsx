@@ -15,6 +15,8 @@ const FORM_ID = 'contract-modal-form';
 const TEXTAREA_CLASS_NAME =
   'block w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 shadow-sm transition-all duration-150 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 resize-none';
 
+const CURRENCIES = ['NIS', 'USD'];
+
 function createInitialState() {
   return {
     customerId: '',
@@ -27,7 +29,7 @@ function createInitialState() {
     amountPaid: '',
     monthlyFee: '',
     hoursPerMonth: '',
-    currency: '',
+    currency: 'NIS',
   };
 }
 
@@ -42,7 +44,7 @@ function buildPayload(formState) {
   if (formState.type === 'lump_sum') {
     return {
       ...basePayload,
-      totalAmount: formState.totalAmount,
+      totalAmount: parseFloat(formState.totalAmount),
       currency: formState.currency,
     };
   }
@@ -50,7 +52,7 @@ function buildPayload(formState) {
   if (formState.type === 'time_and_materials') {
     return {
       ...basePayload,
-      hourlyRate: formState.hourlyRate,
+      hourlyRate: parseFloat(formState.hourlyRate),
       currency: formState.currency,
     };
   }
@@ -58,8 +60,8 @@ function buildPayload(formState) {
   if (formState.type === 'prepaid_hours') {
     return {
       ...basePayload,
-      hoursPurchased: formState.hoursPurchased,
-      amountPaid: formState.amountPaid,
+      hoursPurchased: parseFloat(formState.hoursPurchased),
+      amountPaid: parseFloat(formState.amountPaid),
       currency: formState.currency,
     };
   }
@@ -67,8 +69,8 @@ function buildPayload(formState) {
   if (formState.type === 'monthly_retainer') {
     return {
       ...basePayload,
-      monthlyFee: formState.monthlyFee,
-      hoursPerMonth: formState.hoursPerMonth,
+      monthlyFee: parseFloat(formState.monthlyFee),
+      hoursPerMonth: parseFloat(formState.hoursPerMonth),
       currency: formState.currency,
     };
   }
@@ -132,10 +134,6 @@ export default function ContractModal({ isOpen, onClose, onSuccess }) {
     });
   };
 
-  const handleCurrencyChange = (value) => {
-    handleChange('currency', value.toUpperCase().slice(0, 3));
-  };
-
   const validate = () => {
     const nextErrors = {};
 
@@ -175,7 +173,7 @@ export default function ContractModal({ isOpen, onClose, onSuccess }) {
       ['lump_sum', 'time_and_materials', 'prepaid_hours', 'monthly_retainer'].includes(
         formState.type
       ) &&
-      !formState.currency.trim()
+      !formState.currency
     ) {
       nextErrors.currency = CONTRACT_TEXT.modal.currencyRequired;
     }
@@ -192,10 +190,7 @@ export default function ContractModal({ isOpen, onClose, onSuccess }) {
       return;
     }
 
-    const payload = buildPayload({
-      ...formState,
-      currency: formState.currency.trim().toUpperCase(),
-    });
+    const payload = buildPayload(formState);
 
     createMutation.mutate(payload, {
       onSuccess: (savedContract) => {
@@ -227,13 +222,17 @@ export default function ContractModal({ isOpen, onClose, onSuccess }) {
             ) : null}
           </FormField>
           <FormField label={CONTRACT_TEXT.modal.currencyLabel}>
-            <Input
+            <Select
               value={formState.currency}
-              onChange={(event) => handleCurrencyChange(event.target.value)}
-              placeholder={CONTRACT_TEXT.modal.currencyPlaceholder}
-              maxLength={3}
+              onChange={(event) => handleChange('currency', event.target.value)}
               aria-invalid={Boolean(errors.currency)}
-            />
+            >
+              {CURRENCIES.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </Select>
             {errors.currency ? (
               <p className="text-xs font-medium text-rose-600">{errors.currency}</p>
             ) : null}
@@ -260,13 +259,17 @@ export default function ContractModal({ isOpen, onClose, onSuccess }) {
             ) : null}
           </FormField>
           <FormField label={CONTRACT_TEXT.modal.currencyLabel}>
-            <Input
+            <Select
               value={formState.currency}
-              onChange={(event) => handleCurrencyChange(event.target.value)}
-              placeholder={CONTRACT_TEXT.modal.currencyPlaceholder}
-              maxLength={3}
+              onChange={(event) => handleChange('currency', event.target.value)}
               aria-invalid={Boolean(errors.currency)}
-            />
+            >
+              {CURRENCIES.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </Select>
             {errors.currency ? (
               <p className="text-xs font-medium text-rose-600">{errors.currency}</p>
             ) : null}
@@ -307,13 +310,17 @@ export default function ContractModal({ isOpen, onClose, onSuccess }) {
             ) : null}
           </FormField>
           <FormField label={CONTRACT_TEXT.modal.currencyLabel} className="md:col-span-2">
-            <Input
+            <Select
               value={formState.currency}
-              onChange={(event) => handleCurrencyChange(event.target.value)}
-              placeholder={CONTRACT_TEXT.modal.currencyPlaceholder}
-              maxLength={3}
+              onChange={(event) => handleChange('currency', event.target.value)}
               aria-invalid={Boolean(errors.currency)}
-            />
+            >
+              {CURRENCIES.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </Select>
             {errors.currency ? (
               <p className="text-xs font-medium text-rose-600">{errors.currency}</p>
             ) : null}
@@ -354,13 +361,17 @@ export default function ContractModal({ isOpen, onClose, onSuccess }) {
             ) : null}
           </FormField>
           <FormField label={CONTRACT_TEXT.modal.currencyLabel} className="md:col-span-2">
-            <Input
+            <Select
               value={formState.currency}
-              onChange={(event) => handleCurrencyChange(event.target.value)}
-              placeholder={CONTRACT_TEXT.modal.currencyPlaceholder}
-              maxLength={3}
+              onChange={(event) => handleChange('currency', event.target.value)}
               aria-invalid={Boolean(errors.currency)}
-            />
+            >
+              {CURRENCIES.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </Select>
             {errors.currency ? (
               <p className="text-xs font-medium text-rose-600">{errors.currency}</p>
             ) : null}
