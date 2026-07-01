@@ -5,9 +5,11 @@ import ChevronDownIcon from '@/components/chadcn/icons/ChevronDownIcon';
 import ClipboardIcon from '@/components/chadcn/icons/ClipboardIcon';
 import CreditCardIcon from '@/components/chadcn/icons/CreditCardIcon';
 import DocumentTextIcon from '@/components/chadcn/icons/DocumentTextIcon';
+import ReceiptIcon from '@/components/chadcn/icons/ReceiptIcon';
 import UsersIcon from '@/components/chadcn/icons/UsersIcon';
-import CustomersFeature from '@/features/customers';
 import ContractsFeature from '@/features/contracts';
+import CustomersFeature from '@/features/customers';
+import ExpensesFeature from '@/features/expenses';
 import TasksFeature from '@/features/tasks';
 
 const PANEL_TEXT = {
@@ -22,6 +24,7 @@ const NAV_ITEMS = [
   { id: 'customers', label: 'Customers', Icon: UsersIcon },
   { id: 'tasks', label: 'Tasks', Icon: ClipboardIcon },
   { id: 'contracts', label: 'Contracts', Icon: DocumentTextIcon },
+  { id: 'expenses', label: 'Expenses', Icon: ReceiptIcon },
   { id: 'billing', label: 'Billing', Icon: CreditCardIcon },
 ];
 
@@ -79,6 +82,10 @@ export default function MainPanel({ onLogout }) {
       return <ContractsFeature />;
     }
 
+    if (activeModule === 'expenses') {
+      return <ExpensesFeature />;
+    }
+
     return (
       <div className="space-y-6">
         <div>
@@ -112,7 +119,6 @@ export default function MainPanel({ onLogout }) {
       </header>
 
       <div className="relative flex min-h-0 flex-1 overflow-hidden">
-        {/* Mobile backdrop */}
         {isSidebarOpen && (
           <button
             type="button"
@@ -122,7 +128,6 @@ export default function MainPanel({ onLogout }) {
           />
         )}
 
-        {/* Mobile sidebar — fixed overlay, slide in/out */}
         <aside
           className={`fixed inset-y-0 left-0 z-30 w-56 shrink-0 border-r border-slate-100 bg-white px-3 py-4 shadow-xl transition-transform duration-200 md:hidden ${
             isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
@@ -141,7 +146,6 @@ export default function MainPanel({ onLogout }) {
           <SidebarNav activeModule={activeModule} onSelect={setActiveModule} />
         </aside>
 
-        {/* Mobile open tab — shown when sidebar is closed */}
         {!isSidebarOpen && (
           <button
             type="button"
@@ -153,7 +157,6 @@ export default function MainPanel({ onLogout }) {
           </button>
         )}
 
-        {/* Desktop sidebar — collapses to icon-only strip (w-14); arrow widget at right edge */}
         <div
           className={`relative hidden shrink-0 border-r border-slate-100 bg-white transition-all duration-200 md:block ${
             isSidebarOpen ? 'w-56' : 'w-14'
@@ -167,7 +170,6 @@ export default function MainPanel({ onLogout }) {
             />
           </div>
 
-          {/* Arrow toggle — floats at sidebar right edge */}
           <button
             type="button"
             onClick={() => setIsSidebarOpen((o) => !o)}
