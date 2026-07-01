@@ -6,6 +6,7 @@ import FormField from '@/components/chadcn/FormField';
 import Select from '@/components/chadcn/Select';
 import Table, { TableBody, TableHead, TableHeader, TableRow } from '@/components/chadcn/Table';
 import useCustomers from '@/features/customers/hooks/useCustomers';
+import InvoiceOverview from '@/features/invoices/components/InvoiceOverview';
 import InvoiceRow from '@/features/invoices/components/InvoiceRow';
 import { getApiErrorMessage, INVOICE_STATUSES, INVOICE_TEXT } from '@/features/invoices/constants';
 import useInvoices from '@/features/invoices/hooks/useInvoices';
@@ -16,6 +17,11 @@ export default function InvoiceGrid({ onCreate, onEdit, onDelete, onStatusTransi
   const [selectedCustomerId, setSelectedCustomerId] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
   const [page, setPage] = useState(1);
+  const [selectedInvoiceId, setSelectedInvoiceId] = useState(null);
+
+  const handleView = (invoice) => {
+    setSelectedInvoiceId((prev) => (prev === invoice.id ? null : invoice.id));
+  };
 
   const { data, error, isError, isLoading, refetch } = useInvoices({
     customerId: selectedCustomerId || undefined,
@@ -152,6 +158,8 @@ export default function InvoiceGrid({ onCreate, onEdit, onDelete, onStatusTransi
                   onEdit={onEdit}
                   onDelete={onDelete}
                   onStatusTransition={onStatusTransition}
+                  onView={handleView}
+                  isSelected={invoice.id === selectedInvoiceId}
                 />
               ))}
             </TableBody>
@@ -193,6 +201,10 @@ export default function InvoiceGrid({ onCreate, onEdit, onDelete, onStatusTransi
           action={emptyStateAction}
         />
       )}
+
+      {selectedInvoiceId ? (
+        <InvoiceOverview invoiceId={selectedInvoiceId} onClose={() => setSelectedInvoiceId(null)} />
+      ) : null}
     </section>
   );
 }

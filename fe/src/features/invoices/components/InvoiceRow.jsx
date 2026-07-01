@@ -11,15 +11,45 @@ import {
   isEditable,
 } from '@/features/invoices/constants';
 
+const EyeIcon = ({ className = 'h-4 w-4' }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    className={className}
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="currentColor"
+    strokeWidth={2}
+  >
+    <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+    />
+  </svg>
+);
+
+EyeIcon.propTypes = { className: PropTypes.string };
+
 const formatDate = (iso) => (iso ? new Date(iso).toLocaleDateString() : INVOICE_TEXT.placeholder);
 
-export default function InvoiceRow({ invoice, onEdit, onDelete, onStatusTransition }) {
+export default function InvoiceRow({
+  invoice,
+  onEdit,
+  onDelete,
+  onStatusTransition,
+  onView,
+  isSelected,
+}) {
   const contractLabel = invoice.contractTypeLabel || INVOICE_TEXT.placeholder;
   const statusLabel = INVOICE_TEXT.status[invoice.status] || INVOICE_TEXT.placeholder;
 
   return (
-    <TableRow>
-      <TableCell className="font-mono font-semibold text-slate-900">
+    <TableRow className={isSelected ? 'bg-indigo-50' : undefined}>
+      <TableCell
+        className={`font-mono font-semibold cursor-pointer ${isSelected ? 'text-indigo-700' : 'text-slate-900'}`}
+        onClick={() => onView(invoice)}
+      >
         {invoice.invoiceNumber}
       </TableCell>
       <TableCell>{invoice.customerName || INVOICE_TEXT.placeholder}</TableCell>
@@ -32,6 +62,15 @@ export default function InvoiceRow({ invoice, onEdit, onDelete, onStatusTransiti
       <TableCell>{formatAmount(invoice.total, invoice.currency)}</TableCell>
       <TableCell>
         <div className="flex items-center justify-end gap-2">
+          <Button
+            type="button"
+            variant="ghost"
+            className="p-2"
+            onClick={() => onView(invoice)}
+            aria-label="View invoice"
+          >
+            <EyeIcon />
+          </Button>
           {isEditable(invoice.status) ? (
             <>
               <Button
@@ -105,4 +144,10 @@ InvoiceRow.propTypes = {
   onEdit: PropTypes.func.isRequired,
   onDelete: PropTypes.func.isRequired,
   onStatusTransition: PropTypes.func.isRequired,
+  onView: PropTypes.func.isRequired,
+  isSelected: PropTypes.bool,
+};
+
+InvoiceRow.defaultProps = {
+  isSelected: false,
 };
