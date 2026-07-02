@@ -100,12 +100,27 @@ else
   echo "No db/seed.sql found; skipping seed"
 fi
 
+# Helper: kill processes listening on a given port
+kill_port() {
+  local port=$1
+  local pids
+  pids=$(lsof -ti TCP:"$port" -sTCP:LISTEN 2>/dev/null || true)
+  if [ -n "$pids" ]; then
+    echo "Stopping process(es) on port $port (PIDs: $pids)"
+    echo "$pids" | xargs kill -TERM 2>/dev/null || true
+    sleep 1
+    # Force-kill if still running
+    pids=$(lsof -ti TCP:"$port" -sTCP:LISTEN 2>/dev/null || true)
+    [ -n "$pids" ] && echo "$pids" | xargs kill -KILL 2>/dev/null || true
+  fi
+}
+
 # Start frontend (fe) — Vite React
 FE_DIR="$REPO_ROOT/fe"
 if [ -d "$FE_DIR" ]; then
   echo "Starting frontend (fe)"
+  kill_port 5173
   (cd "$FE_DIR" && npm install --no-audit --no-fund)
-  # start detached with nohup, logs to /tmp/fe_server.log
   nohup sh -c "cd '$FE_DIR' && npm run dev" > /tmp/fe_server.log 2>&1 &
   echo "Frontend started (logs: /tmp/fe_server.log)"
 else
@@ -116,6 +131,7 @@ fi
 BE_DIR="$REPO_ROOT/be"
 if [ -d "$BE_DIR" ]; then
   echo "Starting backend (be)"
+  kill_port 3000
   (cd "$BE_DIR" && npm install --no-audit --no-fund)
 
   # Load backend env from be/.env if present (do not commit secrets into repo)
@@ -134,10 +150,11 @@ if [ -d "$BE_DIR" ]; then
   export PGDATABASE=${PGDATABASE:-sivi_db}
   export JWT_SECRET=${JWT_SECRET:-devsecret}
   export JWT_EXPIRATION_MINUTES=${JWT_EXPIRATION_MINUTES:-30}
+  export GROQ_API_KEY=${GROQ_API_KEY:-}
 
-  echo "Backend env: PGUSER=$PGUSER, PGDATABASE=$PGDATABASE, JWT_SECRET_SET=${JWT_SECRET:+yes}"
+  echo "Backend env: PGUSER=$PGUSER, PGDATABASE=$PGDATABASE, JWT_SECRET_SET=${JWT_SECRET:+yes}, GROQ_API_KEY_SET=${GROQ_API_KEY:+yes}"
 
-  nohup sh -c "cd '$BE_DIR' && export PGHOST='$PGHOST' PGPORT='$PGPORT' PGUSER='$PGUSER' PGPASSWORD='$PGPASSWORD' PGDATABASE='$PGDATABASE' JWT_SECRET='$JWT_SECRET' JWT_EXPIRATION_MINUTES='$JWT_EXPIRATION_MINUTES' && npm run start:dev" > /tmp/be_server.log 2>&1 &
+  nohup sh -c "cd '$BE_DIR' && export PGHOST='$PGHOST' PGPORT='$PGPORT' PGUSER='$PGUSER' PGPASSWORD='$PGPASSWORD' PGDATABASE='$PGDATABASE' JWT_SECRET='$JWT_SECRET' JWT_EXPIRATION_MINUTES='$JWT_EXPIRATION_MINUTES' GROQ_API_KEY='$GROQ_API_KEY' && npm run start:dev" > /tmp/be_server.log 2>&1 &
   echo "Backend started (logs: /tmp/be_server.log)"
 else
   echo "Backend directory not found at $BE_DIR; skipping backend"
