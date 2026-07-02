@@ -217,7 +217,7 @@ body {
 .sig-row { display: flex; justify-content: space-between; gap: 16mm; align-items: flex-start; }
 .sig-b { flex: 1; text-align: center; position: relative; }
 /* Transparent PNG drawn over the continuous line (line stays visible under it). */
-.sig-scribble { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); width: 46mm; margin-bottom: -1mm; }
+.sig-scribble { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); width: 46mm; margin-bottom: -2mm; }
 .sig-line { border-top: 1px solid #111; padding-top: 1.5mm; font-size: 9pt; }
 .sig-sub { font-size: 8pt; color: #555; margin-top: 1mm; line-height: 1.4; }
 
