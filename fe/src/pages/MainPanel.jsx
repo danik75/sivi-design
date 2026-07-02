@@ -4,6 +4,7 @@ import UserMenu from '@/components/UserMenu';
 import ChevronDownIcon from '@/components/chadcn/icons/ChevronDownIcon';
 import ClipboardIcon from '@/components/chadcn/icons/ClipboardIcon';
 import BarChartIcon from '@/components/chadcn/icons/BarChartIcon';
+import BriefcaseIcon from '@/components/chadcn/icons/BriefcaseIcon';
 import CreditCardIcon from '@/components/chadcn/icons/CreditCardIcon';
 import DocumentTextIcon from '@/components/chadcn/icons/DocumentTextIcon';
 import FileInvoiceIcon from '@/components/chadcn/icons/FileInvoiceIcon';
@@ -11,6 +12,7 @@ import HomeIcon from '@/components/chadcn/icons/HomeIcon';
 import ReceiptIcon from '@/components/chadcn/icons/ReceiptIcon';
 import UsersIcon from '@/components/chadcn/icons/UsersIcon';
 import BillingFeature from '@/features/billing';
+import BusinessProposalsFeature from '@/features/business-proposals';
 import ReportsFeature from '@/features/reports';
 import ContractsFeature from '@/features/contracts';
 import CustomersFeature from '@/features/customers';
@@ -32,6 +34,7 @@ const NAV_ITEMS = [
   { id: 'customers', label: 'Customers', Icon: UsersIcon },
   { id: 'tasks', label: 'Tasks', Icon: ClipboardIcon },
   { id: 'contracts', label: 'Contracts', Icon: DocumentTextIcon },
+  { id: 'businessProposals', label: 'Business Proposals', Icon: BriefcaseIcon },
   { id: 'expenses', label: 'Expenses', Icon: ReceiptIcon },
   { id: 'invoices', label: 'Invoices', Icon: FileInvoiceIcon },
   { id: 'billing', label: 'Billing', Icon: CreditCardIcon },
@@ -94,6 +97,10 @@ export default function MainPanel({ onLogout }) {
 
     if (activeModule === 'contracts') {
       return <ContractsFeature />;
+    }
+
+    if (activeModule === 'businessProposals') {
+      return <BusinessProposalsFeature />;
     }
 
     if (activeModule === 'expenses') {

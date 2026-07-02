@@ -44,6 +44,20 @@ $ npm run start:dev
 $ npm run start:prod
 ```
 
+## Business proposal LLM configuration
+
+The business proposal generation flow uses Groq chat completions.
+
+- `GROQ_API_KEY` (required for generation)
+- `GROQ_MODEL` (optional, default: `llama-3.3-70b-versatile`)
+
+Example:
+
+```bash
+export GROQ_API_KEY=your_key_here
+export GROQ_MODEL=llama-3.3-70b-versatile
+```
+
 ## Run tests
 
 ```bash
