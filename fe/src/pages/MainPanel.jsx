@@ -3,12 +3,14 @@ import { useMemo, useState } from 'react';
 import UserMenu from '@/components/UserMenu';
 import ChevronDownIcon from '@/components/chadcn/icons/ChevronDownIcon';
 import ClipboardIcon from '@/components/chadcn/icons/ClipboardIcon';
+import BarChartIcon from '@/components/chadcn/icons/BarChartIcon';
 import CreditCardIcon from '@/components/chadcn/icons/CreditCardIcon';
 import DocumentTextIcon from '@/components/chadcn/icons/DocumentTextIcon';
 import FileInvoiceIcon from '@/components/chadcn/icons/FileInvoiceIcon';
 import ReceiptIcon from '@/components/chadcn/icons/ReceiptIcon';
 import UsersIcon from '@/components/chadcn/icons/UsersIcon';
 import BillingFeature from '@/features/billing';
+import ReportsFeature from '@/features/reports';
 import ContractsFeature from '@/features/contracts';
 import CustomersFeature from '@/features/customers';
 import ExpensesFeature from '@/features/expenses';
@@ -30,6 +32,7 @@ const NAV_ITEMS = [
   { id: 'expenses', label: 'Expenses', Icon: ReceiptIcon },
   { id: 'invoices', label: 'Invoices', Icon: FileInvoiceIcon },
   { id: 'billing', label: 'Billing', Icon: CreditCardIcon },
+  { id: 'reports', label: 'Reports', Icon: BarChartIcon },
 ];
 
 function SidebarNav({ activeModule, onSelect, collapsed }) {
@@ -96,6 +99,10 @@ export default function MainPanel({ onLogout }) {
 
     if (activeModule === 'billing') {
       return <BillingFeature />;
+    }
+
+    if (activeModule === 'reports') {
+      return <ReportsFeature />;
     }
 
     return (
@@ -194,7 +201,7 @@ export default function MainPanel({ onLogout }) {
           </button>
         </div>
 
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">{renderModule()}</main>
+        <main className={`flex-1 min-h-0 ${activeModule === 'reports' ? 'overflow-hidden flex flex-col' : 'overflow-y-auto p-4 sm:p-6 lg:p-8'}`}>{renderModule()}</main>
       </div>
     </div>
   );
