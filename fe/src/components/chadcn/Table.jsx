@@ -2,8 +2,8 @@ import PropTypes from 'prop-types';
 
 function Table({ children }) {
   return (
-    <div className="w-full overflow-x-auto rounded-xl border border-slate-100 shadow-sm">
-      <table className="w-full text-sm">{children}</table>
+    <div className="w-full overflow-x-auto rounded-xl border border-slate-100 bg-white shadow-sm">
+      <table className="w-full text-sm bg-white">{children}</table>
     </div>
   );
 }
