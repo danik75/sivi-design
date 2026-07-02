@@ -5,6 +5,6 @@ export default function useCustomerBillingTrend(customerId, params) {
   return useQuery(
     ['billing-customer-trend', customerId, params],
     () => api.get(`/billing/customer/${customerId}/trend`, { params }).then((r) => r.data),
-    { enabled: Boolean(customerId) },
+    { enabled: Boolean(customerId) }
   );
 }

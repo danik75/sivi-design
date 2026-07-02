@@ -98,18 +98,11 @@ export default function BillingFeature() {
           <h1 className="text-3xl font-bold text-slate-900">Billing</h1>
           <p className="mt-1 text-sm text-slate-500">Revenue and expenses summary by period.</p>
         </div>
-        <PeriodSelector
-          period={period}
-          year={year}
-          month={month}
-          onChange={handlePeriodChange}
-        />
+        <PeriodSelector period={period} year={year} month={month} onChange={handlePeriodChange} />
       </div>
 
       {/* Period totals */}
-      {!isLoading && !isError && customers?.length > 0 && (
-        <TotalCards customers={customers} />
-      )}
+      {!isLoading && !isError && customers?.length > 0 && <TotalCards customers={customers} />}
 
       {/* Charts tabbed pane */}
       <div className="rounded-2xl border border-slate-100 bg-white shadow-sm overflow-hidden">
@@ -133,9 +126,7 @@ export default function BillingFeature() {
           ))}
         </div>
         <div className="p-6">
-          {chartTab === 'trend' && (
-            <ProfitabilityChart data={trendData} isLoading={trendLoading} />
-          )}
+          {chartTab === 'trend' && <ProfitabilityChart data={trendData} isLoading={trendLoading} />}
           {chartTab === 'distribution' && (
             <IncomeChart customers={customers ?? []} onSliceClick={setSelectedCustomerId} />
           )}
@@ -170,7 +161,6 @@ export default function BillingFeature() {
             </div>
           ) : (
             <>
-
               <div className="rounded-2xl border border-slate-100 bg-white shadow-sm overflow-hidden">
                 <Table>
                   <TableHead>
@@ -198,7 +188,9 @@ export default function BillingFeature() {
                               <div className="flex items-center gap-2">
                                 <span
                                   className="inline-block h-2.5 w-2.5 shrink-0 rounded-full"
-                                  style={{ backgroundColor: CHART_COLORS[ci % CHART_COLORS.length] }}
+                                  style={{
+                                    backgroundColor: CHART_COLORS[ci % CHART_COLORS.length],
+                                  }}
                                 />
                                 <span className="font-medium text-slate-800 hover:text-indigo-600">
                                   {customer.customerName}
@@ -221,7 +213,7 @@ export default function BillingFeature() {
                             {formatAmount(c.balance, c.currency)}
                           </TableCell>
                         </TableRow>
-                      )),
+                      ))
                     )}
                   </TableBody>
                 </Table>

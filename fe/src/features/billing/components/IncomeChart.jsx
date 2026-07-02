@@ -9,7 +9,8 @@ function CustomTooltip({ active, payload }) {
     <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 shadow-lg text-sm">
       <p className="font-medium text-slate-900">{name}</p>
       <p className="text-slate-500">
-        {parseFloat(value).toLocaleString('en-US', { minimumFractionDigits: 2 })} {currency} · {pct}%
+        {parseFloat(value).toLocaleString('en-US', { minimumFractionDigits: 2 })} {currency} · {pct}
+        %
       </p>
     </div>
   );

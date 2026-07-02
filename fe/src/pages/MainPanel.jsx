@@ -7,6 +7,7 @@ import BarChartIcon from '@/components/chadcn/icons/BarChartIcon';
 import CreditCardIcon from '@/components/chadcn/icons/CreditCardIcon';
 import DocumentTextIcon from '@/components/chadcn/icons/DocumentTextIcon';
 import FileInvoiceIcon from '@/components/chadcn/icons/FileInvoiceIcon';
+import HomeIcon from '@/components/chadcn/icons/HomeIcon';
 import ReceiptIcon from '@/components/chadcn/icons/ReceiptIcon';
 import UsersIcon from '@/components/chadcn/icons/UsersIcon';
 import BillingFeature from '@/features/billing';
@@ -14,6 +15,7 @@ import ReportsFeature from '@/features/reports';
 import ContractsFeature from '@/features/contracts';
 import CustomersFeature from '@/features/customers';
 import ExpensesFeature from '@/features/expenses';
+import HomeFeature from '@/features/home';
 import InvoicesFeature from '@/features/invoices';
 import TasksFeature from '@/features/tasks';
 
@@ -26,6 +28,7 @@ const PANEL_TEXT = {
 };
 
 const NAV_ITEMS = [
+  { id: 'home', label: 'Home', Icon: HomeIcon },
   { id: 'customers', label: 'Customers', Icon: UsersIcon },
   { id: 'tasks', label: 'Tasks', Icon: ClipboardIcon },
   { id: 'contracts', label: 'Contracts', Icon: DocumentTextIcon },
@@ -66,7 +69,7 @@ SidebarNav.propTypes = {
 };
 
 export default function MainPanel({ onLogout }) {
-  const [activeModule, setActiveModule] = useState('customers');
+  const [activeModule, setActiveModule] = useState('home');
   const [isSidebarOpen, setIsSidebarOpen] = useState(
     () => typeof window !== 'undefined' && window.innerWidth >= 768
   );
@@ -77,6 +80,10 @@ export default function MainPanel({ onLogout }) {
   );
 
   const renderModule = () => {
+    if (activeModule === 'home') {
+      return <HomeFeature />;
+    }
+
     if (activeModule === 'customers') {
       return <CustomersFeature />;
     }
@@ -201,7 +208,11 @@ export default function MainPanel({ onLogout }) {
           </button>
         </div>
 
-        <main className={`flex-1 min-h-0 ${activeModule === 'reports' ? 'overflow-hidden flex flex-col' : 'overflow-y-auto p-4 sm:p-6 lg:p-8'}`}>{renderModule()}</main>
+        <main
+          className={`flex-1 min-h-0 ${activeModule === 'reports' ? 'overflow-hidden flex flex-col' : 'overflow-y-auto p-4 sm:p-6 lg:p-8'}`}
+        >
+          {renderModule()}
+        </main>
       </div>
     </div>
   );

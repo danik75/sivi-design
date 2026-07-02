@@ -1,0 +1,276 @@
+import useInvoices from '@/features/invoices/hooks/useInvoices';
+import {
+  useCustomerProfitability,
+  useProjectStatus,
+  useRevenueBreakdown,
+} from '@/features/reports/hooks';
+import useTasks from '@/features/tasks/hooks/useTasks';
+
+const HOME_TEXT = {
+  title: 'Home Dashboard',
+  subtitle: 'Overview of tasks, receivables, project health, and current month performance.',
+  ganttTitle: 'Top 5 Relevant Tasks (Gantt)',
+  unpaidTitle: 'Sent but Unpaid Invoices',
+  projectTitle: 'Project Status',
+  financeTitle: 'Current Month Billing',
+  incomeTitle: 'Income Distribution',
+  taskEmpty: 'No relevant tasks to show.',
+  unpaidEmpty: 'No sent invoices waiting for payment.',
+  projectEmpty: 'No project status data available.',
+  financeEmpty: 'No billing data available for this month.',
+  incomeEmpty: 'No income distribution data available.',
+  labels: {
+    todo: 'To Do',
+    inProgress: 'In Progress',
+    done: 'Done',
+    cancelled: 'Cancelled',
+    revenue: 'Revenue',
+    expenses: 'Expenses',
+    profit: 'Profit',
+  },
+};
+
+const now = new Date();
+const CURRENT_MONTH_FILTER = {
+  period: 'monthly',
+  year: now.getFullYear(),
+  month: now.getMonth() + 1,
+};
+
+const parseDate = (value) => {
+  if (!value) return null;
+  if (typeof value === 'string' && value.includes('T')) {
+    const d = new Date(value);
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  }
+  const [y, m, d] = value.split('-').map(Number);
+  return new Date(y, m - 1, d);
+};
+
+const fmtDate = (value) => {
+  const d = parseDate(value);
+  return d ? d.toLocaleDateString() : '—';
+};
+
+const fmtMoney = (value, currency = '') =>
+  `${parseFloat(value || 0).toFixed(2)} ${currency}`.trim();
+
+const renderTasksMiniGantt = (tasks) => {
+  if (!tasks.length) {
+    return <p className="text-sm text-slate-400">{HOME_TEXT.taskEmpty}</p>;
+  }
+
+  const starts = tasks.map((t) => parseDate(t.startDate)).filter(Boolean);
+  const ends = tasks.map((t) => parseDate(t.endDate)).filter(Boolean);
+  const rangeStart = new Date(Math.min(...starts.map((d) => d.getTime())));
+  const rangeEnd = new Date(Math.max(...ends.map((d) => d.getTime())));
+  const totalDays = Math.max(1, Math.ceil((rangeEnd - rangeStart) / 86400000) + 1);
+
+  return (
+    <div className="space-y-2">
+      {tasks.map((task) => {
+        const start = parseDate(task.startDate);
+        const end = parseDate(task.endDate);
+        if (!start || !end) return null;
+        const left = ((start - rangeStart) / 86400000 / totalDays) * 100;
+        const width = (Math.max(1, (end - start) / 86400000 + 1) / totalDays) * 100;
+        return (
+          <div key={task.id} className="grid grid-cols-[220px_1fr] items-center gap-3">
+            <div className="truncate text-sm text-slate-700">
+              <span className="font-medium">{task.name}</span>
+              <span className="ml-2 text-xs text-slate-400">{fmtDate(task.endDate)}</span>
+            </div>
+            <div className="relative h-7 rounded-lg bg-slate-100">
+              <div
+                className="absolute inset-y-1 rounded-md bg-indigo-500"
+                style={{
+                  left: `${Math.max(0, left)}%`,
+                  width: `${Math.min(100 - Math.max(0, left), width)}%`,
+                }}
+              />
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
+export default function HomeFeature() {
+  const { data: tasksData } = useTasks({ limit: 500 });
+  const { data: sentInvoices } = useInvoices({ status: 'sent' });
+  const { data: projectStatus } = useProjectStatus({});
+  const { data: profitability } = useCustomerProfitability(CURRENT_MONTH_FILTER);
+  const { data: revenueBreakdown } = useRevenueBreakdown(CURRENT_MONTH_FILTER);
+
+  const relevantTasks = (tasksData?.data ?? [])
+    .filter((t) => t.status !== 'cancelled')
+    .sort((a, b) => {
+      if (a.status === 'in_progress' && b.status !== 'in_progress') return -1;
+      if (b.status === 'in_progress' && a.status !== 'in_progress') return 1;
+      return (
+        (parseDate(a.endDate)?.getTime() ?? Number.MAX_SAFE_INTEGER) -
+        (parseDate(b.endDate)?.getTime() ?? Number.MAX_SAFE_INTEGER)
+      );
+    })
+    .slice(0, 5);
+
+  const unpaid = (sentInvoices ?? [])
+    .slice()
+    .sort(
+      (a, b) => (parseDate(a.dueDate)?.getTime() ?? 0) - (parseDate(b.dueDate)?.getTime() ?? 0)
+    );
+
+  const projectSummary = projectStatus?.summary;
+
+  const financeRows = profitability?.rows ?? [];
+  const totalRevenue = financeRows.reduce((s, r) => s + parseFloat(r.revenue || 0), 0);
+  const totalExpenses = financeRows.reduce((s, r) => s + parseFloat(r.expenses || 0), 0);
+  const totalProfit = financeRows.reduce((s, r) => s + parseFloat(r.profit || 0), 0);
+
+  const incomeDistRows = (revenueBreakdown?.byCustomer ?? [])
+    .slice()
+    .sort((a, b) => parseFloat(b.revenue || 0) - parseFloat(a.revenue || 0))
+    .slice(0, 5);
+  const totalIncome = incomeDistRows.reduce((s, r) => s + parseFloat(r.revenue || 0), 0);
+
+  return (
+    <section className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold text-slate-900">{HOME_TEXT.title}</h1>
+        <p className="mt-2 text-sm text-slate-500">{HOME_TEXT.subtitle}</p>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+        <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-100">
+          <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-500">
+            {HOME_TEXT.ganttTitle}
+          </h2>
+          {renderTasksMiniGantt(relevantTasks)}
+        </div>
+
+        <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-100">
+          <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-500">
+            {HOME_TEXT.unpaidTitle}
+          </h2>
+          {unpaid.length ? (
+            <div className="space-y-2">
+              {unpaid.map((inv) => (
+                <div
+                  key={inv.id}
+                  className="flex items-center justify-between rounded-lg border border-slate-100 px-3 py-2"
+                >
+                  <div>
+                    <p className="font-mono text-sm font-semibold text-slate-800">
+                      {inv.invoiceNumber}
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      {inv.customerName} · {fmtDate(inv.dueDate)}
+                    </p>
+                  </div>
+                  <div className="text-sm font-semibold text-slate-900">
+                    {fmtMoney(inv.total, inv.currency)}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-slate-400">{HOME_TEXT.unpaidEmpty}</p>
+          )}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+        <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-100">
+          <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-500">
+            {HOME_TEXT.projectTitle}
+          </h2>
+          {projectSummary ? (
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <div className="rounded-xl bg-slate-50 p-3">
+                <p className="text-xs text-slate-400">{HOME_TEXT.labels.todo}</p>
+                <p className="text-lg font-bold text-slate-700">{projectSummary.todo ?? 0}</p>
+              </div>
+              <div className="rounded-xl bg-slate-50 p-3">
+                <p className="text-xs text-slate-400">{HOME_TEXT.labels.inProgress}</p>
+                <p className="text-lg font-bold text-indigo-600">
+                  {projectSummary.in_progress ?? 0}
+                </p>
+              </div>
+              <div className="rounded-xl bg-slate-50 p-3">
+                <p className="text-xs text-slate-400">{HOME_TEXT.labels.done}</p>
+                <p className="text-lg font-bold text-emerald-600">{projectSummary.done ?? 0}</p>
+              </div>
+              <div className="rounded-xl bg-slate-50 p-3">
+                <p className="text-xs text-slate-400">{HOME_TEXT.labels.cancelled}</p>
+                <p className="text-lg font-bold text-rose-600">{projectSummary.cancelled ?? 0}</p>
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm text-slate-400">{HOME_TEXT.projectEmpty}</p>
+          )}
+        </div>
+
+        <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-100">
+          <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-500">
+            {HOME_TEXT.financeTitle}
+          </h2>
+          {financeRows.length ? (
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <div className="rounded-xl bg-slate-50 p-3">
+                <p className="text-xs text-slate-400">{HOME_TEXT.labels.revenue}</p>
+                <p className="text-lg font-bold text-indigo-600">{fmtMoney(totalRevenue)}</p>
+              </div>
+              <div className="rounded-xl bg-slate-50 p-3">
+                <p className="text-xs text-slate-400">{HOME_TEXT.labels.expenses}</p>
+                <p className="text-lg font-bold text-rose-600">{fmtMoney(totalExpenses)}</p>
+              </div>
+              <div className="rounded-xl bg-slate-50 p-3">
+                <p className="text-xs text-slate-400">{HOME_TEXT.labels.profit}</p>
+                <p
+                  className={`text-lg font-bold ${totalProfit >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}
+                >
+                  {fmtMoney(totalProfit)}
+                </p>
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm text-slate-400">{HOME_TEXT.financeEmpty}</p>
+          )}
+        </div>
+      </div>
+
+      <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-100">
+        <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-500">
+          {HOME_TEXT.incomeTitle}
+        </h2>
+        {incomeDistRows.length ? (
+          <div className="space-y-2">
+            {incomeDistRows.map((row) => {
+              const revenue = parseFloat(row.revenue || 0);
+              const pct = totalIncome > 0 ? (revenue / totalIncome) * 100 : 0;
+              return (
+                <div key={`${row.customerName}-${row.currency}`} className="space-y-1">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-slate-700">{row.customerName}</span>
+                    <span className="font-medium text-slate-900">
+                      {fmtMoney(revenue, row.currency)}
+                    </span>
+                  </div>
+                  <div className="h-2 rounded-full bg-slate-100">
+                    <div
+                      className="h-2 rounded-full bg-indigo-500"
+                      style={{ width: `${Math.max(2, pct)}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <p className="text-sm text-slate-400">{HOME_TEXT.incomeEmpty}</p>
+        )}
+      </div>
+    </section>
+  );
+}
