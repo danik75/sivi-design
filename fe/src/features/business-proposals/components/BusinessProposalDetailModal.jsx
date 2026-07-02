@@ -176,11 +176,10 @@ function ContentEditor({ content, onChange }) {
 }
 
 export default function BusinessProposalDetailModal({ proposalId, isOpen, onClose }) {
-  const [activeTab, setActiveTab] = useState('he');
+  const [viewTab, setViewTab] = useState('details');
   const [editedContent, setEditedContent] = useState(null);
   const [refinementText, setRefinementText] = useState('');
   const [refineError, setRefineError] = useState('');
-  const [showPreview, setShowPreview] = useState(false);
   const { showToast } = useToast();
   const { data, isLoading, isError } = useBusinessProposal(proposalId, isOpen);
   const refineMutation = useRefineBusinessProposal();
@@ -188,21 +187,24 @@ export default function BusinessProposalDetailModal({ proposalId, isOpen, onClos
   const isRefining = refineMutation.isLoading || refineMutation.isPending;
   const isSaving = updateMutation.isLoading || updateMutation.isPending;
 
+  // Reset transient UI whenever the modal opens or switches to another proposal.
   useEffect(() => {
     if (!isOpen) return;
+    setViewTab('details');
     setRefinementText('');
     setRefineError('');
-    setEditedContent(null);
-    setShowPreview(false);
     refineMutation.reset();
     updateMutation.reset();
-  }, [isOpen]);
+  }, [isOpen, proposalId]);
 
+  // Sync the editable content from the fetched proposal. Depending on isOpen and
+  // proposalId (not just the contentJson reference) ensures the editor populates
+  // even when the query is already cached — otherwise the details only appeared
+  // on the second open.
   useEffect(() => {
-    if (data?.contentJson && !editedContent) {
-      setEditedContent(JSON.parse(JSON.stringify(data.contentJson)));
-    }
-  }, [data?.contentJson]);
+    if (!isOpen) return;
+    setEditedContent(data?.contentJson ? JSON.parse(JSON.stringify(data.contentJson)) : null);
+  }, [isOpen, proposalId, data?.contentJson]);
 
   if (!isOpen) return null;
 
@@ -262,18 +264,20 @@ export default function BusinessProposalDetailModal({ proposalId, isOpen, onClos
       );
     }
 
-    const currentContent = editedContent?.[activeTab];
+    const currentContent = editedContent?.he;
     if (!currentContent) {
-      return <p className="text-sm text-slate-400">No content available for this language.</p>;
+      return <p className="text-sm text-slate-400">No content available.</p>;
     }
 
     return (
       <ContentEditor
         content={currentContent}
-        onChange={(updated) => setEditedContent((prev) => ({ ...prev, [activeTab]: updated }))}
+        onChange={(updated) => setEditedContent((prev) => ({ ...prev, he: updated }))}
       />
     );
   };
+
+  const isCompleted = data?.status === 'completed';
 
   return (
     <div
@@ -281,99 +285,98 @@ export default function BusinessProposalDetailModal({ proposalId, isOpen, onClos
       onClick={onClose}
     >
       <div
-        className="w-full max-w-4xl rounded-2xl bg-white shadow-2xl"
+        className="flex max-h-[88vh] w-full max-w-4xl flex-col rounded-2xl bg-white shadow-2xl"
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
       >
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
-          <h2 className="text-lg font-semibold text-slate-900">{T.title}</h2>
-          <div className="flex items-center gap-2">
-            <Button type="button" variant={activeTab === 'he' ? 'primary' : 'ghost'} onClick={() => setActiveTab('he')}>
-              {T.hebrewTab}
-            </Button>
-            <Button type="button" variant={activeTab === 'en' ? 'primary' : 'ghost'} onClick={() => setActiveTab('en')}>
-              {T.englishTab}
-            </Button>
-            <Button type="button" variant="ghost" onClick={onClose}>{T.close}</Button>
+          <div className="flex items-center gap-3">
+            <h2 className="text-lg font-semibold text-slate-900">{T.title}</h2>
+            {data && (
+              <Badge variant={getStatusVariant(data.status)}>
+                {BUSINESS_PROPOSALS_TEXT.status[data.status] ?? data.status}
+              </Badge>
+            )}
+            {data?.customerName && <span className="text-xs text-slate-500">{data.customerName}</span>}
           </div>
+          <Button type="button" variant="ghost" onClick={onClose}>{T.close}</Button>
         </div>
 
-        {/* Body */}
-        <div className="space-y-4 px-6 py-5">
-          {/* Status bar + action buttons */}
-          {data && (
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <Badge variant={getStatusVariant(data.status)}>
-                  {BUSINESS_PROPOSALS_TEXT.status[data.status] ?? data.status}
-                </Badge>
-                <span className="text-xs text-slate-500">{data.customerName}</span>
-              </div>
-              {data.status === 'completed' && (
-                <div className="flex items-center gap-2">
-                  <Button type="button" variant="ghost" className="h-8 px-3 text-xs" onClick={handleSave} disabled={isSaving}>
-                    {T.saveContent}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant={showPreview ? 'ghost' : 'primary'}
-                    className="h-8 px-3 text-xs"
-                    onClick={() => setShowPreview((v) => !v)}
-                  >
-                    {showPreview ? 'Hide Preview' : 'Preview PDF'}
-                  </Button>
-                </div>
-              )}
-            </div>
-          )}
+        {/* Tabs */}
+        {isCompleted && (
+          <div className="flex items-center gap-1 border-b border-slate-100 px-6">
+            {[
+              { key: 'details', label: T.detailsTab },
+              { key: 'preview', label: T.previewTab },
+            ].map((tab) => (
+              <button
+                key={tab.key}
+                type="button"
+                onClick={() => setViewTab(tab.key)}
+                className={`-mb-px border-b-2 px-3 py-2.5 text-sm font-medium transition-colors ${
+                  viewTab === tab.key
+                    ? 'border-indigo-500 text-indigo-600'
+                    : 'border-transparent text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        )}
 
-          {/* PDF Preview */}
-          {showPreview && data?.id && (
-            <div className="rounded-xl border border-slate-200 overflow-hidden">
-              <div className="flex items-center justify-between bg-slate-50 px-4 py-2 border-b border-slate-200">
-                <span className="text-xs font-medium text-slate-600">PDF Preview</span>
-                <Button
-                  type="button"
-                  variant="primary"
-                  className="h-7 px-3 text-xs"
-                  onClick={handleDownloadPdf}
-                >
+        {/* Body (scrollable) */}
+        <div className="flex-1 overflow-y-auto px-6 py-5">
+          {isCompleted && viewTab === 'preview' ? (
+            <div className="space-y-3">
+              <div className="flex justify-end">
+                <Button type="button" variant="primary" className="h-8 px-3 text-xs" onClick={handleDownloadPdf}>
                   {T.downloadPdf}
                 </Button>
               </div>
               <iframe
                 src={getBusinessProposalPdfPreviewUrl(data.id)}
                 title="Proposal PDF Preview"
-                className="w-full"
+                className="w-full rounded-lg border border-slate-200"
                 style={{ height: '70vh' }}
               />
             </div>
-          )}
+          ) : (
+            <div className="space-y-4">
+              {isCompleted && (
+                <div className="flex items-center justify-end">
+                  <Button type="button" variant="primary" className="h-8 px-3 text-xs" onClick={handleSave} disabled={isSaving}>
+                    {T.saveContent}
+                  </Button>
+                </div>
+              )}
 
-          {/* Refine panel */}
-          {data?.status === 'completed' && (
-            <div className="space-y-2 rounded-lg border border-slate-200 p-3">
-              <label className="block text-sm font-medium text-slate-700">{T.refineLabel}</label>
-              <textarea
-                value={refinementText}
-                onChange={(e) => setRefinementText(e.target.value)}
-                placeholder={T.refinePlaceholder}
-                rows={2}
-                className={TEXTAREA}
-              />
-              {refineError && <p className="text-sm text-rose-600">{refineError}</p>}
-              <div className="flex justify-end">
-                <Button type="button" variant="ghost" className="h-8 px-3 text-xs" disabled={isRefining} onClick={handleRefine}>
-                  {T.refine}
-                </Button>
-              </div>
+              {/* Refine panel */}
+              {isCompleted && (
+                <div className="space-y-2 rounded-lg border border-slate-200 p-3">
+                  <label className="block text-sm font-medium text-slate-700">{T.refineLabel}</label>
+                  <textarea
+                    value={refinementText}
+                    onChange={(e) => setRefinementText(e.target.value)}
+                    placeholder={T.refinePlaceholder}
+                    rows={2}
+                    className={TEXTAREA}
+                  />
+                  {refineError && <p className="text-sm text-rose-600">{refineError}</p>}
+                  <div className="flex justify-end">
+                    <Button type="button" variant="ghost" className="h-8 px-3 text-xs" disabled={isRefining} onClick={handleRefine}>
+                      {T.refine}
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Editable content / status */}
+              {renderBody()}
             </div>
           )}
-
-          {/* Editable content */}
-          {renderBody()}
         </div>
       </div>
     </div>

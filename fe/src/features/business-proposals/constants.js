@@ -135,8 +135,8 @@ export const BUSINESS_PROPOSALS_TEXT = {
   },
   detail: {
     title: 'Business Proposal',
-    englishTab: 'English',
-    hebrewTab: 'Hebrew',
+    detailsTab: 'Details',
+    previewTab: 'PDF Preview',
     copy: 'Copy to Clipboard',
     copied: 'Proposal copied to clipboard.',
     copyFailed: 'Unable to copy proposal to clipboard.',
