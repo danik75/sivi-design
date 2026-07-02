@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react';
 import Button from '@/components/chadcn/Button';
 import EmptyState from '@/components/chadcn/EmptyState';
 import FormField from '@/components/chadcn/FormField';
-import Select from '@/components/chadcn/Select';
+import Dropdown from '@/components/chadcn/Dropdown';
 import Table, { TableBody, TableHead, TableHeader, TableRow } from '@/components/chadcn/Table';
 import ExpenseRow from '@/features/expenses/components/ExpenseRow';
 import {
@@ -86,47 +86,25 @@ export default function ExpenseGrid({ onCreate, onDeactivate }) {
       <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-100">
         <div className="grid gap-4 lg:grid-cols-[minmax(0,280px)_minmax(0,220px)_auto] lg:items-end">
           <FormField label={EXPENSE_TEXT.filters.customerLabel}>
-            <Select
+            <Dropdown
               value={selectedCustomerId}
-              onChange={(event) => {
-                setSelectedCustomerId(event.target.value);
-                setPage(1);
-              }}
-            >
-              <option value="">{EXPENSE_TEXT.filters.customerPlaceholder}</option>
-              {isCustomersLoading ? (
-                <option value="" disabled>
-                  {EXPENSE_TEXT.filters.customerLoading}
-                </option>
-              ) : null}
-              {isCustomersError ? (
-                <option value="" disabled>
-                  {EXPENSE_TEXT.filters.customerError}
-                </option>
-              ) : null}
-              {customers.map((customer) => (
-                <option key={customer.id} value={customer.id}>
-                  {customer.name}
-                </option>
-              ))}
-            </Select>
+              onChange={(val) => { setSelectedCustomerId(val); setPage(1); }}
+              options={[
+                { value: '', label: isCustomersLoading ? EXPENSE_TEXT.filters.customerLoading : isCustomersError ? EXPENSE_TEXT.filters.customerError : EXPENSE_TEXT.filters.customerPlaceholder },
+                ...customers.map((c) => ({ value: c.id, label: c.name })),
+              ]}
+            />
           </FormField>
 
           <FormField label={EXPENSE_TEXT.filters.categoryLabel}>
-            <Select
+            <Dropdown
               value={selectedCategory}
-              onChange={(event) => {
-                setSelectedCategory(event.target.value);
-                setPage(1);
-              }}
-            >
-              <option value="">{EXPENSE_TEXT.filters.categoryPlaceholder}</option>
-              {EXPENSE_CATEGORIES.map((cat) => (
-                <option key={cat.value} value={cat.value}>
-                  {cat.label}
-                </option>
-              ))}
-            </Select>
+              onChange={(val) => { setSelectedCategory(val); setPage(1); }}
+              options={[
+                { value: '', label: EXPENSE_TEXT.filters.categoryPlaceholder },
+                ...EXPENSE_CATEGORIES,
+              ]}
+            />
           </FormField>
 
           <FormField label={EXPENSE_TEXT.filters.statusLabel}>

@@ -5,7 +5,7 @@ import DatePicker from '@/components/chadcn/DatePicker';
 import Form from '@/components/chadcn/Form';
 import FormField from '@/components/chadcn/FormField';
 import Input from '@/components/chadcn/Input';
-import Select from '@/components/chadcn/Select';
+import Dropdown from '@/components/chadcn/Dropdown';
 import XIcon from '@/components/chadcn/icons/XIcon';
 import useContracts from '@/features/contracts/hooks/useContracts';
 import useCustomers from '@/features/customers/hooks/useCustomers';
@@ -356,52 +356,28 @@ export default function InvoiceModal({ isOpen, onClose, invoice, onSuccess }) {
       return (
         <div className="grid gap-4 md:grid-cols-2">
           <FormField label={INVOICE_TEXT.modal.customerLabel} className="md:col-span-2">
-            <Select
+            <Dropdown
               value={formState.customerId}
-              onChange={(event) => handleFormChange('customerId', event.target.value)}
-              aria-invalid={Boolean(errors.customerId)}
-            >
-              <option value="">{INVOICE_TEXT.modal.customerPlaceholder}</option>
-              {isCustomersLoading ? (
-                <option value="" disabled>
-                  {INVOICE_TEXT.filters.customerLoading}
-                </option>
-              ) : null}
-              {isCustomersError ? (
-                <option value="" disabled>
-                  {INVOICE_TEXT.filters.customerError}
-                </option>
-              ) : null}
-              {customers.map((customer) => (
-                <option key={customer.id} value={customer.id}>
-                  {customer.name}
-                </option>
-              ))}
-            </Select>
+              onChange={(val) => handleFormChange('customerId', val)}
+              options={[
+                { value: '', label: isCustomersLoading ? INVOICE_TEXT.filters.customerLoading : isCustomersError ? INVOICE_TEXT.filters.customerError : INVOICE_TEXT.modal.customerPlaceholder },
+                ...customers.map((c) => ({ value: c.id, label: c.name })),
+              ]}
+            />
             {errors.customerId ? (
               <p className="text-xs font-medium text-rose-600">{errors.customerId}</p>
             ) : null}
           </FormField>
 
           <FormField label={INVOICE_TEXT.modal.contractLabel} className="md:col-span-2">
-            <Select
+            <Dropdown
               value={formState.contractId}
-              onChange={(event) => handleFormChange('contractId', event.target.value)}
-              disabled={!formState.customerId}
-              aria-invalid={Boolean(errors.contractId)}
-            >
-              <option value="">{INVOICE_TEXT.modal.contractPlaceholder}</option>
-              {isContractsLoading ? (
-                <option value="" disabled>
-                  {INVOICE_TEXT.modal.contractLoading}
-                </option>
-              ) : null}
-              {contracts.map((contract) => (
-                <option key={contract.id} value={contract.id}>
-                  {contract.name || contract.typeLabel || INVOICE_TEXT.placeholder}
-                </option>
-              ))}
-            </Select>
+              onChange={(val) => handleFormChange('contractId', val)}
+              options={[
+                { value: '', label: isContractsLoading ? INVOICE_TEXT.modal.contractLoading : INVOICE_TEXT.modal.contractPlaceholder },
+                ...contracts.map((c) => ({ value: c.id, label: c.name || c.typeLabel || INVOICE_TEXT.placeholder })),
+              ]}
+            />
             {errors.contractId ? (
               <p className="text-xs font-medium text-rose-600">{errors.contractId}</p>
             ) : null}
@@ -428,16 +404,11 @@ export default function InvoiceModal({ isOpen, onClose, invoice, onSuccess }) {
           </FormField>
 
           <FormField label={INVOICE_TEXT.modal.currencyLabel}>
-            <Select
+            <Dropdown
               value={formState.currency}
-              onChange={(event) => handleFormChange('currency', event.target.value)}
-            >
-              {CURRENCIES.map((currency) => (
-                <option key={currency} value={currency}>
-                  {currency}
-                </option>
-              ))}
-            </Select>
+              onChange={(val) => handleFormChange('currency', val)}
+              options={CURRENCIES.map((c) => ({ value: c, label: c }))}
+            />
           </FormField>
 
           <FormField label={INVOICE_TEXT.modal.taxRateLabel}>
@@ -451,14 +422,15 @@ export default function InvoiceModal({ isOpen, onClose, invoice, onSuccess }) {
           </FormField>
 
           <FormField label={INVOICE_TEXT.modal.discountTypeLabel}>
-            <Select
+            <Dropdown
               value={formState.discountType}
-              onChange={(event) => handleFormChange('discountType', event.target.value)}
-            >
-              <option value="">{INVOICE_TEXT.modal.discountTypePlaceholder}</option>
-              <option value="percentage">Percentage (%)</option>
-              <option value="fixed">Fixed Amount</option>
-            </Select>
+              onChange={(val) => handleFormChange('discountType', val)}
+              options={[
+                { value: '', label: INVOICE_TEXT.modal.discountTypePlaceholder },
+                { value: 'percentage', label: 'Percentage (%)' },
+                { value: 'fixed', label: 'Fixed Amount' },
+              ]}
+            />
           </FormField>
 
           {formState.discountType ? (

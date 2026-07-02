@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react';
 import Button from '@/components/chadcn/Button';
 import EmptyState from '@/components/chadcn/EmptyState';
 import FormField from '@/components/chadcn/FormField';
-import Select from '@/components/chadcn/Select';
+import Dropdown from '@/components/chadcn/Dropdown';
 import Table, { TableBody, TableHead, TableHeader, TableRow } from '@/components/chadcn/Table';
 import ContractRow from '@/features/contracts/components/ContractRow';
 import { CONTRACT_TEXT, getApiErrorMessage } from '@/features/contracts/constants';
@@ -56,8 +56,8 @@ export default function ContractGrid({ onCreate, onDeactivate }) {
     return <Button onClick={onCreate}>{CONTRACT_TEXT.addContract}</Button>;
   }, [hasFilters, onCreate]);
 
-  const handleCustomerChange = (event) => {
-    setSelectedCustomerId(event.target.value);
+  const handleCustomerChange = (val) => {
+    setSelectedCustomerId(val);
     setPage(1);
   };
 
@@ -84,24 +84,14 @@ export default function ContractGrid({ onCreate, onDeactivate }) {
       <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-100">
         <div className="grid gap-4 lg:grid-cols-[minmax(0,280px)_auto] lg:items-end">
           <FormField label={CONTRACT_TEXT.filters.customerLabel}>
-            <Select value={selectedCustomerId} onChange={handleCustomerChange}>
-              <option value="">{CONTRACT_TEXT.filters.customerPlaceholder}</option>
-              {isCustomersLoading ? (
-                <option value="" disabled>
-                  {CONTRACT_TEXT.filters.customerLoading}
-                </option>
-              ) : null}
-              {isCustomersError ? (
-                <option value="" disabled>
-                  {CONTRACT_TEXT.filters.customerError}
-                </option>
-              ) : null}
-              {customers.map((customer) => (
-                <option key={customer.id} value={customer.id}>
-                  {customer.name}
-                </option>
-              ))}
-            </Select>
+            <Dropdown
+              value={selectedCustomerId}
+              onChange={handleCustomerChange}
+              options={[
+                { value: '', label: isCustomersLoading ? CONTRACT_TEXT.filters.customerLoading : isCustomersError ? CONTRACT_TEXT.filters.customerError : CONTRACT_TEXT.filters.customerPlaceholder },
+                ...customers.map((c) => ({ value: c.id, label: c.name })),
+              ]}
+            />
           </FormField>
 
           <FormField label={CONTRACT_TEXT.filters.statusLabel}>
