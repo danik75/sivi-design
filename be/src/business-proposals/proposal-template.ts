@@ -168,30 +168,27 @@ body {
 }
 
 /* ── Key / value rows (pink key in gutter, value inset) ── */
-.kv { display: flex; gap: 4mm; margin-bottom: 1.2mm; align-items: flex-start; }
-.k { color: ${ACCENT}; width: 30mm; flex-shrink: 0; text-align: start; font-size: 9.5pt; line-height: 1.5; }
-.v { flex: 1; text-align: start; font-size: 9.5pt; line-height: 1.5; color: #111; }
-.v-big { font-size: 12pt; font-weight: 700; }
+.kv { display: flex; gap: 4mm; margin-bottom: 0.6mm; align-items: flex-start; }
+.k { color: ${ACCENT}; width: 30mm; flex-shrink: 0; text-align: start; font-size: 9.5pt; line-height: 1.45; }
+.v { flex: 1; text-align: start; font-size: 9.5pt; line-height: 1.45; color: #111; }
 .kv-gap { height: 3mm; }
 
 /* ── Timeline phases ── */
 .phase { margin-bottom: 2.5mm; }
 .phase-h { font-size: 9.5pt; line-height: 1.5; }
 .phase-h b { font-weight: 700; }
-.phase-tasks { margin-top: 0.5mm; padding-inline-start: 5mm; }
+.phase-tasks { margin-top: 0.3mm; text-align: start; }
 .phase-tasks div { line-height: 1.6; font-size: 9pt; }
 
 /* ── Project structure ── */
-.struct { margin-bottom: 4mm; }
+.struct { margin-bottom: 3mm; }
 .struct-name { font-weight: 700; font-size: 10pt; margin-bottom: 0.8mm; }
-.struct-desc { font-size: 9pt; color: #333; margin-bottom: 1.5mm; line-height: 1.5; }
-.deliv { display: flex; gap: 4mm; font-size: 9pt; line-height: 1.7; }
-.deliv .it { flex: 1; text-align: start; }
-.deliv .pr { flex-shrink: 0; text-align: end; white-space: nowrap; color: #333; }
+.struct-desc { font-size: 9pt; color: #333; margin-bottom: 1mm; line-height: 1.5; }
+.deliv { font-size: 9pt; line-height: 1.7; text-align: start; }
 
 /* ── Notes (bullet list, inset) ── */
 .notes { padding-inline-start: ${GUTTER}; }
-.notes .n { position: relative; padding-inline-start: 4mm; margin-bottom: 1.4mm; font-size: 9pt; line-height: 1.55; text-align: start; }
+.notes .n { position: relative; padding-inline-start: 4mm; margin-bottom: 0.6mm; font-size: 9pt; line-height: 1.5; text-align: start; }
 .notes .n::before { content: '•'; position: absolute; inset-inline-start: 0; color: #111; }
 
 /* ── Signature ── */
@@ -260,18 +257,17 @@ function dynamicPages(c: ProposalContent, cust: CustomerInfo, dateStr: string, l
 
   // Payment breakdown lines (under "payment split")
   const payLines = c.paymentSchedule.map(p => {
-    const parts = [p.amount, p.condition].filter(Boolean).map(e);
-    const line = parts.join(' – ');
-    return `<div>${p.label ? `<b>${e(p.label)}</b> ` : ''}${line}</div>`;
+    const parts = [p.label, p.amount, p.condition].filter(Boolean).map(e);
+    return `<div>${parts.join(' – ')}</div>`;
   }).join('');
 
-  // Structure sections
+  // Structure sections — deliverables flow inline as "item – price"
   const structHtml = c.projectStructure.map((s, i) => `
     <div class="struct">
       <div class="struct-name">${i + 1}. ${e(s.name)}</div>
       ${s.description ? `<div class="struct-desc">${e(s.description)}</div>` : ''}
       ${s.deliverables.map(d => `
-        <div class="deliv"><span class="it">${e(d.item)}</span><span class="pr">${e(d.price ?? '')}</span></div>`).join('')}
+        <div class="deliv">${e(d.item)}${d.price ? ` – ${e(d.price)}` : ''}</div>`).join('')}
     </div>`).join('');
 
   // Client details key/value rows
@@ -310,7 +306,7 @@ function dynamicPages(c: ProposalContent, cust: CustomerInfo, dateStr: string, l
   const p2 = page(`
     <div class="sec">
       <div class="sec-head">${L.payTitle}</div>
-      <div class="kv"><span class="k">${L.priceLabel}</span><span class="v v-big">${e(c.totalPrice)}</span></div>
+      <div class="kv"><span class="k">${L.priceLabel}</span><span class="v">${e(c.totalPrice)}</span></div>
       <div class="kv"><span class="k">${L.schedLabel}</span><span class="v">${payLines}</span></div>
       <div class="kv-gap"></div>
       <div class="kv"><span class="k">${L.rateLabel}</span><span class="v">250 ₪</span></div>
