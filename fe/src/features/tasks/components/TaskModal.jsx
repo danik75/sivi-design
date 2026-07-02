@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import Button from '@/components/chadcn/Button';
 import DatePicker from '@/components/chadcn/DatePicker';
 import Dialog from '@/components/chadcn/Dialog';
+import Dropdown from '@/components/chadcn/Dropdown';
 import Form from '@/components/chadcn/Form';
 import FormField from '@/components/chadcn/FormField';
 import Input from '@/components/chadcn/Input';
@@ -290,25 +291,23 @@ export default function TaskModal({ isOpen, onClose, task, onSuccess }) {
 
           {/* Status */}
           <FormField label={TASK_TEXT.modal.statusLabel}>
-            <select className={selectClass} value={fields.status} onChange={set('status')}>
-              {STATUS_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
+            <Dropdown
+              value={fields.status}
+              onChange={set('status')}
+              options={STATUS_OPTIONS}
+            />
           </FormField>
 
           {/* Customer */}
           <FormField label={TASK_TEXT.modal.customerLabel}>
-            <select className={selectClass} value={fields.customerId} onChange={set('customerId')}>
-              <option value="">{TASK_TEXT.modal.noCustomer}</option>
-              {customers.map((c) => (
-                <option key={c.id} value={String(c.id)}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
+            <Dropdown
+              value={fields.customerId}
+              onChange={set('customerId')}
+              options={[
+                { value: '', label: TASK_TEXT.modal.noCustomer },
+                ...customers.map((c) => ({ value: String(c.id), label: c.name })),
+              ]}
+            />
           </FormField>
 
           {/* Task color */}

@@ -6,7 +6,7 @@ import Dialog from '@/components/chadcn/Dialog';
 import Form from '@/components/chadcn/Form';
 import FormField from '@/components/chadcn/FormField';
 import Input from '@/components/chadcn/Input';
-import Select from '@/components/chadcn/Select';
+import Dropdown from '@/components/chadcn/Dropdown';
 import { CONTRACT_TEXT, CONTRACT_TYPES, getApiErrorMessage } from '@/features/contracts/constants';
 import useCreateContract from '@/features/contracts/hooks/useCreateContract';
 import useCustomers from '@/features/customers/hooks/useCustomers';
@@ -222,17 +222,11 @@ export default function ContractModal({ isOpen, onClose, onSuccess }) {
             ) : null}
           </FormField>
           <FormField label={CONTRACT_TEXT.modal.currencyLabel}>
-            <Select
+            <Dropdown
               value={formState.currency}
-              onChange={(event) => handleChange('currency', event.target.value)}
-              aria-invalid={Boolean(errors.currency)}
-            >
-              {CURRENCIES.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </Select>
+              onChange={(val) => handleChange('currency', val)}
+              options={CURRENCIES.map((c) => ({ value: c, label: c }))}
+            />
             {errors.currency ? (
               <p className="text-xs font-medium text-rose-600">{errors.currency}</p>
             ) : null}
@@ -259,17 +253,11 @@ export default function ContractModal({ isOpen, onClose, onSuccess }) {
             ) : null}
           </FormField>
           <FormField label={CONTRACT_TEXT.modal.currencyLabel}>
-            <Select
+            <Dropdown
               value={formState.currency}
-              onChange={(event) => handleChange('currency', event.target.value)}
-              aria-invalid={Boolean(errors.currency)}
-            >
-              {CURRENCIES.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </Select>
+              onChange={(val) => handleChange('currency', val)}
+              options={CURRENCIES.map((c) => ({ value: c, label: c }))}
+            />
             {errors.currency ? (
               <p className="text-xs font-medium text-rose-600">{errors.currency}</p>
             ) : null}
@@ -310,17 +298,11 @@ export default function ContractModal({ isOpen, onClose, onSuccess }) {
             ) : null}
           </FormField>
           <FormField label={CONTRACT_TEXT.modal.currencyLabel} className="md:col-span-2">
-            <Select
+            <Dropdown
               value={formState.currency}
-              onChange={(event) => handleChange('currency', event.target.value)}
-              aria-invalid={Boolean(errors.currency)}
-            >
-              {CURRENCIES.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </Select>
+              onChange={(val) => handleChange('currency', val)}
+              options={CURRENCIES.map((c) => ({ value: c, label: c }))}
+            />
             {errors.currency ? (
               <p className="text-xs font-medium text-rose-600">{errors.currency}</p>
             ) : null}
@@ -361,17 +343,11 @@ export default function ContractModal({ isOpen, onClose, onSuccess }) {
             ) : null}
           </FormField>
           <FormField label={CONTRACT_TEXT.modal.currencyLabel} className="md:col-span-2">
-            <Select
+            <Dropdown
               value={formState.currency}
-              onChange={(event) => handleChange('currency', event.target.value)}
-              aria-invalid={Boolean(errors.currency)}
-            >
-              {CURRENCIES.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </Select>
+              onChange={(val) => handleChange('currency', val)}
+              options={CURRENCIES.map((c) => ({ value: c, label: c }))}
+            />
             {errors.currency ? (
               <p className="text-xs font-medium text-rose-600">{errors.currency}</p>
             ) : null}
@@ -394,45 +370,27 @@ export default function ContractModal({ isOpen, onClose, onSuccess }) {
           </div>
           <div className="grid gap-4 md:grid-cols-2">
             <FormField label={CONTRACT_TEXT.modal.customerLabel}>
-              <Select
+              <Dropdown
                 value={formState.customerId}
-                onChange={(event) => handleChange('customerId', event.target.value)}
-                aria-invalid={Boolean(errors.customerId)}
-              >
-                <option value="">{CONTRACT_TEXT.modal.customerPlaceholder}</option>
-                {isCustomersLoading ? (
-                  <option value="" disabled>
-                    {CONTRACT_TEXT.filters.customerLoading}
-                  </option>
-                ) : null}
-                {isCustomersError ? (
-                  <option value="" disabled>
-                    {CONTRACT_TEXT.filters.customerError}
-                  </option>
-                ) : null}
-                {customers.map((customer) => (
-                  <option key={customer.id} value={customer.id}>
-                    {customer.name}
-                  </option>
-                ))}
-              </Select>
+                onChange={(val) => handleChange('customerId', val)}
+                options={[
+                  { value: '', label: isCustomersLoading ? CONTRACT_TEXT.filters.customerLoading : isCustomersError ? CONTRACT_TEXT.filters.customerError : CONTRACT_TEXT.modal.customerPlaceholder },
+                  ...customers.map((c) => ({ value: c.id, label: c.name })),
+                ]}
+              />
               {errors.customerId ? (
                 <p className="text-xs font-medium text-rose-600">{errors.customerId}</p>
               ) : null}
             </FormField>
             <FormField label={CONTRACT_TEXT.modal.typeLabel}>
-              <Select
+              <Dropdown
                 value={formState.type}
-                onChange={(event) => handleChange('type', event.target.value)}
-                aria-invalid={Boolean(errors.type)}
-              >
-                <option value="">{CONTRACT_TEXT.modal.typePlaceholder}</option>
-                {CONTRACT_TYPES.map((contractType) => (
-                  <option key={contractType.value} value={contractType.value}>
-                    {contractType.label}
-                  </option>
-                ))}
-              </Select>
+                onChange={(val) => handleChange('type', val)}
+                options={[
+                  { value: '', label: CONTRACT_TEXT.modal.typePlaceholder },
+                  ...CONTRACT_TYPES,
+                ]}
+              />
               {errors.type ? (
                 <p className="text-xs font-medium text-rose-600">{errors.type}</p>
               ) : null}
