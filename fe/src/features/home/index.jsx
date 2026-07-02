@@ -4,6 +4,7 @@ import {
   useProjectStatus,
   useRevenueBreakdown,
 } from '@/features/reports/hooks';
+import useBusinessProposals from '@/features/business-proposals/hooks/useBusinessProposals';
 import useTasks from '@/features/tasks/hooks/useTasks';
 
 const HOME_TEXT = {
@@ -11,11 +12,13 @@ const HOME_TEXT = {
   subtitle: 'Overview of tasks, receivables, project health, and current month performance.',
   ganttTitle: 'Top 5 Relevant Tasks (Gantt)',
   unpaidTitle: 'Sent but Unpaid Invoices',
+  pendingProposalsTitle: 'Pending Business Proposals',
   projectTitle: 'Project Status',
   financeTitle: 'Current Month Billing',
   incomeTitle: 'Income Distribution',
   taskEmpty: 'No relevant tasks to show.',
   unpaidEmpty: 'No sent invoices waiting for payment.',
+  pendingProposalsEmpty: 'No pending proposals.',
   projectEmpty: 'No project status data available.',
   financeEmpty: 'No billing data available for this month.',
   incomeEmpty: 'No income distribution data available.',
@@ -27,6 +30,9 @@ const HOME_TEXT = {
     revenue: 'Revenue',
     expenses: 'Expenses',
     profit: 'Profit',
+    queued: 'Queued',
+    inProgress: 'In Progress',
+    pendingDecision: 'Pending Decision',
   },
 };
 
@@ -99,6 +105,7 @@ const renderTasksMiniGantt = (tasks) => {
 export default function HomeFeature() {
   const { data: tasksData } = useTasks({ limit: 500 });
   const { data: sentInvoices } = useInvoices({ status: 'sent' });
+  const { data: proposalsData } = useBusinessProposals({ status: 'all' });
   const { data: projectStatus } = useProjectStatus({});
   const { data: profitability } = useCustomerProfitability(CURRENT_MONTH_FILTER);
   const { data: revenueBreakdown } = useRevenueBreakdown(CURRENT_MONTH_FILTER);
@@ -121,6 +128,15 @@ export default function HomeFeature() {
       (a, b) => (parseDate(a.dueDate)?.getTime() ?? 0) - (parseDate(b.dueDate)?.getTime() ?? 0)
     );
 
+  const pendingProposals = (proposalsData ?? [])
+    .filter(
+      (proposal) =>
+        proposal.status === 'queued' ||
+        proposal.status === 'in_progress' ||
+        proposal.lifecycleStatus === 'sent',
+    )
+    .slice(0, 5);
+
   const projectSummary = projectStatus?.summary;
 
   const financeRows = profitability?.rows ?? [];
@@ -141,7 +157,7 @@ export default function HomeFeature() {
         <p className="mt-2 text-sm text-slate-500">{HOME_TEXT.subtitle}</p>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
         <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-100">
           <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-500">
             {HOME_TEXT.ganttTitle}
@@ -176,6 +192,36 @@ export default function HomeFeature() {
             </div>
           ) : (
             <p className="text-sm text-slate-400">{HOME_TEXT.unpaidEmpty}</p>
+          )}
+        </div>
+
+        <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-100">
+          <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-500">
+            {HOME_TEXT.pendingProposalsTitle}
+          </h2>
+          {pendingProposals.length ? (
+            <div className="space-y-2">
+              {pendingProposals.map((proposal) => (
+                <div
+                  key={proposal.id}
+                  className="flex items-center justify-between rounded-lg border border-slate-100 px-3 py-2"
+                >
+                  <div>
+                    <p className="text-sm font-semibold text-slate-800">{proposal.customerName}</p>
+                    <p className="text-xs text-slate-500">{fmtDate(proposal.createdAt)}</p>
+                  </div>
+                  <span className="text-xs font-medium text-indigo-600">
+                    {proposal.lifecycleStatus === 'sent'
+                      ? HOME_TEXT.labels.pendingDecision
+                      : proposal.status === 'in_progress'
+                      ? HOME_TEXT.labels.inProgress
+                      : HOME_TEXT.labels.queued}
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-slate-400">{HOME_TEXT.pendingProposalsEmpty}</p>
           )}
         </div>
       </div>
