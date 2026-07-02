@@ -52,7 +52,10 @@ export default function AddReceiptModal({ invoice, onClose, onSuccess }) {
       { receiptNumber: receiptNumber.trim(), invoiceId: invoice.id, paidAt, fileData, fileName, fileMimeType },
       {
         onSuccess: (saved) => onSuccess(saved),
-        onError: () => setError('Failed to save receipt. Please try again.'),
+        onError: (err) => {
+          const msg = err?.response?.data?.message;
+          setError(Array.isArray(msg) ? msg.join(', ') : msg || 'Failed to save receipt. Please try again.');
+        },
       },
     );
   }
