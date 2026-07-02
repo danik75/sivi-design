@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, Query } from '@nestjs/common';
 import { CreateReceiptDto } from './dto/create-receipt.dto';
 import { ReceiptsService } from './receipts.service';
 
@@ -7,8 +7,22 @@ export class ReceiptsController {
   constructor(private readonly service: ReceiptsService) {}
 
   @Get()
-  findAll() {
-    return this.service.findAll();
+  findAll(
+    @Query('search') search?: string,
+    @Query('customerId') customerId?: string,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.service.findAll({
+      search,
+      customerId,
+      from,
+      to,
+      page: page ? parseInt(page, 10) : 1,
+      limit: limit ? parseInt(limit, 10) : 15,
+    });
   }
 
   @Get(':id')
