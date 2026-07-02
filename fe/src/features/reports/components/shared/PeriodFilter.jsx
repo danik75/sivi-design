@@ -35,7 +35,7 @@ export default function PeriodFilter({ value, onChange }) {
           <select
             value={month}
             onChange={(e) => set({ month: parseInt(e.target.value, 10) })}
-            className="rounded-lg border border-slate-200 px-2 py-1 text-xs"
+            className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700"
           >
             {MONTHS.map((m, i) => (
               <option key={m} value={i + 1}>
@@ -46,7 +46,7 @@ export default function PeriodFilter({ value, onChange }) {
           <select
             value={year}
             onChange={(e) => set({ year: parseInt(e.target.value, 10) })}
-            className="rounded-lg border border-slate-200 px-2 py-1 text-xs"
+            className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700"
           >
             {Array.from({ length: 6 }, (_, i) => now.getFullYear() - i).map((y) => (
               <option key={y} value={y}>
@@ -61,7 +61,7 @@ export default function PeriodFilter({ value, onChange }) {
         <select
           value={year}
           onChange={(e) => set({ year: parseInt(e.target.value, 10) })}
-          className="rounded-lg border border-slate-200 px-2 py-1 text-xs"
+          className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700"
         >
           {Array.from({ length: 6 }, (_, i) => now.getFullYear() - i).map((y) => (
             <option key={y} value={y}>
@@ -77,14 +77,14 @@ export default function PeriodFilter({ value, onChange }) {
             type="date"
             value={from ?? ''}
             onChange={(e) => set({ from: e.target.value })}
-            className="rounded-lg border border-slate-200 px-2 py-1 text-xs"
+            className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700"
           />
           <span className="text-slate-400 text-xs">to</span>
           <input
             type="date"
             value={to ?? ''}
             onChange={(e) => set({ to: e.target.value })}
-            className="rounded-lg border border-slate-200 px-2 py-1 text-xs"
+            className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700"
           />
         </>
       )}

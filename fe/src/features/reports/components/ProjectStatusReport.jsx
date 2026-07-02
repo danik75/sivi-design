@@ -83,7 +83,7 @@ export default function ProjectStatusReport({ customers = [] }) {
           <select
             value={customerId}
             onChange={(e) => setCustomerId(e.target.value)}
-            className="rounded-lg border border-slate-200 px-2 py-1 text-xs"
+            className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700"
           >
             <option value="">All customers</option>
             {customers.map((c) => (
