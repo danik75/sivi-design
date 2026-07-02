@@ -2,7 +2,6 @@ import { Cell, Pie, PieChart } from 'recharts';
 import useInvoices from '@/features/invoices/hooks/useInvoices';
 import {
   useCustomerProfitability,
-  useProjectStatus,
   useRevenueBreakdown,
 } from '@/features/reports/hooks';
 import useBusinessProposals from '@/features/business-proposals/hooks/useBusinessProposals';
@@ -194,7 +193,6 @@ export default function HomeFeature() {
   const { data: tasksData } = useTasks({ limit: 500 });
   const { data: sentInvoices } = useInvoices({ status: 'sent' });
   const { data: proposalsData } = useBusinessProposals({ status: 'all' });
-  const { data: projectStatus } = useProjectStatus({});
   const { data: profitability } = useCustomerProfitability(CURRENT_MONTH_FILTER);
   const { data: revenueBreakdown } = useRevenueBreakdown(CURRENT_MONTH_FILTER);
   const { data: targets } = useBusinessTargets();
@@ -226,12 +224,9 @@ export default function HomeFeature() {
     )
     .slice(0, 5);
 
-  const projectSummary = projectStatus?.summary;
-
   const financeRows = profitability?.rows ?? [];
   const totalRevenue = financeRows.reduce((s, r) => s + parseFloat(r.revenue || 0), 0);
   const totalExpenses = financeRows.reduce((s, r) => s + parseFloat(r.expenses || 0), 0);
-  const totalProfit = financeRows.reduce((s, r) => s + parseFloat(r.profit || 0), 0);
 
   const incomeDistRows = (revenueBreakdown?.byCustomer ?? [])
     .slice()
@@ -317,66 +312,6 @@ export default function HomeFeature() {
             </div>
           ) : (
             <p className="text-sm text-slate-400">{HOME_TEXT.pendingProposalsEmpty}</p>
-          )}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-        <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-100">
-          <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-500">
-            {HOME_TEXT.projectTitle}
-          </h2>
-          {projectSummary ? (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <div className="rounded-xl bg-slate-50 p-3">
-                <p className="text-xs text-slate-400">{HOME_TEXT.labels.todo}</p>
-                <p className="text-lg font-bold text-slate-700">{projectSummary.todo ?? 0}</p>
-              </div>
-              <div className="rounded-xl bg-slate-50 p-3">
-                <p className="text-xs text-slate-400">{HOME_TEXT.labels.inProgress}</p>
-                <p className="text-lg font-bold text-indigo-600">
-                  {projectSummary.in_progress ?? 0}
-                </p>
-              </div>
-              <div className="rounded-xl bg-slate-50 p-3">
-                <p className="text-xs text-slate-400">{HOME_TEXT.labels.done}</p>
-                <p className="text-lg font-bold text-emerald-600">{projectSummary.done ?? 0}</p>
-              </div>
-              <div className="rounded-xl bg-slate-50 p-3">
-                <p className="text-xs text-slate-400">{HOME_TEXT.labels.cancelled}</p>
-                <p className="text-lg font-bold text-rose-600">{projectSummary.cancelled ?? 0}</p>
-              </div>
-            </div>
-          ) : (
-            <p className="text-sm text-slate-400">{HOME_TEXT.projectEmpty}</p>
-          )}
-        </div>
-
-        <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-100">
-          <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-500">
-            {HOME_TEXT.financeTitle}
-          </h2>
-          {financeRows.length ? (
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-              <div className="rounded-xl bg-slate-50 p-3">
-                <p className="text-xs text-slate-400">{HOME_TEXT.labels.revenue}</p>
-                <p className="text-lg font-bold text-indigo-600">{fmtMoney(totalRevenue)}</p>
-              </div>
-              <div className="rounded-xl bg-slate-50 p-3">
-                <p className="text-xs text-slate-400">{HOME_TEXT.labels.expenses}</p>
-                <p className="text-lg font-bold text-rose-600">{fmtMoney(totalExpenses)}</p>
-              </div>
-              <div className="rounded-xl bg-slate-50 p-3">
-                <p className="text-xs text-slate-400">{HOME_TEXT.labels.profit}</p>
-                <p
-                  className={`text-lg font-bold ${totalProfit >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}
-                >
-                  {fmtMoney(totalProfit)}
-                </p>
-              </div>
-            </div>
-          ) : (
-            <p className="text-sm text-slate-400">{HOME_TEXT.financeEmpty}</p>
           )}
         </div>
       </div>
