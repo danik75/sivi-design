@@ -1,4 +1,5 @@
 import PropTypes from 'prop-types';
+import DatePicker from '@/components/chadcn/DatePicker';
 import Dropdown from '@/components/chadcn/Dropdown';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -63,19 +64,13 @@ export default function PeriodFilter({ value, onChange }) {
 
       {period === 'range' && (
         <>
-          <input
-            type="date"
-            value={from ?? ''}
-            onChange={(e) => set({ from: e.target.value })}
-            className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700 shadow-sm"
-          />
+          <div className="w-36">
+            <DatePicker value={from ?? ''} onChange={(v) => set({ from: v })} placeholder="From date" />
+          </div>
           <span className="text-slate-400 text-xs">to</span>
-          <input
-            type="date"
-            value={to ?? ''}
-            onChange={(e) => set({ to: e.target.value })}
-            className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700 shadow-sm"
-          />
+          <div className="w-36">
+            <DatePicker value={to ?? ''} onChange={(v) => set({ to: v })} placeholder="To date" />
+          </div>
         </>
       )}
     </div>
