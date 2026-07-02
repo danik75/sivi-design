@@ -16,11 +16,11 @@ export default function Dropdown({ value, onChange, options, placeholder = 'Sele
   const selected = options.find((o) => String(o.value) === String(value));
 
   return (
-    <div ref={ref} className={`relative ${className}`}>
+    <div ref={ref} className={`relative w-full ${className}`}>
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs text-slate-700 shadow-sm hover:bg-slate-50 transition-colors"
+        className="flex w-full items-center justify-between gap-2 rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-700 shadow-sm hover:bg-slate-50 transition-colors"
       >
         <span>{selected?.label ?? placeholder}</span>
         <ChevronDownIcon className={`h-3 w-3 text-slate-400 transition-transform ${open ? 'rotate-180' : ''}`} />
@@ -33,7 +33,7 @@ export default function Dropdown({ value, onChange, options, placeholder = 'Sele
               key={o.value}
               type="button"
               onClick={() => { onChange(o.value); setOpen(false); }}
-              className={`w-full px-3 py-1.5 text-left text-xs transition-colors hover:bg-slate-50 ${
+              className={`w-full px-3.5 py-2 text-left text-sm transition-colors hover:bg-slate-50 ${
                 String(o.value) === String(value) ? 'font-semibold text-indigo-600' : 'text-slate-700'
               }`}
             >

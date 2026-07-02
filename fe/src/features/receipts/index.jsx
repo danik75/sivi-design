@@ -190,34 +190,32 @@ export default function ReceiptsFeature() {
               </tbody>
             </table>
 
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex items-center justify-between border-t border-slate-100 px-4 py-3">
-                <p className="text-xs text-slate-500">
-                  {total} receipt{total !== 1 ? 's' : ''} · page {page} of {totalPages}
-                </p>
-                <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    className="px-3 py-1.5 text-xs"
-                    disabled={page <= 1}
-                    onClick={() => setPage((p) => p - 1)}
-                  >
-                    Previous
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    className="px-3 py-1.5 text-xs"
-                    disabled={page >= totalPages}
-                    onClick={() => setPage((p) => p + 1)}
-                  >
-                    Next
-                  </Button>
-                </div>
+            {/* Pagination — always visible */}
+            <div className="flex items-center justify-between border-t border-slate-100 px-4 py-3">
+              <p className="text-xs text-slate-500">
+                {total} receipt{total !== 1 ? 's' : ''}{totalPages > 1 ? ` · page ${page} of ${totalPages}` : ''}
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="px-3 py-1.5 text-xs"
+                  disabled={page <= 1}
+                  onClick={() => setPage((p) => p - 1)}
+                >
+                  Previous
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="px-3 py-1.5 text-xs"
+                  disabled={page >= totalPages}
+                  onClick={() => setPage((p) => p + 1)}
+                >
+                  Next
+                </Button>
               </div>
-            )}
+            </div>
           </>
         )}
       </div>
