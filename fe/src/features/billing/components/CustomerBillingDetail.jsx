@@ -29,12 +29,19 @@ function periodLabel(period, year, month) {
   return period === 'monthly' ? `${MONTHS[month - 1]} ${year}` : String(year);
 }
 
-export default function CustomerBillingDetail({ isOpen, customerId, period, year, month, onClose }) {
+export default function CustomerBillingDetail({
+  isOpen,
+  customerId,
+  period,
+  year,
+  month,
+  onClose,
+}) {
   const params = { period, year, month };
   const { data, isLoading, isError } = useCustomerBilling(isOpen ? customerId : null, params);
   const { data: trendData, isLoading: trendLoading } = useCustomerBillingTrend(
     isOpen ? customerId : null,
-    params,
+    params
   );
   const [activeTab, setActiveTab] = useState('Invoices');
 
@@ -44,7 +51,9 @@ export default function CustomerBillingDetail({ isOpen, customerId, period, year
 
   useEffect(() => {
     if (!isOpen) return undefined;
-    const handler = (e) => { if (e.key === 'Escape') onClose(); };
+    const handler = (e) => {
+      if (e.key === 'Escape') onClose();
+    };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, [isOpen, onClose]);
@@ -67,9 +76,7 @@ export default function CustomerBillingDetail({ isOpen, customerId, period, year
         {/* ── Header (fixed) ── */}
         <div className="flex shrink-0 items-center justify-between border-b border-slate-100 px-6 py-4">
           <div className="flex items-center gap-3">
-            <h2 className="text-lg font-semibold text-slate-900">
-              {data?.customerName ?? '…'}
-            </h2>
+            <h2 className="text-lg font-semibold text-slate-900">{data?.customerName ?? '…'}</h2>
             <span className="text-sm text-slate-400">{periodLabel(period, year, month)}</span>
           </div>
           <button
@@ -84,9 +91,7 @@ export default function CustomerBillingDetail({ isOpen, customerId, period, year
 
         {/* ── Scrollable body ── */}
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-          {isLoading && (
-            <div className="py-16 text-center text-sm text-slate-400">Loading…</div>
-          )}
+          {isLoading && <div className="py-16 text-center text-sm text-slate-400">Loading…</div>}
           {isError && (
             <div className="m-4 rounded-xl bg-rose-50 px-4 py-3 text-sm text-rose-600">
               Failed to load customer billing data.
@@ -201,7 +206,9 @@ export default function CustomerBillingDetail({ isOpen, customerId, period, year
                             <TableCell>{formatDate(inv.issueDate)}</TableCell>
                             <TableCell>{formatDate(inv.dueDate)}</TableCell>
                             <TableCell className="tabular-nums">
-                              {parseFloat(inv.total).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                              {parseFloat(inv.total).toLocaleString('en-US', {
+                                minimumFractionDigits: 2,
+                              })}
                             </TableCell>
                             <TableCell>{inv.currency}</TableCell>
                             <TableCell>
@@ -235,10 +242,14 @@ export default function CustomerBillingDetail({ isOpen, customerId, period, year
                       ) : (
                         data.expenses.map((exp) => (
                           <TableRow key={exp.id}>
-                            <TableCell className="font-medium text-slate-800">{exp.vendor}</TableCell>
+                            <TableCell className="font-medium text-slate-800">
+                              {exp.vendor}
+                            </TableCell>
                             <TableCell className="capitalize">{exp.category ?? '—'}</TableCell>
                             <TableCell className="tabular-nums">
-                              {parseFloat(exp.amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                              {parseFloat(exp.amount).toLocaleString('en-US', {
+                                minimumFractionDigits: 2,
+                              })}
                             </TableCell>
                             <TableCell>{exp.currency}</TableCell>
                             <TableCell>{formatDate(exp.date)}</TableCell>
@@ -271,7 +282,9 @@ export default function CustomerBillingDetail({ isOpen, customerId, period, year
                       ) : (
                         data.tasks.map((task) => (
                           <TableRow key={task.id}>
-                            <TableCell className="font-medium text-slate-800">{task.name}</TableCell>
+                            <TableCell className="font-medium text-slate-800">
+                              {task.name}
+                            </TableCell>
                             <TableCell>
                               <span className="inline-flex rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600 capitalize">
                                 {TASK_STATUS_LABELS[task.status] ?? task.status}
@@ -310,10 +323,12 @@ export default function CustomerBillingDetail({ isOpen, customerId, period, year
                           const rateDisplay = con.hourlyRate
                             ? `${parseFloat(con.hourlyRate).toLocaleString('en-US', { minimumFractionDigits: 2 })}/hr`
                             : con.monthlyFee
-                            ? `${parseFloat(con.monthlyFee).toLocaleString('en-US', { minimumFractionDigits: 2 })}/mo`
-                            : con.totalAmount
-                            ? parseFloat(con.totalAmount).toLocaleString('en-US', { minimumFractionDigits: 2 })
-                            : '—';
+                              ? `${parseFloat(con.monthlyFee).toLocaleString('en-US', { minimumFractionDigits: 2 })}/mo`
+                              : con.totalAmount
+                                ? parseFloat(con.totalAmount).toLocaleString('en-US', {
+                                    minimumFractionDigits: 2,
+                                  })
+                                : '—';
                           return (
                             <TableRow key={con.id}>
                               <TableCell>

@@ -25,7 +25,10 @@ function CustomTooltip({ active, payload, label }) {
       <p className="font-semibold text-slate-700 mb-1">{label}</p>
       {payload.map((p) => (
         <div key={p.dataKey} className="flex items-center gap-2">
-          <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: p.color }} />
+          <span
+            className="inline-block h-2 w-2 rounded-full"
+            style={{ backgroundColor: p.color }}
+          />
           <span className="text-slate-500">{p.name}</span>
           <span className="ml-auto font-medium tabular-nums" style={{ color: p.color }}>
             {parseFloat(p.value).toLocaleString('en-US', { minimumFractionDigits: 2 })}

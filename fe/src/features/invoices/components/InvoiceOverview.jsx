@@ -16,15 +16,26 @@ import useInvoice from '@/features/invoices/hooks/useInvoice';
 const formatDate = (iso) => (iso ? new Date(iso).toLocaleDateString() : INVOICE_TEXT.placeholder);
 
 const MailIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    className="h-4 w-4 shrink-0"
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="currentColor"
+    strokeWidth={2}
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+    />
   </svg>
 );
 
 const STATUS_BADGE = {
-  draft:     { bg: '#e0e7ff', color: '#3730a3' },
-  sent:      { bg: '#fef3c7', color: '#92400e' },
-  paid:      { bg: '#d1fae5', color: '#065f46' },
+  draft: { bg: '#e0e7ff', color: '#3730a3' },
+  sent: { bg: '#fef3c7', color: '#92400e' },
+  paid: { bg: '#d1fae5', color: '#065f46' },
   cancelled: { bg: '#fee2e2', color: '#991b1b' },
 };
 
@@ -44,8 +55,8 @@ function buildEmailHtml(invoice) {
         item.sourceType === 'contract'
           ? 'background:#dbeafe;color:#1d4ed8;'
           : item.sourceType === 'expense'
-          ? 'background:#fef3c7;color:#92400e;'
-          : '';
+            ? 'background:#fef3c7;color:#92400e;'
+            : '';
       const tagHtml = item.sourceType
         ? `<span style="font-size:11px;padding:2px 8px;border-radius:4px;${tagStyle}">${item.sourceType}</span>`
         : '';
@@ -164,7 +175,11 @@ export default function InvoiceOverview({ isOpen, invoiceId, onClose }) {
     }
     const to = encodeURIComponent(invoice.customerEmail ?? '');
     const su = encodeURIComponent(`Invoice ID: ${invoice.invoiceNumber}`);
-    window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=${to}&su=${su}`, '_blank', 'noopener,noreferrer');
+    window.open(
+      `https://mail.google.com/mail/?view=cm&fs=1&to=${to}&su=${su}`,
+      '_blank',
+      'noopener,noreferrer'
+    );
     setEmailLabel('Paste in Gmail (⌘V)');
     clearTimeout(resetRef.current);
     resetRef.current = setTimeout(() => setEmailLabel('Send Email'), 4000);

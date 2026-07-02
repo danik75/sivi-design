@@ -7,16 +7,20 @@ const CURRENT_MONTH = now.getMonth() + 1;
 
 export default function PeriodSelector({ period, year, month, onChange }) {
   const isCurrentPeriod =
-    period === 'monthly'
-      ? year === CURRENT_YEAR && month === CURRENT_MONTH
-      : year === CURRENT_YEAR;
+    period === 'monthly' ? year === CURRENT_YEAR && month === CURRENT_MONTH : year === CURRENT_YEAR;
 
   function step(delta) {
     if (period === 'monthly') {
       let m = month + delta;
       let y = year;
-      if (m < 1) { m = 12; y -= 1; }
-      if (m > 12) { m = 1; y += 1; }
+      if (m < 1) {
+        m = 12;
+        y -= 1;
+      }
+      if (m > 12) {
+        m = 1;
+        y += 1;
+      }
       onChange({ period, year: y, month: m });
     } else {
       onChange({ period, year: year + delta, month });

@@ -3,39 +3,47 @@ export const REPORT_GROUPS = [
     label: 'Customer-facing',
     reports: [
       { id: 'customer-statement', label: 'Customer Statement' },
-      { id: 'project-status',     label: 'Project Status' },
+      { id: 'project-status', label: 'Project Status' },
     ],
   },
   {
     label: 'Accountant / Tax',
     reports: [
-      { id: 'pl',          label: 'P&L Statement' },
+      { id: 'pl', label: 'P&L Statement' },
       { id: 'tax-summary', label: 'Tax Summary' },
-      { id: 'ar-aging',    label: 'AR Aging' },
+      { id: 'ar-aging', label: 'AR Aging' },
     ],
   },
   {
     label: 'Business Intelligence',
     reports: [
-      { id: 'revenue-breakdown',       label: 'Revenue Breakdown' },
-      { id: 'customer-profitability',  label: 'Customer Profitability' },
-      { id: 'forecast',                label: 'Revenue Forecast' },
-      { id: 'expense-analysis',        label: 'Expense Analysis' },
+      { id: 'revenue-breakdown', label: 'Revenue Breakdown' },
+      { id: 'customer-profitability', label: 'Customer Profitability' },
+      { id: 'forecast', label: 'Revenue Forecast' },
+      { id: 'expense-analysis', label: 'Expense Analysis' },
     ],
   },
 ];
 
 export const CHART_COLORS = [
-  '#6366f1','#10b981','#f59e0b','#ef4444','#3b82f6',
-  '#8b5cf6','#ec4899','#14b8a6','#f97316','#84cc16',
+  '#6366f1',
+  '#10b981',
+  '#f59e0b',
+  '#ef4444',
+  '#3b82f6',
+  '#8b5cf6',
+  '#ec4899',
+  '#14b8a6',
+  '#f97316',
+  '#84cc16',
 ];
 
 export const AGING_BUCKETS = [
-  { key: 'current',     label: 'Current',    color: '#94a3b8' },
-  { key: 'days1to30',   label: '1–30 days',  color: '#f59e0b' },
-  { key: 'days31to60',  label: '31–60 days', color: '#f97316' },
-  { key: 'days61to90',  label: '61–90 days', color: '#ef4444' },
-  { key: 'days90plus',  label: '90+ days',   color: '#991b1b' },
+  { key: 'current', label: 'Current', color: '#94a3b8' },
+  { key: 'days1to30', label: '1–30 days', color: '#f59e0b' },
+  { key: 'days31to60', label: '31–60 days', color: '#f97316' },
+  { key: 'days61to90', label: '61–90 days', color: '#ef4444' },
+  { key: 'days90plus', label: '90+ days', color: '#991b1b' },
 ];
 
 export const BUCKET_COLOR = Object.fromEntries(AGING_BUCKETS.map((b) => [b.key, b.color]));
