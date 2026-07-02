@@ -14,6 +14,10 @@ export class ReceiptsService {
     return this.repo.findOne(id);
   }
 
+  delete(id: number, revertInvoice: boolean) {
+    return this.repo.delete(id, revertInvoice);
+  }
+
   create(dto: CreateReceiptDto) {
     return this.repo.create(dto);
   }

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post } from '@nestjs/common';
 import { CreateReceiptDto } from './dto/create-receipt.dto';
 import { ReceiptsService } from './receipts.service';
 
@@ -14,6 +14,14 @@ export class ReceiptsController {
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.service.findOne(id);
+  }
+
+  @Delete(':id')
+  remove(
+    @Param('id', ParseIntPipe) id: number,
+    @Body('revertInvoice') revertInvoice?: boolean,
+  ) {
+    return this.service.delete(id, revertInvoice ?? false);
   }
 
   @Post()

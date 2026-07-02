@@ -58,6 +58,36 @@ export class ReceiptsRepository {
     return res.rows[0];
   }
 
+  async delete(id: number, revertInvoice: boolean) {
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      const res = await client.query(
+        `SELECT id, invoice_id AS "invoiceId" FROM receipts WHERE id = $1`,
+        [id],
+      );
+      if (!res.rows[0]) throw new NotFoundException('Receipt not found');
+
+      await client.query(`DELETE FROM receipts WHERE id = $1`, [id]);
+
+      if (revertInvoice) {
+        await client.query(
+          `UPDATE invoices SET status = 'sent', updated_at = now() WHERE id = $1`,
+          [res.rows[0].invoiceId],
+        );
+      }
+
+      await client.query('COMMIT');
+      return { deleted: true };
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
+  }
+
   async create(dto: CreateReceiptDto) {
     const client = await pool.connect();
     try {
