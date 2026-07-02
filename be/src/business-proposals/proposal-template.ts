@@ -147,7 +147,7 @@ body {
 .main {
   margin-left: 32mm;
   height: 297mm;
-  padding: 13mm 26mm 24mm 4mm;
+  padding: 18mm 22mm 24mm 4mm;
 }
 
 /* ── Header block (aligns to outer margin) ── */
@@ -159,7 +159,7 @@ body {
 /* ── Sections ── */
 .sec { margin-bottom: 6mm; }
 .sec-head {
-  color: ${ACCENT}; font-weight: 700; font-size: 12pt;
+  color: ${ACCENT}; font-weight: 700; font-size: 13pt;
   text-align: start; padding-inline-start: ${GUTTER}; margin-bottom: 2.5mm;
 }
 .sec-body {
