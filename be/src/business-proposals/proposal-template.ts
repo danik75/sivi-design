@@ -114,13 +114,13 @@ function formatDate(iso: string): string {
 const ACCENT = '#c8365a';
 
 const CSS = `
-@import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Great+Vibes&family=Montserrat:wght@400;700&display=swap');
 
 @page { size: A4; margin: 0; }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
-  font-family: Arial, 'Arial Unicode MS', sans-serif;
+  font-family: 'Montserrat', Arial, sans-serif;
   font-size: 9.5pt;
   color: #1a1a1a;
   background: #fff;
@@ -130,73 +130,67 @@ body {
 .page {
   width: 210mm;
   min-height: 297mm;
-  position: relative;
   display: flex;
   page-break-after: always;
 }
 
-/* ── Left sidebar (identical for HE and EN) ── */
+/* ── Left sidebar ── */
 .sidebar {
   width: 20mm;
   min-height: 297mm;
-  border-right: 1px solid #d0d0d0;
+  border-right: 0.75px solid #bbb;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 7mm 0 7mm;
+  padding: 10mm 0 8mm;
   flex-shrink: 0;
-  position: relative;
 }
 
 .logo-text {
-  font-family: 'Dancing Script', cursive;
-  font-size: 13pt;
-  font-weight: 700;
+  font-family: 'Great Vibes', cursive;
+  font-size: 20pt;
   color: #1a1a1a;
-  writing-mode: vertical-rl;
-  transform: rotate(180deg);
-  letter-spacing: 1px;
+  writing-mode: vertical-lr;
+  letter-spacing: 2px;
   line-height: 1;
-  margin-top: 0;
 }
 
 .logo-divider {
-  width: 60%;
-  height: 1px;
-  background: #d0d0d0;
+  width: 55%;
+  height: 0.75px;
+  background: #bbb;
   margin: 5mm 0;
 }
 
 .services {
   font-size: 5pt;
   color: #666;
-  writing-mode: vertical-rl;
-  transform: rotate(180deg);
-  letter-spacing: 0.8px;
-  line-height: 2;
+  writing-mode: vertical-lr;
+  letter-spacing: 3px;
   text-align: center;
   flex: 1;
-  white-space: nowrap;
+}
+
+/* ── Content column (main + footer stacked) ── */
+.content-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 297mm;
 }
 
 /* ── Main content area ── */
 .main {
   flex: 1;
-  padding: 7mm 13mm 20mm 11mm;
-  min-height: 297mm;
-  position: relative;
+  padding: 8mm 13mm 5mm 11mm;
 }
 
 /* ── Footer ── */
-.footer {
-  position: absolute;
-  bottom: 5mm;
-  left: 20mm;
-  right: 0;
-  padding: 1.5mm 13mm 0 11mm;
-  border-top: 1px solid #e8e8e8;
+.page-footer {
+  padding: 3mm 0 6mm 11mm;
   font-size: 7.5pt;
-  color: #555;
+  color: #444;
+  line-height: 1.6;
 }
 
 /* ── Typography ── */
@@ -230,19 +224,6 @@ body {
 [dir="ltr"] .det-label { text-align: left; padding-right: 4mm; }
 
 /* ── Timeline ── */
-.timeline-wrap { position: relative; }
-.timeline-note {
-  position: absolute;
-  top: 0;
-  font-size: 7.5pt;
-  color: ${ACCENT};
-  font-style: italic;
-  max-width: 28mm;
-  line-height: 1.4;
-}
-[dir="rtl"] .timeline-note { left: 0; }
-[dir="ltr"] .timeline-note { right: 0; }
-
 .phase { margin-bottom: 3mm; }
 .phase-header { font-size: 9.5pt; font-weight: normal; }
 .phase-header strong { font-weight: bold; }
@@ -334,7 +315,10 @@ const SIDEBAR = `
   <div class="services">AI &nbsp;·&nbsp; Design &nbsp;·&nbsp; Creative &nbsp;·&nbsp; Marketing &nbsp;·&nbsp; Digital &nbsp;·&nbsp; UX/UI &nbsp;·&nbsp; Web &nbsp;·&nbsp; Illustration</div>
 </div>`;
 
-const FOOTER_HTML = `<div class="footer">052-6613709 &nbsp;&nbsp; sivandarmon@gmail.com &nbsp;&nbsp; sivi-design.com</div>`;
+const PAGE_FOOTER = `
+<div class="page-footer">
+  052-6613709<br>sivandarmon@gmail.com<br>sivi-design.com
+</div>`;
 
 // ─── Page builder ─────────────────────────────────────────────────────────────
 
@@ -342,10 +326,10 @@ function page(inner: string, dir: 'rtl' | 'ltr'): string {
   return `
 <div class="page">
   ${SIDEBAR}
-  <div class="main" dir="${dir}">
-    ${inner}
+  <div class="content-col">
+    <div class="main" dir="${dir}">${inner}</div>
+    ${PAGE_FOOTER}
   </div>
-  ${FOOTER_HTML}
 </div>`;
 }
 
@@ -361,7 +345,7 @@ function dynamicPages(c: ProposalContent, cust: CustomerInfo, dateStr: string, l
     lBusinessName: 'שם העסק', lReg: 'ח.פ.', lAddress: 'כתובת',
     lContact: 'איש קשר', lPhone: 'טלפון', lEmail: 'דוא"ל',
     projectTitle: 'תיאור הפרויקט',
-    timelineTitle: 'לוח זמנים', timelineNote: 'מתי זה יהיה מוכן?',
+    timelineTitle: 'לוח זמנים',
     payTitle: 'תשלום', priceLabel: 'מחיר הפרויקט', schedLabel: 'חלוקה לתשלומים',
     rateLabel: 'מחיר שעת עבודה נוספת', addRateLabel: 'מחיר לשעות נוספות',
     approval: 'אישור הלקוחה לפני ביצוע ובמסמך משותף אין ליין',
@@ -372,7 +356,7 @@ function dynamicPages(c: ProposalContent, cust: CustomerInfo, dateStr: string, l
     lBusinessName: 'Business Name', lReg: 'Reg. No.', lAddress: 'Address',
     lContact: 'Contact', lPhone: 'Phone', lEmail: 'Email',
     projectTitle: 'Project Description',
-    timelineTitle: 'Timeline', timelineNote: 'When will it be ready?',
+    timelineTitle: 'Timeline',
     payTitle: 'Payment', priceLabel: 'Project Price', schedLabel: 'Payment Schedule',
     rateLabel: 'Additional Hours Rate', addRateLabel: 'Extra Hours Rate',
     approval: 'Client approval required via shared online document before production',
@@ -440,10 +424,7 @@ function dynamicPages(c: ProposalContent, cust: CustomerInfo, dateStr: string, l
 
     <div class="section">
       <div class="sec-title">${L.timelineTitle}</div>
-      <div class="timeline-wrap" style="position:relative">
-        <div class="timeline-note">${L.timelineNote}</div>
-        ${phasesHtml}
-      </div>
+      ${phasesHtml}
     </div>
   `, dir);
 
