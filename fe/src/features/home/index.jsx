@@ -1,12 +1,12 @@
+import { Cell, Pie, PieChart } from 'recharts';
 import useInvoices from '@/features/invoices/hooks/useInvoices';
-import {
-  useCustomerProfitability,
-  useProjectStatus,
-  useRevenueBreakdown,
-} from '@/features/reports/hooks';
+import { useRevenueBreakdown } from '@/features/reports/hooks';
 import useBusinessProposals from '@/features/business-proposals/hooks/useBusinessProposals';
+import useBusinessTargets from '@/features/business-targets/hooks/useBusinessTargets';
 import { STATUS_CONFIG } from '@/features/tasks/constants';
 import useTasks from '@/features/tasks/hooks/useTasks';
+
+const MONTH_LABEL = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 
 const HOME_TEXT = {
   title: 'Home Dashboard',
@@ -190,9 +190,8 @@ export default function HomeFeature() {
   const { data: tasksData } = useTasks({ limit: 500 });
   const { data: sentInvoices } = useInvoices({ status: 'sent' });
   const { data: proposalsData } = useBusinessProposals({ status: 'all' });
-  const { data: projectStatus } = useProjectStatus({});
-  const { data: profitability } = useCustomerProfitability(CURRENT_MONTH_FILTER);
   const { data: revenueBreakdown } = useRevenueBreakdown(CURRENT_MONTH_FILTER);
+  const { data: targets } = useBusinessTargets();
 
   const relevantTasks = (tasksData?.data ?? [])
     .filter((t) => t.status !== 'cancelled')
@@ -221,18 +220,16 @@ export default function HomeFeature() {
     )
     .slice(0, 5);
 
-  const projectSummary = projectStatus?.summary;
-
-  const financeRows = profitability?.rows ?? [];
-  const totalRevenue = financeRows.reduce((s, r) => s + parseFloat(r.revenue || 0), 0);
-  const totalExpenses = financeRows.reduce((s, r) => s + parseFloat(r.expenses || 0), 0);
-  const totalProfit = financeRows.reduce((s, r) => s + parseFloat(r.profit || 0), 0);
-
   const incomeDistRows = (revenueBreakdown?.byCustomer ?? [])
     .slice()
     .sort((a, b) => parseFloat(b.revenue || 0) - parseFloat(a.revenue || 0))
     .slice(0, 5);
   const totalIncome = incomeDistRows.reduce((s, r) => s + parseFloat(r.revenue || 0), 0);
+
+  const targetHours = targets?.targetHoursPerMonth ?? 0;
+  const currentHours = targets?.currentHours ?? 0;
+  const hoursPct = targetHours > 0 ? Math.min(100, (currentHours / targetHours) * 100) : 0;
+  const hoursRemaining = Math.max(0, targetHours - currentHours);
 
   return (
     <section className="space-y-6">
@@ -310,62 +307,136 @@ export default function HomeFeature() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-        <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-100">
-          <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-500">
-            {HOME_TEXT.projectTitle}
+      {/* Monthly balance + hours target */}
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+        {/* Income vs target donut */}
+        <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-100 flex flex-col">
+          <h2 className="mb-1 text-sm font-semibold uppercase tracking-wide text-slate-500">
+            Income Target
           </h2>
-          {projectSummary ? (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <div className="rounded-xl bg-slate-50 p-3">
-                <p className="text-xs text-slate-400">{HOME_TEXT.labels.todo}</p>
-                <p className="text-lg font-bold text-slate-700">{projectSummary.todo ?? 0}</p>
+          <p className="mb-4 text-xs text-slate-400">{MONTH_LABEL}</p>
+          {(() => {
+            const targetIncome = targets?.targetIncomePerMonth ?? 0;
+            const currentIncome = targets?.currentIncome ?? 0;
+            const incomePct = targetIncome > 0 ? Math.min(100, (currentIncome / targetIncome) * 100) : 0;
+            const isOver = targetIncome > 0 && currentIncome > targetIncome;
+            const arcColor = isOver ? '#f97316' : '#10b981';
+            const incomeRemaining = Math.max(0, targetIncome - currentIncome);
+            const pieData = targetIncome > 0
+              ? isOver
+                ? [{ value: 1, fill: arcColor }]
+                : [{ value: currentIncome, fill: arcColor }, { value: incomeRemaining, fill: '#f1f5f9' }]
+              : [{ value: 1, fill: '#f1f5f9' }];
+            const currency = targets?.currency ?? 'USD';
+            const fmtIncome = (n) => new Intl.NumberFormat('en-US', { style: 'currency', currency, maximumFractionDigits: 0 }).format(n);
+            return targetIncome > 0 ? (
+              <div className="flex flex-1 items-center gap-6">
+                <div className="relative shrink-0">
+                  <PieChart width={120} height={120}>
+                    <Pie data={pieData} cx={55} cy={55} innerRadius={36} outerRadius={52} startAngle={90} endAngle={-270} dataKey="value" strokeWidth={0}>
+                      {pieData.map((entry, i) => <Cell key={i} fill={entry.fill} />)}
+                    </Pie>
+                  </PieChart>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                    <span className={`text-lg font-bold ${isOver ? 'text-orange-500' : 'text-slate-900'}`}>
+                      {Math.round(incomePct)}%
+                    </span>
+                  </div>
+                </div>
+                <div className="space-y-2 text-sm">
+                  <div>
+                    <p className="text-xs text-slate-400">Earned</p>
+                    <p className="font-bold text-slate-900">{fmtIncome(currentIncome)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-400">Target</p>
+                    <p className="font-semibold text-slate-600">{fmtIncome(targetIncome)}</p>
+                  </div>
+                  {isOver ? (
+                    <span className="inline-block rounded-full bg-orange-50 px-2 py-0.5 text-xs font-semibold text-orange-600">
+                      +{fmtIncome(currentIncome - targetIncome)} above
+                    </span>
+                  ) : incomeRemaining > 0 ? (
+                    <div>
+                      <p className="text-xs text-slate-400">Remaining</p>
+                      <p className="font-semibold text-emerald-600">{fmtIncome(incomeRemaining)}</p>
+                    </div>
+                  ) : (
+                    <span className="inline-block rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">Target reached!</span>
+                  )}
+                </div>
               </div>
-              <div className="rounded-xl bg-slate-50 p-3">
-                <p className="text-xs text-slate-400">{HOME_TEXT.labels.inProgress}</p>
-                <p className="text-lg font-bold text-indigo-600">
-                  {projectSummary.in_progress ?? 0}
-                </p>
-              </div>
-              <div className="rounded-xl bg-slate-50 p-3">
-                <p className="text-xs text-slate-400">{HOME_TEXT.labels.done}</p>
-                <p className="text-lg font-bold text-emerald-600">{projectSummary.done ?? 0}</p>
-              </div>
-              <div className="rounded-xl bg-slate-50 p-3">
-                <p className="text-xs text-slate-400">{HOME_TEXT.labels.cancelled}</p>
-                <p className="text-lg font-bold text-rose-600">{projectSummary.cancelled ?? 0}</p>
-              </div>
-            </div>
-          ) : (
-            <p className="text-sm text-slate-400">{HOME_TEXT.projectEmpty}</p>
-          )}
+            ) : (
+              <p className="text-sm text-slate-400">No income target set. Go to Targets to set one.</p>
+            );
+          })()}
         </div>
 
-        <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-100">
-          <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-500">
-            {HOME_TEXT.financeTitle}
+        {/* Hours target donut */}
+        <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-100 flex flex-col">
+          <h2 className="mb-1 text-sm font-semibold uppercase tracking-wide text-slate-500">
+            Work Hours Target
           </h2>
-          {financeRows.length ? (
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-              <div className="rounded-xl bg-slate-50 p-3">
-                <p className="text-xs text-slate-400">{HOME_TEXT.labels.revenue}</p>
-                <p className="text-lg font-bold text-indigo-600">{fmtMoney(totalRevenue)}</p>
+          <p className="mb-4 text-xs text-slate-400">{MONTH_LABEL}</p>
+          {targetHours > 0 ? (() => {
+            const isOver = currentHours > targetHours;
+            const arcColor = isOver ? '#f97316' : '#10b981';
+            const pieData = isOver
+              ? [{ value: 1, fill: arcColor }]
+              : [
+                  { value: currentHours, fill: arcColor },
+                  { value: hoursRemaining, fill: '#f1f5f9' },
+                ];
+            return (
+              <div className="flex flex-1 items-center gap-6">
+                <div className="relative shrink-0">
+                  <PieChart width={120} height={120}>
+                    <Pie
+                      data={pieData}
+                      cx={55} cy={55}
+                      innerRadius={36} outerRadius={52}
+                      startAngle={90} endAngle={-270}
+                      dataKey="value" strokeWidth={0}
+                    >
+                      {pieData.map((entry, i) => <Cell key={i} fill={entry.fill} />)}
+                    </Pie>
+                  </PieChart>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                    <span className={`text-lg font-bold ${isOver ? 'text-orange-500' : 'text-slate-900'}`}>
+                      {Math.round(hoursPct)}%
+                    </span>
+                  </div>
+                </div>
+                <div className="space-y-2 text-sm">
+                  <div>
+                    <p className="text-xs text-slate-400">Logged</p>
+                    <p className="font-bold text-slate-900">{currentHours.toFixed(1)} h</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-400">Target</p>
+                    <p className="font-semibold text-slate-600">{targetHours} h</p>
+                  </div>
+                  {hoursRemaining > 0 && (
+                    <div>
+                      <p className="text-xs text-slate-400">Remaining</p>
+                      <p className="font-semibold text-emerald-600">{hoursRemaining.toFixed(1)} h</p>
+                    </div>
+                  )}
+                  {isOver && (
+                    <span className="inline-block rounded-full bg-orange-50 px-2 py-0.5 text-xs font-semibold text-orange-600">
+                      +{(currentHours - targetHours).toFixed(1)} h over
+                    </span>
+                  )}
+                  {!isOver && hoursRemaining === 0 && (
+                    <span className="inline-block rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">
+                      Target reached!
+                    </span>
+                  )}
+                </div>
               </div>
-              <div className="rounded-xl bg-slate-50 p-3">
-                <p className="text-xs text-slate-400">{HOME_TEXT.labels.expenses}</p>
-                <p className="text-lg font-bold text-rose-600">{fmtMoney(totalExpenses)}</p>
-              </div>
-              <div className="rounded-xl bg-slate-50 p-3">
-                <p className="text-xs text-slate-400">{HOME_TEXT.labels.profit}</p>
-                <p
-                  className={`text-lg font-bold ${totalProfit >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}
-                >
-                  {fmtMoney(totalProfit)}
-                </p>
-              </div>
-            </div>
-          ) : (
-            <p className="text-sm text-slate-400">{HOME_TEXT.financeEmpty}</p>
+            );
+          })() : (
+            <p className="text-sm text-slate-400">No hours target set. Go to Targets to set one.</p>
           )}
         </div>
       </div>
