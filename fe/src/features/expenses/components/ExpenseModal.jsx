@@ -6,7 +6,7 @@ import Dialog from '@/components/chadcn/Dialog';
 import Form from '@/components/chadcn/Form';
 import FormField from '@/components/chadcn/FormField';
 import Input from '@/components/chadcn/Input';
-import Select from '@/components/chadcn/Select';
+import Dropdown from '@/components/chadcn/Dropdown';
 import {
   CURRENCIES,
   EXPENSE_CATEGORIES,
@@ -163,18 +163,14 @@ export default function ExpenseModal({ isOpen, onClose, onSuccess }) {
         </FormField>
 
         <FormField label={EXPENSE_TEXT.modal.categoryLabel}>
-          <Select
+          <Dropdown
             value={formState.category}
-            onChange={(event) => handleChange('category', event.target.value)}
-            aria-invalid={Boolean(errors.category)}
-          >
-            <option value="">{EXPENSE_TEXT.modal.typePlaceholder}</option>
-            {EXPENSE_CATEGORIES.map((category) => (
-              <option key={category.value} value={category.value}>
-                {category.label}
-              </option>
-            ))}
-          </Select>
+            onChange={(val) => handleChange('category', val)}
+            options={[
+              { value: '', label: EXPENSE_TEXT.modal.typePlaceholder },
+              ...EXPENSE_CATEGORIES,
+            ]}
+          />
           {errors.category ? (
             <p className="text-xs font-medium text-rose-600">{errors.category}</p>
           ) : null}
@@ -197,16 +193,11 @@ export default function ExpenseModal({ isOpen, onClose, onSuccess }) {
           </FormField>
 
           <FormField label={EXPENSE_TEXT.modal.currencyLabel}>
-            <Select
+            <Dropdown
               value={formState.currency}
-              onChange={(event) => handleChange('currency', event.target.value)}
-            >
-              {CURRENCIES.map((currency) => (
-                <option key={currency} value={currency}>
-                  {currency}
-                </option>
-              ))}
-            </Select>
+              onChange={(val) => handleChange('currency', val)}
+              options={CURRENCIES.map((c) => ({ value: c, label: c }))}
+            />
           </FormField>
         </div>
 
@@ -220,27 +211,14 @@ export default function ExpenseModal({ isOpen, onClose, onSuccess }) {
         </FormField>
 
         <FormField label={EXPENSE_TEXT.modal.customerLabel}>
-          <Select
+          <Dropdown
             value={formState.customerId}
-            onChange={(event) => handleChange('customerId', event.target.value)}
-          >
-            <option value="">{EXPENSE_TEXT.modal.customerPlaceholder}</option>
-            {isCustomersLoading ? (
-              <option value="" disabled>
-                {EXPENSE_TEXT.filters.customerLoading}
-              </option>
-            ) : null}
-            {isCustomersError ? (
-              <option value="" disabled>
-                {EXPENSE_TEXT.filters.customerError}
-              </option>
-            ) : null}
-            {customers.map((customer) => (
-              <option key={customer.id} value={customer.id}>
-                {customer.name}
-              </option>
-            ))}
-          </Select>
+            onChange={(val) => handleChange('customerId', val)}
+            options={[
+              { value: '', label: isCustomersLoading ? EXPENSE_TEXT.filters.customerLoading : isCustomersError ? EXPENSE_TEXT.filters.customerError : EXPENSE_TEXT.modal.customerPlaceholder },
+              ...customers.map((c) => ({ value: c.id, label: c.name })),
+            ]}
+          />
         </FormField>
 
         <FormField label={EXPENSE_TEXT.modal.descriptionLabel}>

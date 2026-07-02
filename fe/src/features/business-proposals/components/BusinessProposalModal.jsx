@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import Button from '@/components/chadcn/Button';
 import Dialog from '@/components/chadcn/Dialog';
 import Input from '@/components/chadcn/Input';
-import Select from '@/components/chadcn/Select';
+import Dropdown from '@/components/chadcn/Dropdown';
 import useCustomers from '@/features/customers/hooks/useCustomers';
 import {
   BUSINESS_PROPOSALS_TEXT,
@@ -250,61 +250,47 @@ export default function BusinessProposalModal({ isOpen, onClose, onSuccess }) {
 
     if (currentStep === STEP_KEYS.customerId) {
       return (
-        <Select value={draftAnswer} onChange={(event) => setDraftAnswer(event.target.value)}>
-          <option value="">{BUSINESS_PROPOSALS_TEXT.filters.customerPlaceholder}</option>
-          {isCustomersLoading ? (
-            <option value="" disabled>
-              {BUSINESS_PROPOSALS_TEXT.filters.customerLoading}
-            </option>
-          ) : null}
-          {isCustomersError ? (
-            <option value="" disabled>
-              {BUSINESS_PROPOSALS_TEXT.filters.customerError}
-            </option>
-          ) : null}
-          {customers.map((customer) => (
-            <option key={customer.id} value={customer.id}>
-              {customer.name}
-            </option>
-          ))}
-        </Select>
+        <Dropdown
+          value={draftAnswer}
+          onChange={(val) => setDraftAnswer(val)}
+          options={[
+            { value: '', label: isCustomersLoading ? BUSINESS_PROPOSALS_TEXT.filters.customerLoading : isCustomersError ? BUSINESS_PROPOSALS_TEXT.filters.customerError : BUSINESS_PROPOSALS_TEXT.filters.customerPlaceholder },
+            ...customers.map((c) => ({ value: c.id, label: c.name })),
+          ]}
+        />
       );
     }
 
     if (currentStep === STEP_KEYS.pricingModel) {
       return (
-        <Select value={draftAnswer} onChange={(event) => setDraftAnswer(event.target.value)}>
-          <option value="">{BUSINESS_PROPOSALS_TEXT.modal.requiredPricingModel}</option>
-          {PRICING_MODELS.map((model) => (
-            <option key={model.value} value={model.value}>
-              {model.label}
-            </option>
-          ))}
-        </Select>
+        <Dropdown
+          value={draftAnswer}
+          onChange={(val) => setDraftAnswer(val)}
+          options={[
+            { value: '', label: BUSINESS_PROPOSALS_TEXT.modal.requiredPricingModel },
+            ...PRICING_MODELS,
+          ]}
+        />
       );
     }
 
     if (currentStep === STEP_KEYS.currency) {
       return (
-        <Select value={draftAnswer} onChange={(event) => setDraftAnswer(event.target.value)}>
-          {CURRENCIES.map((currency) => (
-            <option key={currency} value={currency}>
-              {currency}
-            </option>
-          ))}
-        </Select>
+        <Dropdown
+          value={draftAnswer}
+          onChange={(val) => setDraftAnswer(val)}
+          options={CURRENCIES.map((c) => ({ value: c, label: c }))}
+        />
       );
     }
 
     if (currentStep === STEP_KEYS.requestedLanguage) {
       return (
-        <Select value={draftAnswer} onChange={(event) => setDraftAnswer(event.target.value)}>
-          {LANGUAGES.map((language) => (
-            <option key={language.value} value={language.value}>
-              {language.label}
-            </option>
-          ))}
-        </Select>
+        <Dropdown
+          value={draftAnswer}
+          onChange={(val) => setDraftAnswer(val)}
+          options={LANGUAGES}
+        />
       );
     }
 

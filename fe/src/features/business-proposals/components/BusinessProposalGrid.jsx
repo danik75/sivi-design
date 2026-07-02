@@ -3,7 +3,7 @@ import { useState } from 'react';
 import Button from '@/components/chadcn/Button';
 import EmptyState from '@/components/chadcn/EmptyState';
 import FormField from '@/components/chadcn/FormField';
-import Select from '@/components/chadcn/Select';
+import Dropdown from '@/components/chadcn/Dropdown';
 import Table, { TableBody, TableHead, TableHeader, TableRow } from '@/components/chadcn/Table';
 import {
   BUSINESS_PROPOSALS_TEXT,
@@ -51,41 +51,25 @@ export default function BusinessProposalGrid({
       <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-100">
         <div className="grid gap-4 lg:grid-cols-[minmax(0,280px)_minmax(0,220px)] lg:items-end">
           <FormField label={BUSINESS_PROPOSALS_TEXT.filters.customerLabel}>
-            <Select
+            <Dropdown
               value={selectedCustomerId}
-              onChange={(event) => setSelectedCustomerId(event.target.value)}
-            >
-              <option value="">{BUSINESS_PROPOSALS_TEXT.filters.customerPlaceholder}</option>
-              {isCustomersLoading ? (
-                <option value="" disabled>
-                  {BUSINESS_PROPOSALS_TEXT.filters.customerLoading}
-                </option>
-              ) : null}
-              {isCustomersError ? (
-                <option value="" disabled>
-                  {BUSINESS_PROPOSALS_TEXT.filters.customerError}
-                </option>
-              ) : null}
-              {customers.map((customer) => (
-                <option key={customer.id} value={customer.id}>
-                  {customer.name}
-                </option>
-              ))}
-            </Select>
+              onChange={(val) => setSelectedCustomerId(val)}
+              options={[
+                { value: '', label: isCustomersLoading ? BUSINESS_PROPOSALS_TEXT.filters.customerLoading : isCustomersError ? BUSINESS_PROPOSALS_TEXT.filters.customerError : BUSINESS_PROPOSALS_TEXT.filters.customerPlaceholder },
+                ...customers.map((c) => ({ value: c.id, label: c.name })),
+              ]}
+            />
           </FormField>
 
           <FormField label={BUSINESS_PROPOSALS_TEXT.filters.statusLabel}>
-            <Select
+            <Dropdown
               value={selectedStatus}
-              onChange={(event) => setSelectedStatus(event.target.value)}
-            >
-              <option value="">{BUSINESS_PROPOSALS_TEXT.filters.statusPlaceholder}</option>
-              {PROPOSAL_STATUSES.map((status) => (
-                <option key={status.value} value={status.value}>
-                  {status.label}
-                </option>
-              ))}
-            </Select>
+              onChange={(val) => setSelectedStatus(val)}
+              options={[
+                { value: '', label: BUSINESS_PROPOSALS_TEXT.filters.statusPlaceholder },
+                ...PROPOSAL_STATUSES,
+              ]}
+            />
           </FormField>
         </div>
       </div>
