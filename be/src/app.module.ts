@@ -7,10 +7,11 @@ import { ContractsModule } from './contracts/contracts.module';
 import { CustomersModule } from './customers/customers.module';
 import { ExpensesModule } from './expenses/expenses.module';
 import { InvoicesModule } from './invoices/invoices.module';
+import { ReportsModule } from './reports/reports.module';
 import { TasksModule } from './tasks/tasks.module';
 
 @Module({
-  imports: [AuthModule, BillingModule, CustomersModule, ContractsModule, ExpensesModule, InvoicesModule, TasksModule],
+  imports: [AuthModule, BillingModule, CustomersModule, ContractsModule, ExpensesModule, InvoicesModule, ReportsModule, TasksModule],
   controllers: [AppController],
   providers: [AppService],
 })
