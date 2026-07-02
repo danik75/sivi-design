@@ -4,6 +4,7 @@ import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { BillingModule } from './billing/billing.module';
 import { BusinessProposalsModule } from './business-proposals/business-proposals.module';
+import { BusinessTargetsModule } from './business-targets/business-targets.module';
 import { ContractsModule } from './contracts/contracts.module';
 import { CustomersModule } from './customers/customers.module';
 import { ExpensesModule } from './expenses/expenses.module';
@@ -16,6 +17,7 @@ import { TasksModule } from './tasks/tasks.module';
     AuthModule,
     BillingModule,
     BusinessProposalsModule,
+    BusinessTargetsModule,
     CustomersModule,
     ContractsModule,
     ExpensesModule,
