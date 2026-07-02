@@ -120,7 +120,7 @@ export default function TasksFeature() {
   const [view, setView] = useState(loadView);
   const [showCreate, setShowCreate] = useState(false);
   const [editTask, setEditTask] = useState(null);
-  const [visibleStatuses, setVisibleStatuses] = useState(() => new Set(ALL_STATUSES));
+  const [visibleStatuses, setVisibleStatuses] = useState(() => new Set(['pending', 'in_progress']));
 
   const handleViewChange = (nextView) => {
     setView(nextView);

@@ -3,18 +3,14 @@ import { useMemo, useState } from 'react';
 import Button from '@/components/chadcn/Button';
 import EmptyState from '@/components/chadcn/EmptyState';
 import SearchInput from '@/components/chadcn/SearchInput';
-import Table, {
-  TableBody,
+import {
   TableCell,
-  TableHead,
   TableHeader,
   TableRow,
 } from '@/components/chadcn/Table';
 import { STATUS_CONFIG, TASK_TEXT, getApiErrorMessage } from '@/features/tasks/constants';
 import useTasks from '@/features/tasks/hooks/useTasks';
 import useUpdateTask from '@/features/tasks/hooks/useUpdateTask';
-
-const PAGE_SIZE = 8;
 
 function StatusBadge({ status }) {
   const config = STATUS_CONFIG[status] ?? STATUS_CONFIG.pending;
@@ -121,9 +117,12 @@ TaskRow.propTypes = {
   onDoubleClick: PropTypes.func.isRequired,
 };
 
+const ROW_HEIGHT = 52; // px — approximate single-line row height
+const MAX_VISIBLE_ROWS = 10;
+const SCROLL_MAX_HEIGHT = ROW_HEIGHT * MAX_VISIBLE_ROWS;
+
 export default function TasksGrid({ onCreate, onEdit, visibleStatuses }) {
   const [search, setSearch] = useState('');
-  const [page, setPage] = useState(1);
   const abortMutation = useUpdateTask();
 
   const { data, error, isError, isLoading, refetch } = useTasks({ limit: 10000 });
@@ -143,9 +142,6 @@ export default function TasksGrid({ onCreate, onEdit, visibleStatuses }) {
     });
   }, [allTasks, search, visibleStatuses]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const safePage = Math.min(page, totalPages);
-  const tasks = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
   const hasSearch = Boolean(search.trim());
 
   const handleSearchChange = (e) => {
@@ -206,9 +202,12 @@ export default function TasksGrid({ onCreate, onEdit, visibleStatuses }) {
           {TASK_TEXT.loading}
         </div>
       ) : filtered.length ? (
-        <div className="space-y-4">
-          <Table>
-            <TableHead>
+        <div
+          className="w-full overflow-auto rounded-xl border border-slate-100 shadow-sm"
+          style={{ maxHeight: SCROLL_MAX_HEIGHT }}
+        >
+          <table className="w-full text-sm">
+            <thead className="sticky top-0 z-10 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
               <TableRow>
                 <TableHeader>{TASK_TEXT.headers.name}</TableHeader>
                 <TableHeader>{TASK_TEXT.headers.customer}</TableHeader>
@@ -219,9 +218,9 @@ export default function TasksGrid({ onCreate, onEdit, visibleStatuses }) {
                 <TableHeader>{TASK_TEXT.headers.percentComplete}</TableHeader>
                 <TableHeader />
               </TableRow>
-            </TableHead>
-            <TableBody>
-              {tasks.map((task) => (
+            </thead>
+            <tbody className="divide-y divide-slate-50">
+              {filtered.map((task) => (
                 <TaskRow
                   key={task.id}
                   task={task}
@@ -230,32 +229,8 @@ export default function TasksGrid({ onCreate, onEdit, visibleStatuses }) {
                   onDoubleClick={() => onEdit(task)}
                 />
               ))}
-            </TableBody>
-          </Table>
-
-          <div className="flex flex-col gap-3 rounded-2xl bg-white px-4 py-3 shadow-sm ring-1 ring-slate-100 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm text-slate-500">
-              {TASK_TEXT.pagination.label(safePage, totalPages)}
-            </p>
-            <div className="flex items-center gap-2">
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={safePage === 1}
-              >
-                {TASK_TEXT.pagination.previous}
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                disabled={safePage >= totalPages}
-              >
-                {TASK_TEXT.pagination.next}
-              </Button>
-            </div>
-          </div>
+            </tbody>
+          </table>
         </div>
       ) : (
         <EmptyState
