@@ -101,9 +101,9 @@ export default function ReportShell({
                     No data for this period.
                   </p>
                 ) : (
-                  <table className="w-full text-sm">
+                  <table className="w-full text-sm bg-white">
                     <thead>
-                      <tr className="border-b border-slate-100">
+                      <tr className="border-b border-slate-100 bg-slate-50">
                         {tableHeaders?.map((h) => (
                           <th
                             key={h}
@@ -114,9 +114,9 @@ export default function ReportShell({
                         ))}
                       </tr>
                     </thead>
-                    <tbody>
+                    <tbody className="bg-white">
                       {tableRows?.map((row, i) => (
-                        <tr key={i} className="border-b border-slate-50 hover:bg-slate-50">
+                        <tr key={i} className="border-b border-slate-50 bg-white hover:bg-slate-50/60">
                           {tableHeaders?.map((h) => (
                             <td key={h} className="py-2.5 pr-4 text-slate-700">
                               {row[h] ?? '—'}

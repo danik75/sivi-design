@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import ClipboardIcon from '@/components/chadcn/icons/ClipboardIcon';
 import {
   Area,
   AreaChart,
@@ -114,9 +115,11 @@ export default function CustomerStatementReport({ customers = [] }) {
           type="button"
           onClick={handleSend}
           disabled={!data}
-          className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-40"
+          aria-label={emailLabel}
+          title={emailLabel}
+          className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-40 transition-colors"
         >
-          {emailLabel}
+          <ClipboardIcon className="h-4 w-4" />
         </button>
       }
       chartContent={
