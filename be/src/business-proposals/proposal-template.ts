@@ -211,10 +211,13 @@ body {
 .notes .n::before { content: '•'; position: absolute; inset-inline-start: 0; color: #111; }
 
 /* ── Signature ── */
-.sig-head { text-align: center; color: ${ACCENT}; font-weight: 700; font-size: 13pt; margin: 12mm 0 16mm; }
-.sig-row { display: flex; justify-content: space-between; gap: 16mm; align-items: flex-end; }
+.sig-head { text-align: center; color: ${ACCENT}; font-weight: 700; font-size: 13pt; margin: 12mm 0 20mm; }
+/* Top-align both blocks so the two signature lines sit at the same height;
+ * names hang directly below each line, the client's note further below. */
+.sig-row { display: flex; justify-content: space-between; gap: 16mm; align-items: flex-start; }
 .sig-b { flex: 1; text-align: center; position: relative; }
-.sig-scribble { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); width: 46mm; margin-bottom: -1.5mm; }
+/* Transparent PNG drawn over the continuous line (line stays visible under it). */
+.sig-scribble { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); width: 46mm; margin-bottom: -1mm; }
 .sig-line { border-top: 1px solid #111; padding-top: 1.5mm; font-size: 9pt; }
 .sig-sub { font-size: 8pt; color: #555; margin-top: 1mm; line-height: 1.4; }
 
