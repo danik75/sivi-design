@@ -204,7 +204,7 @@ export default function TasksGrid({ onCreate, onEdit, visibleStatuses }) {
       ) : filtered.length ? (
         <div
           className="w-full overflow-auto rounded-xl border border-slate-100 shadow-sm"
-          style={{ maxHeight: SCROLL_MAX_HEIGHT }}
+          style={{ maxHeight: `${SCROLL_MAX_HEIGHT}px` }}
         >
           <table className="w-full text-sm">
             <thead className="sticky top-0 z-10 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
