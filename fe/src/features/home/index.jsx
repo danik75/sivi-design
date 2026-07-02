@@ -156,17 +156,27 @@ function HomeGantt({ tasks }) {
                   />
                 ))}
                 {/* bar */}
-                {!outsideRange && (
-                  <div
-                    className={`absolute top-1.5 bottom-1.5 rounded overflow-hidden shadow-sm ${cfg.barClass}`}
-                    style={{ left: `${leftPct}%`, width: `${widthPct}%` }}
-                  >
-                    <div className={`absolute inset-y-0 left-0 ${cfg.barFillClass}`} style={{ width: `${fillPct}%` }} />
-                    <span className="relative z-10 flex h-full items-center truncate px-2 text-xs font-medium text-white leading-none">
-                      {task.name}
-                    </span>
-                  </div>
-                )}
+                {!outsideRange && (() => {
+                  const barBg = task.color ?? null;
+                  return (
+                    <div
+                      className={`absolute top-1.5 bottom-1.5 rounded overflow-hidden shadow-sm${barBg === null ? ` ${cfg.barClass}` : ''}`}
+                      style={{ left: `${leftPct}%`, width: `${widthPct}%`, backgroundColor: barBg ?? undefined }}
+                    >
+                      {barBg !== null ? (
+                        <div className="absolute inset-y-0 left-0 bg-white/20" style={{ width: `${fillPct}%` }} />
+                      ) : (
+                        <div className={`absolute inset-y-0 left-0 ${cfg.barFillClass}`} style={{ width: `${fillPct}%` }} />
+                      )}
+                      {barBg !== null && (
+                        <span className={`absolute left-2 top-1/2 z-10 h-2 w-2 shrink-0 -translate-y-1/2 rounded-full ring-1 ring-white/60 ${cfg.barClass}`} />
+                      )}
+                      <span className={`relative z-10 flex h-full items-center truncate text-xs font-medium text-white leading-none ${barBg !== null ? 'pl-6 pr-2' : 'px-2'}`}>
+                        {task.name}
+                      </span>
+                    </div>
+                  );
+                })()}
               </div>
             </div>
           );
