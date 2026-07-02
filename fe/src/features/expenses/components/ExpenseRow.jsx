@@ -37,12 +37,11 @@ export default function ExpenseRow({ expense, onDeactivate }) {
             <Button
               type="button"
               variant="danger"
-              className="px-3 py-2"
+              className="h-8 w-8 !p-0 shrink-0"
               onClick={() => onDeactivate(expense)}
               aria-label={EXPENSE_TEXT.rowActions.deactivateLabel}
             >
               <XIcon />
-              <span>{EXPENSE_TEXT.rowActions.deactivate}</span>
             </Button>
           ) : null}
         </div>
