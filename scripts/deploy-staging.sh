@@ -52,7 +52,7 @@ log "Deploying frontend to Vercel..."
 cd "$REPO_ROOT/fe"
 npm ci --silent
 
-npx vercel --yes \
+npx vercel --prod --yes \
   --env VITE_API_BASE_URL="$RAILWAY_BE_URL" \
   --build-env VITE_API_BASE_URL="$RAILWAY_BE_URL"
 
