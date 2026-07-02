@@ -197,7 +197,8 @@ export class InvoiceRepository {
           inv.total,
           inv.created_at AS "createdAt",
           inv.updated_at AS "updatedAt",
-          (SELECT co.email FROM contacts co WHERE co.customer_id = inv.customer_id AND co.is_primary = TRUE LIMIT 1) AS "customerEmail"
+          (SELECT co.email FROM contacts co WHERE co.customer_id = inv.customer_id AND co.is_primary = TRUE LIMIT 1) AS "customerEmail",
+          (SELECT r.id FROM receipts r WHERE r.invoice_id = inv.id ORDER BY r.created_at DESC LIMIT 1) AS "receiptId"
         FROM invoices inv
         LEFT JOIN customers c ON c.id = inv.customer_id
         JOIN contracts con ON con.id = inv.contract_id

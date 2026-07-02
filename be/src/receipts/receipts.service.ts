@@ -6,8 +6,8 @@ import { ReceiptsRepository } from './receipts.repository';
 export class ReceiptsService {
   constructor(private readonly repo: ReceiptsRepository) {}
 
-  findAll() {
-    return this.repo.findAll();
+  findAll(opts: { search?: string; customerId?: string; from?: string; to?: string; page?: number; limit?: number } = {}) {
+    return this.repo.findAll(opts);
   }
 
   findOne(id: number) {

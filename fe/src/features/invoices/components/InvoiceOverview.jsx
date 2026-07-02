@@ -12,6 +12,7 @@ import Table, {
 import XIcon from '@/components/chadcn/icons/XIcon';
 import { formatAmount, getStatusVariant, INVOICE_TEXT } from '@/features/invoices/constants';
 import useInvoice from '@/features/invoices/hooks/useInvoice';
+import ReceiptDetailModal from '@/features/receipts/components/ReceiptDetailModal';
 
 const formatDate = (iso) => (iso ? new Date(iso).toLocaleDateString() : INVOICE_TEXT.placeholder);
 
@@ -160,6 +161,7 @@ Field.propTypes = {
 export default function InvoiceOverview({ isOpen, invoiceId, onClose }) {
   const { data: invoice, isLoading, isError } = useInvoice(isOpen ? invoiceId : null);
   const [emailLabel, setEmailLabel] = useState('Send Email');
+  const [showReceipt, setShowReceipt] = useState(false);
   const resetRef = useRef(null);
 
   const handleSendEmail = async () => {
@@ -198,6 +200,10 @@ export default function InvoiceOverview({ isOpen, invoiceId, onClose }) {
 
   if (!isOpen) return null;
 
+  const receiptModal = showReceipt && invoice?.receiptId ? (
+    <ReceiptDetailModal receiptId={invoice.receiptId} onClose={() => setShowReceipt(false)} />
+  ) : null;
+
   const subtotal = invoice ? parseFloat(invoice.subtotal ?? 0) : 0;
   const discountAmount = invoice ? parseFloat(invoice.discountAmount ?? 0) : 0;
   const discountType = invoice?.discountType ?? null;
@@ -207,6 +213,7 @@ export default function InvoiceOverview({ isOpen, invoiceId, onClose }) {
   const taxRate = invoice ? parseFloat(invoice.taxRate ?? 0) : 0;
 
   return (
+    <>
     <div
       className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-900/50 p-4 pt-12 backdrop-blur-sm"
       onClick={onClose}
@@ -232,6 +239,19 @@ export default function InvoiceOverview({ isOpen, invoiceId, onClose }) {
             )}
           </div>
           <div className="flex items-center gap-2">
+            {invoice?.status === 'paid' && invoice?.receiptId ? (
+              <Button
+                type="button"
+                variant="ghost"
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs"
+                onClick={() => setShowReceipt(true)}
+              >
+                <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                View Receipt
+              </Button>
+            ) : null}
             {invoice ? (
               <Button
                 type="button"
@@ -370,6 +390,8 @@ export default function InvoiceOverview({ isOpen, invoiceId, onClose }) {
         ) : null}
       </div>
     </div>
+    {receiptModal}
+    </>
   );
 }
 

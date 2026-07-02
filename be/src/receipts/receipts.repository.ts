@@ -4,26 +4,72 @@ import { CreateReceiptDto } from './dto/create-receipt.dto';
 
 @Injectable()
 export class ReceiptsRepository {
-  async findAll() {
-    const res = await pool.query(`
-      SELECT
-        r.id,
-        r.receipt_number  AS "receiptNumber",
-        r.invoice_id      AS "invoiceId",
-        inv.invoice_number AS "invoiceNumber",
-        c.name            AS "customerName",
-        inv.total,
-        inv.currency,
-        r.paid_at         AS "paidAt",
-        r.file_name       AS "fileName",
-        r.file_mime_type  AS "fileMimeType",
-        r.created_at      AS "createdAt"
-      FROM receipts r
-      JOIN invoices inv ON inv.id = r.invoice_id
-      LEFT JOIN customers c ON c.id = inv.customer_id
-      ORDER BY r.created_at DESC
-    `);
-    return res.rows;
+  async findAll(opts: {
+    search?: string;
+    customerId?: string;
+    from?: string;
+    to?: string;
+    page?: number;
+    limit?: number;
+  } = {}) {
+    const { search, customerId, from, to, page = 1, limit = 15 } = opts;
+    const conditions: string[] = [];
+    const values: (string | number)[] = [];
+
+    if (search) {
+      values.push(`%${search.toLowerCase()}%`);
+      conditions.push(`(LOWER(r.receipt_number) LIKE $${values.length} OR LOWER(inv.invoice_number) LIKE $${values.length})`);
+    }
+    if (customerId) {
+      values.push(customerId);
+      conditions.push(`inv.customer_id = $${values.length}`);
+    }
+    if (from) {
+      values.push(from);
+      conditions.push(`r.paid_at >= $${values.length}::date`);
+    }
+    if (to) {
+      values.push(to);
+      conditions.push(`r.paid_at < ($${values.length}::date + interval '1 day')`);
+    }
+
+    const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
+
+    const countRes = await pool.query(
+      `SELECT COUNT(*) FROM receipts r JOIN invoices inv ON inv.id = r.invoice_id LEFT JOIN customers c ON c.id = inv.customer_id ${where}`,
+      values,
+    );
+    const total = parseInt(countRes.rows[0].count, 10);
+
+    const offset = (Math.max(1, page) - 1) * limit;
+    values.push(limit, offset);
+
+    const dataRes = await pool.query(
+      `
+        SELECT
+          r.id,
+          r.receipt_number   AS "receiptNumber",
+          r.invoice_id       AS "invoiceId",
+          inv.invoice_number AS "invoiceNumber",
+          c.name             AS "customerName",
+          c.id               AS "customerId",
+          inv.total,
+          inv.currency,
+          r.paid_at          AS "paidAt",
+          r.file_name        AS "fileName",
+          r.file_mime_type   AS "fileMimeType",
+          r.created_at       AS "createdAt"
+        FROM receipts r
+        JOIN invoices inv ON inv.id = r.invoice_id
+        LEFT JOIN customers c ON c.id = inv.customer_id
+        ${where}
+        ORDER BY r.created_at DESC
+        LIMIT $${values.length - 1} OFFSET $${values.length}
+      `,
+      values,
+    );
+
+    return { data: dataRes.rows, total };
   }
 
   async findOne(id: number) {
