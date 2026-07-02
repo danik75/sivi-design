@@ -190,27 +190,25 @@ export default function ReceiptsFeature() {
               </tbody>
             </table>
 
-            {/* Pagination — always visible */}
-            <div className="flex items-center justify-between border-t border-slate-100 px-4 py-3">
-              <p className="text-xs text-slate-500">
-                {total} receipt{total !== 1 ? 's' : ''}{totalPages > 1 ? ` · page ${page} of ${totalPages}` : ''}
+            {/* Pagination */}
+            <div className="flex flex-col gap-3 rounded-b-2xl bg-white px-4 py-3 shadow-sm ring-1 ring-slate-100 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm text-slate-500">
+                Page {page} of {totalPages}
               </p>
-              <div className="flex gap-2">
+              <div className="flex items-center gap-2">
                 <Button
                   type="button"
                   variant="ghost"
-                  className="px-3 py-1.5 text-xs"
                   disabled={page <= 1}
-                  onClick={() => setPage((p) => p - 1)}
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
                 >
                   Previous
                 </Button>
                 <Button
                   type="button"
                   variant="ghost"
-                  className="px-3 py-1.5 text-xs"
                   disabled={page >= totalPages}
-                  onClick={() => setPage((p) => p + 1)}
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 >
                   Next
                 </Button>
