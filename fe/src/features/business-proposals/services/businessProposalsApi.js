@@ -19,3 +19,5 @@ export const deleteBusinessProposal = (id) =>
   api.delete(`/business-proposals/${id}`).then((r) => r.data);
 export const getBusinessProposalPdfUrl = (id) =>
   `${api.defaults.baseURL}/business-proposals/${id}/pdf`;
+export const getBusinessProposalPdfPreviewUrl = (id) =>
+  `${api.defaults.baseURL}/business-proposals/${id}/pdf?inline=1`;
