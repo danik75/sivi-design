@@ -1,6 +1,7 @@
 import { Injectable, UnauthorizedException, InternalServerErrorException } from '@nestjs/common';
 import { UserRepository } from './user.repository';
 import * as jwt from 'jsonwebtoken';
+import * as bcrypt from 'bcryptjs';
 
 @Injectable()
 export class AuthService {
@@ -10,12 +11,11 @@ export class AuthService {
     const user = await this.userRepository.findByUsername(username);
     if (!user) throw new UnauthorizedException('Invalid credentials');
 
-    // DEV-ONLY: The development seed stores passwords in cleartext. This direct comparison is
-    // intentionally simple for local development. In production replace with bcrypt.compare
-    // against a hashed password.
-    if (password !== user.password) {
-      throw new UnauthorizedException('Invalid credentials');
-    }
+    const isValid = user.password.startsWith('$2')
+      ? await bcrypt.compare(password, user.password)
+      : password === user.password;
+
+    if (!isValid) throw new UnauthorizedException('Invalid credentials');
 
     const secret = process.env.JWT_SECRET || 'devsecret';
     if (!secret) throw new InternalServerErrorException('JWT_SECRET not configured');
