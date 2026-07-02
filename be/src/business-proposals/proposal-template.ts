@@ -121,7 +121,7 @@ const ACCENT = '#f04e63';
 const GUTTER = '34mm';
 
 const CSS = `
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Assistant:wght@400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Heebo:wght@400;500;700&display=swap');
 
 @page { size: A4; margin: 0; }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -129,11 +129,11 @@ const CSS = `
 /*
  * Latin renders in Montserrat; Hebrew glyphs (absent in Montserrat) fall
  * through per-glyph to FB Pilot when the brand font is installed, otherwise to
- * Assistant — the closest freely available Hebrew face. Drop FbPilot .ttf/.otf
- * on the system (or embed via @font-face) to render Hebrew in the exact brand font.
+ * Heebo. Drop FbPilot .ttf/.otf on the system (or embed via @font-face) to
+ * render Hebrew in the exact brand font.
  */
 body {
-  font-family: 'Montserrat', 'FB Pilot', 'FbPilot', 'Assistant', 'Arial Hebrew', Arial, sans-serif;
+  font-family: 'Montserrat', 'FB Pilot', 'FbPilot', 'Heebo', 'Arial Hebrew', Arial, sans-serif;
   font-size: 9.5pt;
   color: #111;
   background: #fff;
@@ -185,9 +185,13 @@ body {
 
 /* ── Key / value rows (pink key in gutter, value inset) ── */
 .kv { display: flex; gap: 4mm; margin-bottom: 0.6mm; align-items: flex-start; }
-.k { color: ${ACCENT}; width: 30mm; flex-shrink: 0; text-align: start; font-size: 9.5pt; line-height: 1.45; }
+.k { color: ${ACCENT}; width: 30mm; flex-shrink: 0; text-align: start; white-space: nowrap; font-size: 9.5pt; line-height: 1.45; }
 .v { flex: 1; text-align: start; font-size: 9.5pt; line-height: 1.45; color: #111; }
 .kv-gap { height: 3mm; }
+/* Keys align on the edge next to the values (left in RTL), matching the
+ * reference — left edges flush; longer labels run toward the outer margin
+ * (nowrap keeps them on one line instead of wrapping and breaking alignment). */
+[dir="rtl"] .k { text-align: end; }
 
 /* ── Timeline phases ── */
 .phase { margin-bottom: 2.5mm; }
@@ -210,7 +214,7 @@ body {
 .sig-head { text-align: center; color: ${ACCENT}; font-weight: 700; font-size: 13pt; margin: 12mm 0 16mm; }
 .sig-row { display: flex; justify-content: space-between; gap: 16mm; align-items: flex-end; }
 .sig-b { flex: 1; text-align: center; position: relative; }
-.sig-scribble { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); width: 42mm; margin-bottom: -1mm; }
+.sig-scribble { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); width: 46mm; margin-bottom: -1.5mm; }
 .sig-line { border-top: 1px solid #111; padding-top: 1.5mm; font-size: 9pt; }
 .sig-sub { font-size: 8pt; color: #555; margin-top: 1mm; line-height: 1.4; }
 

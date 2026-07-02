@@ -12,7 +12,6 @@ import {
 import { ProposalLifecycleStatus } from './dto/update-business-proposal-lifecycle.dto';
 import {
   buildProposalHtml,
-  buildBilingualPdf,
   ContentJson,
   CustomerInfo,
 } from './proposal-template';
@@ -456,7 +455,7 @@ export class BusinessProposalRepository {
 
     const customer = await this.loadCustomerInfo(row.customerId);
     const dateStr = this.formatDate(row.createdAt);
-    const html = buildBilingualPdf({ contentJson: row.contentJson, customer, dateStr });
+    const html = buildProposalHtml({ contentJson: row.contentJson, customer, dateStr, lang: 'he' });
     return htmlToPdfBuffer(html);
   }
 
