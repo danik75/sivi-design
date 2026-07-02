@@ -345,7 +345,7 @@ export default function HomeFeature() {
         {/* Hours target donut */}
         <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-100 flex flex-col">
           <h2 className="mb-1 text-sm font-semibold uppercase tracking-wide text-slate-500">
-            Hours Target
+            Work Hours Target
           </h2>
           <p className="mb-4 text-xs text-slate-400">{MONTH_LABEL}</p>
           {targetHours > 0 ? (

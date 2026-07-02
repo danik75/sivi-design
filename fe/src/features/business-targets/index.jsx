@@ -140,7 +140,7 @@ export default function BusinessTargetsFeature() {
             </p>
             <div className="grid gap-4 sm:grid-cols-2">
               <ProgressCard
-                label="Hours billed"
+                label="Work hours"
                 current={data?.currentHours ?? 0}
                 target={data?.targetHoursPerMonth ?? 0}
                 formatFn={(n) => `${fmt(n)} h`}
@@ -161,7 +161,7 @@ export default function BusinessTargetsFeature() {
             <h2 className="mb-5 text-sm font-semibold text-slate-800">Edit Targets</h2>
             <form onSubmit={handleSave} className="space-y-4">
               <div className="grid gap-4 sm:grid-cols-2">
-                <FormField label="Target hours / month">
+                <FormField label="Target work hours / month">
                   <Input
                     type="number"
                     min="0"
