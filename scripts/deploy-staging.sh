@@ -23,6 +23,15 @@ command -v vercel  >/dev/null 2>&1 || fail "vercel CLI not found.  Run: npm inst
 railway whoami >/dev/null 2>&1  || fail "Not logged in to Railway. Run: railway login"
 vercel whoami  >/dev/null 2>&1  || fail "Not logged in to Vercel.  Run: vercel login"
 
+# Required Railway env vars — set once via:
+#   railway variables set --service 44900def-7551-41c5-b929-0bc4e4c2c0a6 "GROQ_API_KEY=<key>"
+# The script does not set secrets — they are managed manually in Railway dashboard.
+REQUIRED_SECRETS=(GROQ_API_KEY JWT_SECRET PGPASSWORD)
+for secret in "${REQUIRED_SECRETS[@]}"; do
+  railway variables --service 44900def-7551-41c5-b929-0bc4e4c2c0a6 2>/dev/null | grep -q "^║ $secret" || \
+    warn "Railway variable '$secret' may not be set — check dashboard before deploying"
+done
+
 # ---------------------------------------------------------------------------
 # Backend — build & deploy to Railway
 # ---------------------------------------------------------------------------
