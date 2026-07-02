@@ -1,6 +1,10 @@
+import * as dns from 'node:dns';
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
+
+// Prefer IPv4 so Railway containers can reach Supabase (no IPv6 routing)
+dns.setDefaultResultOrder('ipv4first');
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
