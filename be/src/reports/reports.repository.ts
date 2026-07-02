@@ -173,8 +173,8 @@ export class ReportsRepository {
       pool.query(
         `
         SELECT 'invoice' AS type, i.id, i.invoice_number AS reference,
-               COALESCE(con.type,'') AS description,
-               i.total AS amount, i.issue_date AS date, i.status, i.currency
+               COALESCE(con.type::text,'') AS description,
+               i.total AS amount, i.issue_date AS date, i.status::text AS status, i.currency
         FROM invoices i
         JOIN contracts con ON con.id = i.contract_id
         WHERE i.customer_id = $1 AND i.issue_date BETWEEN $2 AND $3
@@ -184,8 +184,8 @@ export class ReportsRepository {
 
         SELECT 'expense' AS type, e.id,
                CONCAT('EXP-', SUBSTRING(e.id::text,1,8)) AS reference,
-               CONCAT(COALESCE(e.vendor,''),' – ',COALESCE(e.category,'')) AS description,
-               -e.amount AS amount, e.date, e.status, e.currency
+               CONCAT(COALESCE(e.vendor,''),' – ',COALESCE(e.category::text,'')) AS description,
+               -e.amount AS amount, e.date, e.status::text AS status, e.currency
         FROM expenses e
         WHERE e.customer_id = $1 AND e.date BETWEEN $2 AND $3
 
@@ -485,7 +485,7 @@ export class ReportsRepository {
                con.type, con.monthly_fee AS "monthlyFee", con.total_amount AS "totalAmount",
                con.amount_paid AS "amountPaid", con.expires_at AS "expiresAt", con.currency
         FROM contracts con JOIN customers c ON c.id = con.customer_id
-        WHERE con.status = 'active' AND con.type IN ('retainer','fixed_price')
+        WHERE con.status = 'active' AND con.type IN ('monthly_retainer','lump_sum')
         `,
       ),
     ]);
@@ -516,7 +516,7 @@ export class ReportsRepository {
 
     const projected: typeof confirmed = [];
     for (const con of contractsRes.rows) {
-      if (con.type === 'retainer' && con.monthlyFee) {
+      if (con.type === 'monthly_retainer' && con.monthlyFee) {
         for (const m of monthLabels) {
           const expiresAt = con.expiresAt ? new Date(con.expiresAt) : null;
           if (expiresAt && new Date(m.year, m.month, 1) > expiresAt) continue;
@@ -531,7 +531,7 @@ export class ReportsRepository {
             forecastMonth: m.label,
           });
         }
-      } else if (con.type === 'fixed_price' && con.totalAmount) {
+      } else if (con.type === 'lump_sum' && con.totalAmount) {
         const remaining = parseFloat(con.totalAmount) - parseFloat(con.amountPaid ?? 0);
         if (remaining <= 0) continue;
         projected.push({
