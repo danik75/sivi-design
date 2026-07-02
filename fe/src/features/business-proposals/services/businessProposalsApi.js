@@ -13,5 +13,9 @@ export const updateBusinessProposalLifecycle = (id, lifecycleStatus) =>
   api
     .patch(`/business-proposals/${id}/lifecycle`, { lifecycleStatus })
     .then((r) => r.data);
+export const updateBusinessProposalContent = (id, contentJson) =>
+  api.patch(`/business-proposals/${id}/content`, { contentJson }).then((r) => r.data);
 export const deleteBusinessProposal = (id) =>
   api.delete(`/business-proposals/${id}`).then((r) => r.data);
+export const getBusinessProposalPdfUrl = (id) =>
+  `${api.defaults.baseURL}/business-proposals/${id}/pdf`;

@@ -10,6 +10,13 @@ import {
   ProposalPricingModel,
 } from './dto/create-business-proposal.dto';
 import { ProposalLifecycleStatus } from './dto/update-business-proposal-lifecycle.dto';
+import {
+  buildProposalHtml,
+  buildBilingualPdf,
+  ContentJson,
+  CustomerInfo,
+} from './proposal-template';
+import { htmlToPdfBuffer } from './pdf-generator';
 
 type ProposalStatus = 'queued' | 'in_progress' | 'completed' | 'failed';
 
@@ -26,6 +33,7 @@ type ProposalRow = {
   requestedLanguage: ProposalLanguage;
   status: ProposalStatus;
   lifecycleStatus: ProposalLifecycleStatus;
+  contentJson: ContentJson | null;
   englishHtml: string | null;
   hebrewHtml: string | null;
   generationError: string | null;
@@ -62,8 +70,8 @@ type ProposalContext = {
     pricingModel: string;
     businessRequirement: string;
     paymentDistribution: string;
-    englishSnippet: string;
-    hebrewSnippet: string;
+    heSnippet: string;
+    enSnippet: string;
   }>;
 };
 
@@ -79,10 +87,7 @@ type GenerationInput = {
   requestedLanguage: ProposalLanguage;
   context: ProposalContext;
   refinementInstructions?: string;
-  currentProposal?: {
-    englishHtml: string;
-    hebrewHtml: string;
-  };
+  currentContentJson?: ContentJson;
 };
 
 const PRICING_MODEL_LABELS: Record<ProposalPricingModel, string> = {
@@ -91,6 +96,81 @@ const PRICING_MODEL_LABELS: Record<ProposalPricingModel, string> = {
   capped_hours_bundle: 'Capped Hours Bundle',
   monthly_retainer: 'Monthly Retainer',
 };
+
+const SYSTEM_PROMPT = `You are a professional business proposal writer for Sivi-Design, an Israeli creative studio.
+
+ABOUT SIVI-DESIGN:
+- Owner / Designer: Sivan Darmon Pritsker (Hebrew: סיון דרמון פריצקר)
+- Services: AI Design, Graphic Design (עיצוב גרפי), Creative Direction, Marketing, Digital Design, UX/UI, Web Design, Illustration
+- VAT status: Exempt (עוסק פטור) — prices do NOT include VAT
+- Standard hourly rate: 250 NIS/hour
+- Overtime/additional hours rate: 230 NIS/hour
+- Rush/emergency surcharge: +50% above base price
+- Contact: 052-6613709 | sivandarmon@gmail.com | sivi-design.com
+
+PRICING MODEL GUIDANCE:
+- fixed_fee: One total price. Payment: 25% advance before start, milestone payments per phase, final 25% upon file delivery.
+- time_and_materials: Hourly billing at 250 NIS/hr. 1,000 NIS advance. Monthly invoicing.
+- monthly_retainer: Fixed monthly fee for agreed ongoing hours. Payment on the 15th of each calendar month. Track hours monthly.
+- capped_hours_bundle: Pre-purchased block of hours at slightly reduced rate. Full amount paid upfront. Hours tracked; unused hours do not roll over.
+
+STANDARD TERMS (these appear in every proposal — do NOT include in your JSON, they are added automatically by the template):
+- 2 revision rounds + 3 sub-revisions per deliverable, then billed hourly
+- 50% surcharge for rush/emergency work
+- No VAT (עוסק פטור)
+- Work begins only after advance payment and signed contract
+- Source files transferred only after final payment
+
+YOUR TASK:
+Generate a complete, professional price proposal for Sivi-Design. Base the scope, timeline, pricing, and deliverables on the business requirement and pricing model provided. Be specific, realistic, and professional.
+
+RETURN a JSON object with EXACTLY this structure (no extra keys):
+{
+  "he": {
+    "greeting": "היי [contactName],",
+    "intro": "בהמשך לשיחתנו, להלן הצעת מחיר לעיצוב – אנא עבר/י בעיון והחזר/י לי חתום/ה:",
+    "projectDescription": "תיאור קצר של הפרויקט ומטרותיו",
+    "timeline": [
+      {
+        "phase": "שלב א׳: שם השלב",
+        "duration": "עד X ימי עסקים",
+        "tasks": ["משימה 1", "משימה 2", "משימה 3"]
+      }
+    ],
+    "totalPrice": "XX,XXX ₪",
+    "paymentSchedule": [
+      { "label": "מקדמה", "amount": "X,XXX ₪", "condition": "לפני תחילת הפרויקט – 25% מהסכום הכללי" },
+      { "label": "תשלום שני", "amount": "X,XXX ₪", "condition": "לאחר סיום שלב א׳" },
+      { "label": "תשלום אחרון", "amount": "X,XXX ₪", "condition": "לאחר סיום ולפני העברת קבצים פתוחים" }
+    ],
+    "projectStructure": [
+      {
+        "name": "שם המרכיב / שלב",
+        "description": "תיאור קצר",
+        "deliverables": [
+          { "item": "שם פריט ספציפי", "price": "X,XXX ₪" }
+        ]
+      }
+    ]
+  },
+  "en": {
+    "greeting": "Hi [contactName],",
+    "intro": "Following our conversation, please find the price proposal for design services below. Please review and return signed:",
+    "projectDescription": "Brief description of the project and its goals",
+    "timeline": [ ... same structure in English ... ],
+    "totalPrice": "₪XX,XXX",
+    "paymentSchedule": [ ... ],
+    "projectStructure": [ ... ]
+  }
+}
+
+RULES:
+- Both "he" and "en" must be fully populated — do not leave any field empty.
+- Use [contactName] as a placeholder in greeting when the contact name is not known.
+- Be specific about deliverables and prices — don't use generic placeholders.
+- For time_and_materials / monthly_retainer: totalPrice should reflect the hourly rate or monthly fee, not a vague estimate.
+- For refinements: if refinementInstructions and currentContentJson are provided, update only the relevant sections while keeping the rest.
+- Return ONLY the JSON object — no markdown, no explanation, no wrapper.`;
 
 const SELECT_FIELDS = `
   SELECT
@@ -106,6 +186,7 @@ const SELECT_FIELDS = `
     bp.requested_language AS "requestedLanguage",
     bp.status,
     bp.lifecycle_status AS "lifecycleStatus",
+    bp.content_json AS "contentJson",
     bp.english_html AS "englishHtml",
     bp.hebrew_html AS "hebrewHtml",
     bp.generation_error AS "generationError",
@@ -218,6 +299,7 @@ export class BusinessProposalRepository {
       `
         UPDATE business_proposals
         SET status = 'queued',
+            content_json = NULL,
             english_html = NULL,
             hebrew_html = NULL,
             generation_error = NULL,
@@ -306,6 +388,38 @@ export class BusinessProposalRepository {
     return this.findOne(id);
   }
 
+  async updateContent(id: string, contentJson: ContentJson) {
+    if (!this.isUuid(id)) {
+      throw new BadRequestException('Invalid business proposal id');
+    }
+
+    const row = await this.findOneRow(id);
+    if (!row) {
+      throw new NotFoundException('Business proposal not found');
+    }
+    if (row.status !== 'completed') {
+      throw new BadRequestException('Only completed proposals can have their content edited');
+    }
+
+    const customer = await this.loadCustomerInfo(row.customerId);
+    const dateStr = this.formatDate(row.createdAt);
+    const englishHtml = buildProposalHtml({ contentJson, customer, dateStr, lang: 'en' });
+    const hebrewHtml = buildProposalHtml({ contentJson, customer, dateStr, lang: 'he' });
+
+    await pool.query(
+      `
+        UPDATE business_proposals
+        SET content_json = $2::jsonb,
+            english_html = $3,
+            hebrew_html  = $4
+        WHERE id = $1
+      `,
+      [id, JSON.stringify(contentJson), englishHtml, hebrewHtml],
+    );
+
+    return this.findOne(id);
+  }
+
   async remove(id: string) {
     if (!this.isUuid(id)) {
       throw new BadRequestException('Invalid business proposal id');
@@ -325,6 +439,25 @@ export class BusinessProposalRepository {
     }
 
     return { deleted: true };
+  }
+
+  async generatePdfBuffer(id: string): Promise<Buffer> {
+    if (!this.isUuid(id)) {
+      throw new BadRequestException('Invalid business proposal id');
+    }
+
+    const row = await this.findOneRow(id);
+    if (!row) {
+      throw new NotFoundException('Business proposal not found');
+    }
+    if (row.status !== 'completed' || !row.contentJson) {
+      throw new BadRequestException('Proposal is not yet completed or has no content');
+    }
+
+    const customer = await this.loadCustomerInfo(row.customerId);
+    const dateStr = this.formatDate(row.createdAt);
+    const html = buildBilingualPdf({ contentJson: row.contentJson, customer, dateStr });
+    return htmlToPdfBuffer(html);
   }
 
   async processGeneration(id: string, refinementText?: string) {
@@ -349,6 +482,8 @@ export class BusinessProposalRepository {
       }
 
       const context = await this.loadContext(proposal.customerId, proposal.id);
+      const customer = await this.loadCustomerInfo(proposal.customerId);
+
       const generationInput: GenerationInput = {
         customerId: proposal.customerId,
         customerName: proposal.customerName,
@@ -363,35 +498,38 @@ export class BusinessProposalRepository {
       };
 
       if (refinementText) {
-        if (!proposal.englishHtml || !proposal.hebrewHtml) {
+        if (!proposal.contentJson) {
           throw new BadRequestException('Proposal content is missing and cannot be refined');
         }
         generationInput.refinementInstructions = refinementText;
-        generationInput.currentProposal = {
-          englishHtml: proposal.englishHtml,
-          hebrewHtml: proposal.hebrewHtml,
-        };
+        generationInput.currentContentJson = proposal.contentJson;
       }
 
-      const llmResult = await this.callGroq(generationInput);
+      const llmResult = await this.callGroq(generationInput, customer);
+      const dateStr = this.formatDate(proposal.createdAt);
+
+      const englishHtml = buildProposalHtml({ contentJson: llmResult.contentJson, customer, dateStr, lang: 'en' });
+      const hebrewHtml = buildProposalHtml({ contentJson: llmResult.contentJson, customer, dateStr, lang: 'he' });
 
       await pool.query(
         `
           UPDATE business_proposals
           SET status = 'completed',
-              english_html = $2,
-              hebrew_html = $3,
-              context_snapshot = $4::jsonb,
-              llm_model = $5,
-              llm_response = $6::jsonb,
+              content_json = $2::jsonb,
+              english_html = $3,
+              hebrew_html = $4,
+              context_snapshot = $5::jsonb,
+              llm_model = $6,
+              llm_response = $7::jsonb,
               generation_error = NULL,
               completed_at = now()
           WHERE id = $1
         `,
         [
           id,
-          llmResult.englishHtml,
-          llmResult.hebrewHtml,
+          JSON.stringify(llmResult.contentJson),
+          englishHtml,
+          hebrewHtml,
           JSON.stringify(generationInput),
           llmResult.model,
           JSON.stringify(llmResult.rawResponse),
@@ -459,14 +597,14 @@ export class BusinessProposalRepository {
             pricing_model AS "pricingModel",
             business_requirement AS "businessRequirement",
             payment_distribution AS "paymentDistribution",
-            LEFT(regexp_replace(COALESCE(english_html, ''), '<[^>]*>', '', 'g'), 600) AS "englishSnippet",
-            LEFT(regexp_replace(COALESCE(hebrew_html, ''), '<[^>]*>', '', 'g'), 600) AS "hebrewSnippet"
+            LEFT(COALESCE(content_json->>'he', ''), 400) AS "heSnippet",
+            LEFT(COALESCE(content_json->>'en', ''), 400) AS "enSnippet"
           FROM business_proposals
           WHERE customer_id = $1
             AND status = 'completed'
             AND id != $2
           ORDER BY created_at DESC
-          LIMIT 5
+          LIMIT 3
         `,
         [customerId, proposalId],
       ),
@@ -488,7 +626,27 @@ export class BusinessProposalRepository {
     };
   }
 
-  private async callGroq(payload: GenerationInput) {
+  private async loadCustomerInfo(customerId: string): Promise<CustomerInfo> {
+    const [customerRes, contactRes] = await Promise.all([
+      pool.query('SELECT name FROM customers WHERE id = $1', [customerId]),
+      pool.query(
+        'SELECT email, phone, address FROM contacts WHERE customer_id = $1 ORDER BY created_at LIMIT 1',
+        [customerId],
+      ),
+    ]);
+
+    const customer = customerRes.rows[0] as { name: string } | undefined;
+    const contact = contactRes.rows[0] as { email?: string; phone?: string; address?: string } | undefined;
+
+    return {
+      businessName: customer?.name ?? 'Unknown',
+      email: contact?.email ?? undefined,
+      phone: contact?.phone ?? undefined,
+      address: contact?.address ?? undefined,
+    };
+  }
+
+  private async callGroq(payload: GenerationInput, customer: CustomerInfo) {
     const apiKey = process.env.GROQ_API_KEY;
     if (!apiKey) {
       throw new Error('GROQ_API_KEY is missing');
@@ -496,30 +654,17 @@ export class BusinessProposalRepository {
 
     const preferredModel = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
     const candidates = Array.from(
-      new Set([
-        preferredModel,
-        'llama-3.3-70b-versatile',
-        'llama-3.1-8b-instant',
-      ]),
+      new Set([preferredModel, 'llama-3.3-70b-versatile', 'llama-3.1-8b-instant']),
     );
 
     let lastError = 'Unknown Groq error';
     for (const model of candidates) {
       try {
-        const rawResponse = await this.requestGroqCompletion(apiKey, model, payload);
+        const rawResponse = await this.requestGroqCompletion(apiKey, model, payload, customer);
         const content = this.extractAssistantContent(rawResponse);
-        const parsed = this.parseProposalPayload(content);
+        const contentJson = this.parseContentJson(content);
 
-        if (!parsed.englishHtml || !parsed.hebrewHtml) {
-          throw new Error('Groq response missing englishHtml/hebrewHtml');
-        }
-
-        return {
-          model,
-          englishHtml: parsed.englishHtml,
-          hebrewHtml: parsed.hebrewHtml,
-          rawResponse,
-        };
+        return { model, contentJson, rawResponse };
       } catch (error) {
         lastError = this.getErrorMessage(error);
         const isModelAccessError =
@@ -541,8 +686,32 @@ export class BusinessProposalRepository {
   private async requestGroqCompletion(
     apiKey: string,
     model: string,
-    payload: Record<string, unknown>,
+    payload: GenerationInput,
+    customer: CustomerInfo,
   ) {
+    const userMessage = `Generate a business proposal for Sivi-Design with the following details:
+
+Customer: ${customer.businessName}
+${customer.contactName ? `Contact: ${customer.contactName}` : ''}
+${customer.email ? `Email: ${customer.email}` : ''}
+
+Business Requirement: ${payload.businessRequirement}
+
+Pricing Model: ${PRICING_MODEL_LABELS[payload.pricingModel]}
+${payload.estimatedHours ? `Estimated Hours: ${payload.estimatedHours}` : ''}
+${payload.hourlyRate ? `Hourly Rate: ${payload.hourlyRate} ${payload.currency}` : ''}
+Currency: ${payload.currency}
+Payment Distribution Preference: ${payload.paymentDistribution}
+
+Customer Context:
+- Existing contracts: ${payload.context.contracts.length} (${payload.context.contracts.map(c => c.type).join(', ') || 'none'})
+- Billing history: ${payload.context.billingSummary.paidTotal} ${payload.currency} paid across ${payload.context.billingSummary.paidInvoices} invoices
+- Active tasks: ${payload.context.taskSummary.activeTasks}
+${payload.context.previousProposals.length ? `- Previous proposals: ${payload.context.previousProposals.length} (pricing model: ${payload.context.previousProposals[0]?.pricingModel})` : ''}
+${payload.refinementInstructions ? `\nRefinement instructions: ${payload.refinementInstructions}\n\nCurrent content JSON to refine:\n${JSON.stringify(payload.currentContentJson, null, 2)}` : ''}
+
+Return only the JSON object as specified in the system prompt.`;
+
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -551,18 +720,11 @@ export class BusinessProposalRepository {
       },
       body: JSON.stringify({
         model,
-        temperature: 0.2,
+        temperature: 0.3,
         response_format: { type: 'json_object' },
         messages: [
-          {
-            role: 'system',
-            content:
-              'You are a B2B proposal generator. Produce one English proposal and one Hebrew translation. If refinementInstructions and currentProposal are provided, revise the proposal accordingly while preserving professionalism and consistency. Return valid JSON object with keys: englishHtml, hebrewHtml. Both values must be complete styled HTML documents. Hebrew must have dir="rtl" and lang="he".',
-          },
-          {
-            role: 'user',
-            content: `Generate proposal from this JSON payload:\n${JSON.stringify(payload, null, 2)}`,
-          },
+          { role: 'system', content: SYSTEM_PROMPT },
+          { role: 'user', content: userMessage },
         ],
       }),
     });
@@ -588,20 +750,24 @@ export class BusinessProposalRepository {
     return content;
   }
 
-  private parseProposalPayload(content: string) {
+  private parseContentJson(content: string): ContentJson {
     const trimmed = content.trim();
     const jsonCandidate = trimmed.startsWith('```')
       ? trimmed.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/, '')
       : trimmed;
 
     try {
-      return JSON.parse(jsonCandidate) as { englishHtml?: string; hebrewHtml?: string };
+      const parsed = JSON.parse(jsonCandidate) as ContentJson;
+      if (!parsed.he || !parsed.en) {
+        throw new Error('Content JSON missing "he" or "en" key');
+      }
+      return parsed;
     } catch {
-      throw new Error('Unable to parse proposal JSON payload from Groq');
+      throw new Error('Unable to parse structured content JSON from Groq response');
     }
   }
 
-  private mapRow(row: ProposalRow, withHtml: boolean) {
+  private mapRow(row: ProposalRow, withContent: boolean) {
     return {
       id: row.id,
       customerId: row.customerId,
@@ -619,11 +785,12 @@ export class BusinessProposalRepository {
       generationError: row.generationError,
       createdAt: row.createdAt,
       completedAt: row.completedAt,
-      contextSnapshot: withHtml ? row.contextSnapshot : undefined,
-      llmModel: withHtml ? row.llmModel : undefined,
-      llmResponse: withHtml ? row.llmResponse : undefined,
-      englishHtml: withHtml ? row.englishHtml : undefined,
-      hebrewHtml: withHtml ? row.hebrewHtml : undefined,
+      contentJson: withContent ? row.contentJson : undefined,
+      contextSnapshot: withContent ? row.contextSnapshot : undefined,
+      llmModel: withContent ? row.llmModel : undefined,
+      llmResponse: withContent ? row.llmResponse : undefined,
+      englishHtml: withContent ? row.englishHtml : undefined,
+      hebrewHtml: withContent ? row.hebrewHtml : undefined,
     };
   }
 
@@ -638,6 +805,11 @@ export class BusinessProposalRepository {
     return (res.rows[0] as ProposalRow | undefined) ?? null;
   }
 
+  private formatDate(isoDate: string): string {
+    const d = new Date(isoDate);
+    return `${d.getDate()}.${d.getMonth() + 1}.${String(d.getFullYear()).slice(2)}`;
+  }
+
   private getErrorMessage(error: unknown) {
     if (error instanceof Error) {
       return error.message.slice(0, 2000);
@@ -646,6 +818,6 @@ export class BusinessProposalRepository {
   }
 
   private isUuid(value: string) {
-    return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
   }
 }

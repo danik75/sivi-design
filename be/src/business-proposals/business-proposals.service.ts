@@ -3,6 +3,7 @@ import { BusinessProposalRepository } from './business-proposal.repository';
 import { CreateBusinessProposalDto } from './dto/create-business-proposal.dto';
 import { RefineBusinessProposalDto } from './dto/refine-business-proposal.dto';
 import { UpdateBusinessProposalLifecycleDto } from './dto/update-business-proposal-lifecycle.dto';
+import { ContentJson } from './proposal-template';
 
 @Injectable()
 export class BusinessProposalsService {
@@ -18,14 +19,8 @@ export class BusinessProposalsService {
 
   async create(dto: CreateBusinessProposalDto) {
     const created = await this.repo.create(dto);
-
     this.runGeneration(created.id);
-
-    return {
-      id: created.id,
-      status: created.status,
-      createdAt: created.createdAt,
-    };
+    return { id: created.id, status: created.status, createdAt: created.createdAt };
   }
 
   async resubmit(id: string) {
@@ -42,6 +37,14 @@ export class BusinessProposalsService {
 
   updateLifecycle(id: string, dto: UpdateBusinessProposalLifecycleDto) {
     return this.repo.updateLifecycle(id, dto.lifecycleStatus);
+  }
+
+  updateContent(id: string, contentJson: ContentJson) {
+    return this.repo.updateContent(id, contentJson);
+  }
+
+  async getPdfBuffer(id: string): Promise<Buffer> {
+    return this.repo.generatePdfBuffer(id);
   }
 
   remove(id: string) {

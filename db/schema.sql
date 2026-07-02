@@ -233,6 +233,7 @@ CREATE TABLE IF NOT EXISTS business_proposals (
   requested_language    proposal_language        NOT NULL DEFAULT 'en',
   status                proposal_status          NOT NULL DEFAULT 'queued',
   lifecycle_status      proposal_lifecycle_status NOT NULL DEFAULT 'sent',
+  content_json          JSONB,
   english_html          TEXT,
   hebrew_html           TEXT,
   generation_error      TEXT,
