@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Cell, Pie, PieChart } from 'recharts';
 import Button from '@/components/chadcn/Button';
 import FormField from '@/components/chadcn/FormField';
 import Input from '@/components/chadcn/Input';
@@ -13,47 +14,66 @@ function fmtCurrency(n, currency) {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: currency ?? 'USD', maximumFractionDigits: 0 }).format(n ?? 0);
 }
 
-function ProgressCard({ label, current, target, formatFn, color }) {
+function ProgressCard({ label, current, target, formatFn, fillColor, trackColor = '#f1f5f9' }) {
   const pct = target > 0 ? Math.min(100, (current / target) * 100) : 0;
   const over = target > 0 && current > target;
+  const remaining = Math.max(0, target - current);
+  const pieData = target > 0
+    ? [{ value: Math.min(current, target) }, { value: remaining }]
+    : [{ value: 1 }];
 
   return (
     <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-100">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">{label}</p>
-          <p className="mt-1 text-2xl font-bold tabular-nums text-slate-900">{formatFn(current)}</p>
-          <p className="mt-0.5 text-xs text-slate-400">
-            of {formatFn(target)} target
-          </p>
+      <p className="mb-4 text-xs font-semibold uppercase tracking-wide text-slate-400">{label}</p>
+      <div className="flex items-center gap-6">
+        {/* Donut */}
+        <div className="relative shrink-0">
+          <PieChart width={120} height={120}>
+            <Pie
+              data={target > 0 ? pieData : [{ value: 1 }]}
+              cx={55} cy={55}
+              innerRadius={36} outerRadius={52}
+              startAngle={90} endAngle={-270}
+              dataKey="value" strokeWidth={0}
+            >
+              {target > 0 ? (
+                <>
+                  <Cell fill={fillColor} />
+                  <Cell fill={trackColor} />
+                </>
+              ) : (
+                <Cell fill={trackColor} />
+              )}
+            </Pie>
+          </PieChart>
+          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+            <span className="text-lg font-bold text-slate-900">{Math.round(pct)}%</span>
+          </div>
         </div>
-        <span
-          className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
-            over
-              ? 'bg-emerald-50 text-emerald-700'
-              : pct >= 75
-              ? 'bg-indigo-50 text-indigo-700'
-              : 'bg-slate-50 text-slate-600'
-          }`}
-        >
-          {pct.toFixed(0)}%
-        </span>
-      </div>
 
-      <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-slate-100">
-        <div
-          className={`h-full rounded-full transition-all duration-500 ${color}`}
-          style={{ width: `${pct}%` }}
-        />
+        {/* Stats */}
+        <div className="space-y-2 min-w-0">
+          <div>
+            <p className="text-xs text-slate-400">Current</p>
+            <p className="text-xl font-bold tabular-nums text-slate-900">{formatFn(current)}</p>
+          </div>
+          <div>
+            <p className="text-xs text-slate-400">Target</p>
+            <p className="text-sm font-semibold text-slate-500">{target > 0 ? formatFn(target) : '—'}</p>
+          </div>
+          {target > 0 && (
+            <div>
+              {over ? (
+                <span className="inline-block rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">
+                  +{formatFn(current - target)} above
+                </span>
+              ) : (
+                <span className="text-xs text-slate-400">{formatFn(remaining)} remaining</span>
+              )}
+            </div>
+          )}
+        </div>
       </div>
-
-      <p className="mt-2 text-xs text-slate-400">
-        {over
-          ? `${formatFn(current - target)} above target`
-          : target > 0
-          ? `${formatFn(target - current)} remaining`
-          : 'No target set'}
-      </p>
     </div>
   );
 }
@@ -124,14 +144,14 @@ export default function BusinessTargetsFeature() {
                 current={data?.currentHours ?? 0}
                 target={data?.targetHoursPerMonth ?? 0}
                 formatFn={(n) => `${fmt(n)} h`}
-                color="bg-indigo-500"
+                fillColor="#6366f1"
               />
               <ProgressCard
                 label="Income"
                 current={data?.currentIncome ?? 0}
                 target={data?.targetIncomePerMonth ?? 0}
                 formatFn={(n) => fmtCurrency(n, data?.currency)}
-                color="bg-emerald-500"
+                fillColor="#10b981"
               />
             </div>
           </div>

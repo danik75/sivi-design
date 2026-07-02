@@ -1,3 +1,4 @@
+import { Cell, Pie, PieChart } from 'recharts';
 import useInvoices from '@/features/invoices/hooks/useInvoices';
 import {
   useCustomerProfitability,
@@ -5,8 +6,11 @@ import {
   useRevenueBreakdown,
 } from '@/features/reports/hooks';
 import useBusinessProposals from '@/features/business-proposals/hooks/useBusinessProposals';
+import useBusinessTargets from '@/features/business-targets/hooks/useBusinessTargets';
 import { STATUS_CONFIG } from '@/features/tasks/constants';
 import useTasks from '@/features/tasks/hooks/useTasks';
+
+const MONTH_LABEL = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 
 const HOME_TEXT = {
   title: 'Home Dashboard',
@@ -193,6 +197,7 @@ export default function HomeFeature() {
   const { data: projectStatus } = useProjectStatus({});
   const { data: profitability } = useCustomerProfitability(CURRENT_MONTH_FILTER);
   const { data: revenueBreakdown } = useRevenueBreakdown(CURRENT_MONTH_FILTER);
+  const { data: targets } = useBusinessTargets();
 
   const relevantTasks = (tasksData?.data ?? [])
     .filter((t) => t.status !== 'cancelled')
@@ -233,6 +238,12 @@ export default function HomeFeature() {
     .sort((a, b) => parseFloat(b.revenue || 0) - parseFloat(a.revenue || 0))
     .slice(0, 5);
   const totalIncome = incomeDistRows.reduce((s, r) => s + parseFloat(r.revenue || 0), 0);
+
+  const balance = totalRevenue - totalExpenses;
+  const targetHours = targets?.targetHoursPerMonth ?? 0;
+  const currentHours = targets?.currentHours ?? 0;
+  const hoursPct = targetHours > 0 ? Math.min(100, (currentHours / targetHours) * 100) : 0;
+  const hoursRemaining = Math.max(0, targetHours - currentHours);
 
   return (
     <section className="space-y-6">
@@ -366,6 +377,92 @@ export default function HomeFeature() {
             </div>
           ) : (
             <p className="text-sm text-slate-400">{HOME_TEXT.financeEmpty}</p>
+          )}
+        </div>
+      </div>
+
+      {/* Monthly balance + hours target */}
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+        {/* Balance card */}
+        <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-100">
+          <h2 className="mb-1 text-sm font-semibold uppercase tracking-wide text-slate-500">
+            Monthly Balance
+          </h2>
+          <p className="mb-4 text-xs text-slate-400">{MONTH_LABEL}</p>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-slate-500">Income</span>
+              <span className="text-sm font-semibold text-emerald-600">+{fmtMoney(totalRevenue)}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-slate-500">Expenses</span>
+              <span className="text-sm font-semibold text-rose-600">−{fmtMoney(totalExpenses)}</span>
+            </div>
+            <div className="border-t border-slate-100 pt-3 flex items-center justify-between">
+              <span className="text-sm font-semibold text-slate-700">Balance</span>
+              <span className={`text-xl font-bold tabular-nums ${balance >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                {balance >= 0 ? '+' : ''}{fmtMoney(balance)}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Hours target donut */}
+        <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-100 flex flex-col">
+          <h2 className="mb-1 text-sm font-semibold uppercase tracking-wide text-slate-500">
+            Hours Target
+          </h2>
+          <p className="mb-4 text-xs text-slate-400">{MONTH_LABEL}</p>
+          {targetHours > 0 ? (
+            <div className="flex flex-1 items-center gap-6">
+              <div className="relative shrink-0">
+                <PieChart width={120} height={120}>
+                  <Pie
+                    data={[
+                      { name: 'Done', value: currentHours },
+                      { name: 'Left', value: hoursRemaining },
+                    ]}
+                    cx={55}
+                    cy={55}
+                    innerRadius={36}
+                    outerRadius={52}
+                    startAngle={90}
+                    endAngle={-270}
+                    dataKey="value"
+                    strokeWidth={0}
+                  >
+                    <Cell fill="#6366f1" />
+                    <Cell fill="#f1f5f9" />
+                  </Pie>
+                </PieChart>
+                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                  <span className="text-lg font-bold text-slate-900">{Math.round(hoursPct)}%</span>
+                </div>
+              </div>
+              <div className="space-y-2 text-sm">
+                <div>
+                  <p className="text-xs text-slate-400">Logged</p>
+                  <p className="font-bold text-slate-900">{currentHours.toFixed(1)} h</p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-400">Target</p>
+                  <p className="font-semibold text-slate-600">{targetHours} h</p>
+                </div>
+                {hoursRemaining > 0 && (
+                  <div>
+                    <p className="text-xs text-slate-400">Remaining</p>
+                    <p className="font-semibold text-indigo-600">{hoursRemaining.toFixed(1)} h</p>
+                  </div>
+                )}
+                {hoursRemaining <= 0 && (
+                  <span className="inline-block rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">
+                    Target reached!
+                  </span>
+                )}
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm text-slate-400">No hours target set. Go to Targets to set one.</p>
           )}
         </div>
       </div>
