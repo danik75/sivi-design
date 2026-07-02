@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import useToast from '@/components/chadcn/useToast';
 import useTransitionStatus from '@/features/invoices/hooks/useTransitionStatus';
+import AddReceiptModal from '@/features/receipts/components/AddReceiptModal';
 import InvoiceDeleteDialog from './components/InvoiceDeleteDialog';
 import InvoiceGrid from './components/InvoiceGrid';
 import InvoiceModal from './components/InvoiceModal';
@@ -11,6 +12,7 @@ export default function InvoicesFeature() {
   const [showCreate, setShowCreate] = useState(false);
   const [editInvoice, setEditInvoice] = useState(null);
   const [deleteInvoice, setDeleteInvoice] = useState(null);
+  const [receiptInvoice, setReceiptInvoice] = useState(null);
   const transitionMutation = useTransitionStatus();
 
   const handleSuccess = (message) => {
@@ -21,6 +23,10 @@ export default function InvoicesFeature() {
   };
 
   const handleStatusTransition = (invoice, targetStatus) => {
+    if (targetStatus === 'paid') {
+      setReceiptInvoice(invoice);
+      return;
+    }
     transitionMutation.mutate(
       { id: invoice.id, status: targetStatus },
       {
@@ -58,6 +64,16 @@ export default function InvoicesFeature() {
         invoice={deleteInvoice}
         onSuccess={handleSuccess}
       />
+      {receiptInvoice && (
+        <AddReceiptModal
+          invoice={receiptInvoice}
+          onClose={() => setReceiptInvoice(null)}
+          onSuccess={(saved) => {
+            setReceiptInvoice(null);
+            showToast(`Receipt ${saved.receiptNumber} saved — invoice marked as paid.`, 'success');
+          }}
+        />
+      )}
     </>
   );
 }

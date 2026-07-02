@@ -5,6 +5,7 @@ import ChevronDownIcon from '@/components/chadcn/icons/ChevronDownIcon';
 import ClipboardIcon from '@/components/chadcn/icons/ClipboardIcon';
 import BarChartIcon from '@/components/chadcn/icons/BarChartIcon';
 import BriefcaseIcon from '@/components/chadcn/icons/BriefcaseIcon';
+import ReceiptsIcon from '@/components/chadcn/icons/ReceiptsIcon';
 import TargetIcon from '@/components/chadcn/icons/TargetIcon';
 import CreditCardIcon from '@/components/chadcn/icons/CreditCardIcon';
 import DocumentTextIcon from '@/components/chadcn/icons/DocumentTextIcon';
@@ -14,6 +15,7 @@ import ReceiptIcon from '@/components/chadcn/icons/ReceiptIcon';
 import UsersIcon from '@/components/chadcn/icons/UsersIcon';
 import BillingFeature from '@/features/billing';
 import BusinessTargetsFeature from '@/features/business-targets';
+import ReceiptsFeature from '@/features/receipts';
 import BusinessProposalsFeature from '@/features/business-proposals';
 import ReportsFeature from '@/features/reports';
 import ContractsFeature from '@/features/contracts';
@@ -41,6 +43,7 @@ const NAV_ITEMS = [
   { id: 'invoices', label: 'Invoices', Icon: FileInvoiceIcon },
   { id: 'billing', label: 'Billing', Icon: CreditCardIcon },
   { id: 'businessTargets', label: 'Targets', Icon: TargetIcon },
+  { id: 'receipts', label: 'Receipts', Icon: ReceiptsIcon },
   { id: 'reports', label: 'Reports', Icon: BarChartIcon },
 ];
 
@@ -120,6 +123,10 @@ export default function MainPanel({ onLogout }) {
 
     if (activeModule === 'businessTargets') {
       return <BusinessTargetsFeature />;
+    }
+
+    if (activeModule === 'receipts') {
+      return <ReceiptsFeature />;
     }
 
     if (activeModule === 'reports') {

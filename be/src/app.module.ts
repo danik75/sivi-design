@@ -9,6 +9,7 @@ import { ContractsModule } from './contracts/contracts.module';
 import { CustomersModule } from './customers/customers.module';
 import { ExpensesModule } from './expenses/expenses.module';
 import { InvoicesModule } from './invoices/invoices.module';
+import { ReceiptsModule } from './receipts/receipts.module';
 import { ReportsModule } from './reports/reports.module';
 import { TasksModule } from './tasks/tasks.module';
 
@@ -22,6 +23,7 @@ import { TasksModule } from './tasks/tasks.module';
     ContractsModule,
     ExpensesModule,
     InvoicesModule,
+    ReceiptsModule,
     ReportsModule,
     TasksModule,
   ],
