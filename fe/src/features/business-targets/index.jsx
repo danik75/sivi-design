@@ -14,13 +14,16 @@ function fmtCurrency(n, currency) {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: currency ?? 'USD', maximumFractionDigits: 0 }).format(n ?? 0);
 }
 
-function ProgressCard({ label, current, target, formatFn, fillColor, trackColor = '#f1f5f9' }) {
+function ProgressCard({ label, current, target, formatFn }) {
   const pct = target > 0 ? Math.min(100, (current / target) * 100) : 0;
   const over = target > 0 && current > target;
   const remaining = Math.max(0, target - current);
+  const arcColor = over ? '#f97316' : '#10b981';
   const pieData = target > 0
-    ? [{ value: Math.min(current, target) }, { value: remaining }]
-    : [{ value: 1 }];
+    ? over
+      ? [{ value: 1, fill: arcColor }]
+      : [{ value: current, fill: arcColor }, { value: remaining, fill: '#f1f5f9' }]
+    : [{ value: 1, fill: '#f1f5f9' }];
 
   return (
     <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-100">
@@ -30,24 +33,19 @@ function ProgressCard({ label, current, target, formatFn, fillColor, trackColor 
         <div className="relative shrink-0">
           <PieChart width={120} height={120}>
             <Pie
-              data={target > 0 ? pieData : [{ value: 1 }]}
+              data={pieData}
               cx={55} cy={55}
               innerRadius={36} outerRadius={52}
               startAngle={90} endAngle={-270}
               dataKey="value" strokeWidth={0}
             >
-              {target > 0 ? (
-                <>
-                  <Cell fill={fillColor} />
-                  <Cell fill={trackColor} />
-                </>
-              ) : (
-                <Cell fill={trackColor} />
-              )}
+              {pieData.map((entry, i) => <Cell key={i} fill={entry.fill} />)}
             </Pie>
           </PieChart>
           <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-            <span className="text-lg font-bold text-slate-900">{Math.round(pct)}%</span>
+            <span className={`text-lg font-bold ${over ? 'text-orange-500' : 'text-slate-900'}`}>
+              {Math.round(pct)}%
+            </span>
           </div>
         </div>
 
@@ -64,7 +62,7 @@ function ProgressCard({ label, current, target, formatFn, fillColor, trackColor 
           {target > 0 && (
             <div>
               {over ? (
-                <span className="inline-block rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">
+                <span className="inline-block rounded-full bg-orange-50 px-2 py-0.5 text-xs font-semibold text-orange-600">
                   +{formatFn(current - target)} above
                 </span>
               ) : (
@@ -144,14 +142,12 @@ export default function BusinessTargetsFeature() {
                 current={data?.currentHours ?? 0}
                 target={data?.targetHoursPerMonth ?? 0}
                 formatFn={(n) => `${fmt(n)} h`}
-                fillColor="#6366f1"
               />
               <ProgressCard
                 label="Income"
                 current={data?.currentIncome ?? 0}
                 target={data?.targetIncomePerMonth ?? 0}
                 formatFn={(n) => fmtCurrency(n, data?.currency)}
-                fillColor="#10b981"
               />
             </div>
           </div>
