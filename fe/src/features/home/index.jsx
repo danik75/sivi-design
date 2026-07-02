@@ -5,6 +5,7 @@ import {
   useRevenueBreakdown,
 } from '@/features/reports/hooks';
 import useBusinessProposals from '@/features/business-proposals/hooks/useBusinessProposals';
+import { STATUS_CONFIG } from '@/features/tasks/constants';
 import useTasks from '@/features/tasks/hooks/useTasks';
 
 const HOME_TEXT = {
@@ -61,46 +62,129 @@ const fmtDate = (value) => {
 const fmtMoney = (value, currency = '') =>
   `${parseFloat(value || 0).toFixed(2)} ${currency}`.trim();
 
-const renderTasksMiniGantt = (tasks) => {
+const GANTT_DAYS = 28;
+const MS = 86400000;
+function addDays(d, n) { return new Date(d.getTime() + n * MS); }
+function diffDays(a, b) { return Math.round((b.getTime() - a.getTime()) / MS); }
+function startOfDay(d) { return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
+function fmtShort(d) { return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); }
+
+function HomeGantt({ tasks }) {
   if (!tasks.length) {
-    return <p className="text-sm text-slate-400">{HOME_TEXT.taskEmpty}</p>;
+    return <p className="px-5 pb-4 text-sm text-slate-400">{HOME_TEXT.taskEmpty}</p>;
   }
 
-  const starts = tasks.map((t) => parseDate(t.startDate)).filter(Boolean);
-  const ends = tasks.map((t) => parseDate(t.endDate)).filter(Boolean);
-  const rangeStart = new Date(Math.min(...starts.map((d) => d.getTime())));
-  const rangeEnd = new Date(Math.max(...ends.map((d) => d.getTime())));
-  const totalDays = Math.max(1, Math.ceil((rangeEnd - rangeStart) / 86400000) + 1);
+  const today = startOfDay(new Date());
+  const rangeStart = today;
+  const rangeEnd = addDays(today, GANTT_DAYS - 1);
+  const totalDays = GANTT_DAYS;
+  const days = Array.from({ length: totalDays }, (_, i) => addDays(rangeStart, i));
+  const todayMs = today.getTime();
 
   return (
-    <div className="space-y-2">
-      {tasks.map((task) => {
-        const start = parseDate(task.startDate);
-        const end = parseDate(task.endDate);
-        if (!start || !end) return null;
-        const left = ((start - rangeStart) / 86400000 / totalDays) * 100;
-        const width = (Math.max(1, (end - start) / 86400000 + 1) / totalDays) * 100;
-        return (
-          <div key={task.id} className="grid grid-cols-[220px_1fr] items-center gap-3">
-            <div className="truncate text-sm text-slate-700">
-              <span className="font-medium">{task.name}</span>
-              <span className="ml-2 text-xs text-slate-400">{fmtDate(task.endDate)}</span>
-            </div>
-            <div className="relative h-7 rounded-lg bg-slate-100">
-              <div
-                className="absolute inset-y-1 rounded-md bg-indigo-500"
-                style={{
-                  left: `${Math.max(0, left)}%`,
-                  width: `${Math.min(100 - Math.max(0, left), width)}%`,
-                }}
-              />
-            </div>
+    <div className="overflow-x-auto">
+      <div style={{ minWidth: `${Math.max(500, totalDays * 28)}px` }}>
+        {/* Column headers */}
+        <div className="flex border-b border-slate-100">
+          <div className="w-36 shrink-0 border-r border-slate-100 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+            Task
           </div>
-        );
-      })}
+          <div className="flex flex-1">
+            {days.map((day, i) => {
+              const isToday = day.getTime() === todayMs;
+              const label = i === 0 || day.getDate() === 1 ? fmtShort(day) : String(day.getDate());
+              return (
+                <div
+                  key={i}
+                  className={`flex-1 border-r border-slate-50 py-2 text-center text-xs ${
+                    isToday ? 'bg-indigo-50 font-bold text-indigo-600' : 'text-slate-400'
+                  }`}
+                >
+                  {label}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Task rows */}
+        {tasks.map((task) => {
+          if (!task.startDate || !task.endDate) return null;
+          const cfg = STATUS_CONFIG[task.status] ?? STATUS_CONFIG.pending;
+          const ts = parseDate(task.startDate);
+          const te = parseDate(task.endDate);
+          const clampedStart = ts < rangeStart ? rangeStart : ts;
+          const clampedEnd = te > rangeEnd ? rangeEnd : te;
+          const leftDays = diffDays(rangeStart, clampedStart);
+          const spanDays = diffDays(clampedStart, clampedEnd) + 1;
+          const leftPct = (leftDays / totalDays) * 100;
+          const widthPct = (spanDays / totalDays) * 100;
+          const fillPct = Math.min(100, Math.max(0, task.percentComplete ?? 0));
+          const outsideRange = te < rangeStart || ts > rangeEnd;
+
+          return (
+            <div
+              key={task.id}
+              className={`flex border-b border-slate-50 last:border-b-0 hover:bg-slate-50/40 transition-colors${outsideRange ? ' opacity-40' : ''}`}
+            >
+              <div className="w-36 shrink-0 border-r border-slate-100 px-3 py-1 flex items-center">
+                <div>
+                  <p className="text-xs font-medium text-slate-800 truncate max-w-[128px]">{task.name}</p>
+                  {task.customerName && (
+                    <p className="text-xs text-slate-400 truncate max-w-[128px]">{task.customerName}</p>
+                  )}
+                </div>
+              </div>
+              <div className="relative flex-1" style={{ height: '44px' }}>
+                {/* today column highlight */}
+                {days.map((day, i) => {
+                  if (day.getTime() !== todayMs) return null;
+                  return (
+                    <div
+                      key="today"
+                      className="absolute inset-y-0 bg-indigo-50/60"
+                      style={{ left: `${(i / totalDays) * 100}%`, width: `${(1 / totalDays) * 100}%` }}
+                    />
+                  );
+                })}
+                {/* grid lines */}
+                {days.map((_, i) => (
+                  <div
+                    key={i}
+                    className="absolute inset-y-0 border-r border-slate-50"
+                    style={{ left: `${((i + 1) / totalDays) * 100}%` }}
+                  />
+                ))}
+                {/* bar */}
+                {!outsideRange && (() => {
+                  const barBg = task.color ?? null;
+                  return (
+                    <div
+                      className={`absolute top-1.5 bottom-1.5 rounded overflow-hidden shadow-sm${barBg === null ? ` ${cfg.barClass}` : ''}`}
+                      style={{ left: `${leftPct}%`, width: `${widthPct}%`, backgroundColor: barBg ?? undefined }}
+                    >
+                      {barBg !== null ? (
+                        <div className="absolute inset-y-0 left-0 bg-white/20" style={{ width: `${fillPct}%` }} />
+                      ) : (
+                        <div className={`absolute inset-y-0 left-0 ${cfg.barFillClass}`} style={{ width: `${fillPct}%` }} />
+                      )}
+                      {barBg !== null && (
+                        <span className={`absolute left-2 top-1/2 z-10 h-2 w-2 shrink-0 -translate-y-1/2 rounded-full ring-1 ring-white/60 ${cfg.barClass}`} />
+                      )}
+                      <span className={`relative z-10 flex h-full items-center truncate text-xs font-medium text-white leading-none ${barBg !== null ? 'pl-6 pr-2' : 'px-2'}`}>
+                        {task.name}
+                      </span>
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
-};
+}
 
 export default function HomeFeature() {
   const { data: tasksData } = useTasks({ limit: 500 });
@@ -158,11 +242,11 @@ export default function HomeFeature() {
       </div>
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-        <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-100">
-          <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-500">
+        <div className="rounded-2xl bg-white shadow-sm ring-1 ring-slate-100 overflow-hidden">
+          <h2 className="px-5 pt-5 pb-4 text-sm font-semibold uppercase tracking-wide text-slate-500">
             {HOME_TEXT.ganttTitle}
           </h2>
-          {renderTasksMiniGantt(relevantTasks)}
+          <HomeGantt tasks={relevantTasks} />
         </div>
 
         <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-100">

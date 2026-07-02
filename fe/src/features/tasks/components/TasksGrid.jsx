@@ -2,6 +2,8 @@ import PropTypes from 'prop-types';
 import { useMemo, useState } from 'react';
 import Button from '@/components/chadcn/Button';
 import EmptyState from '@/components/chadcn/EmptyState';
+import PencilIcon from '@/components/chadcn/icons/PencilIcon';
+import XIcon from '@/components/chadcn/icons/XIcon';
 import SearchInput from '@/components/chadcn/SearchInput';
 import Table, {
   TableBody,
@@ -83,19 +85,21 @@ function TaskRow({ task, onEdit, onAbort, onDoubleClick }) {
           <Button
             type="button"
             variant="ghost"
-            className="px-2 py-1 text-xs"
+            className="h-8 w-8 !p-0 shrink-0"
             onClick={() => onEdit(task)}
+            aria-label="Edit task"
           >
-            Edit
+            <PencilIcon />
           </Button>
           {!isAborted && (
             <Button
               type="button"
               variant="danger"
-              className="px-2 py-1 text-xs"
+              className="h-8 w-8 !p-0 shrink-0"
               onClick={() => onAbort(task)}
+              aria-label="Abort task"
             >
-              Abort
+              <XIcon />
             </Button>
           )}
         </div>

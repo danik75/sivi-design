@@ -1,4 +1,6 @@
 import { useRef, useState } from 'react';
+import ClipboardIcon from '@/components/chadcn/icons/ClipboardIcon';
+import Dropdown from '@/components/chadcn/Dropdown';
 import {
   Area,
   AreaChart,
@@ -89,24 +91,19 @@ export default function CustomerStatementReport({ customers = [] }) {
       title="Customer Statement"
       controls={
         <div className="flex flex-wrap gap-3 items-center">
-          <select
+          <Dropdown
             value={customerId}
-            onChange={(e) => setCustomerId(e.target.value)}
-            className="rounded-lg border border-slate-200 px-2 py-1 text-xs"
-          >
-            <option value="">Select customer…</option>
-            {customers.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
+            onChange={setCustomerId}
+            placeholder="Select customer…"
+            options={[{ value: '', label: 'Select customer…' }, ...customers.map((c) => ({ value: c.id, label: c.name }))]}
+          />
           <PeriodFilter value={filter} onChange={setFilter} />
         </div>
       }
       isLoading={isLoading}
       isError={isError}
       onRetry={refetch}
+      emptyMessage={!customerId ? 'Select a customer to view the statement.' : 'No transactions found for this period.'}
       tableHeaders={['Date', 'Type', 'Reference', 'Description', 'Amount', 'Balance', 'Status']}
       tableRows={tableRows}
       extraActions={
@@ -114,9 +111,11 @@ export default function CustomerStatementReport({ customers = [] }) {
           type="button"
           onClick={handleSend}
           disabled={!data}
-          className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-40"
+          aria-label={emailLabel}
+          title={emailLabel}
+          className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-40 transition-colors"
         >
-          {emailLabel}
+          <ClipboardIcon className="h-4 w-4" />
         </button>
       }
       chartContent={

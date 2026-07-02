@@ -68,11 +68,12 @@ export const CUSTOMER_TEXT = {
   },
 };
 
-export function createEmptyContact() {
+export function createEmptyContact(isPrimary = false) {
   return {
     email: '',
     phone: '',
     address: '',
+    isPrimary,
   };
 }
 
@@ -85,19 +86,23 @@ export function getPrimaryContact(customer) {
 }
 
 export function normalizeCustomerPayload({ name, contacts }) {
-  const normalizedContacts = contacts
+  const filtered = contacts
     .map((contact) => ({
       email: contact.email?.trim() ?? '',
       phone: contact.phone?.trim() ?? '',
       address: contact.address?.trim() ?? '',
+      isPrimary: Boolean(contact.isPrimary),
     }))
-    .filter((contact) => contact.email || contact.phone || contact.address)
-    .map((contact, index) => ({ ...contact, isPrimary: index === 0 }));
+    .filter((contact) => contact.email || contact.phone || contact.address);
 
-  return {
-    name: name.trim(),
-    contacts: normalizedContacts,
-  };
+  // ensure exactly one primary — keep user's choice, fall back to first
+  const hasPrimary = filtered.some((c) => c.isPrimary);
+  const normalizedContacts = filtered.map((c, i) => ({
+    ...c,
+    isPrimary: hasPrimary ? c.isPrimary : i === 0,
+  }));
+
+  return { name: name.trim(), contacts: normalizedContacts };
 }
 
 export function getApiErrorMessage(error, fallbackMessage) {

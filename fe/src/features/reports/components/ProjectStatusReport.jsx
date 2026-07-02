@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import Dropdown from '@/components/chadcn/Dropdown';
 import {
   Bar,
   BarChart,
@@ -80,18 +81,12 @@ export default function ProjectStatusReport({ customers = [] }) {
       <ReportShell
         title="Project Status"
         controls={
-          <select
+          <Dropdown
             value={customerId}
-            onChange={(e) => setCustomerId(e.target.value)}
-            className="rounded-lg border border-slate-200 px-2 py-1 text-xs"
-          >
-            <option value="">All customers</option>
-            {customers.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
+            onChange={setCustomerId}
+            placeholder="All customers"
+            options={[{ value: '', label: 'All customers' }, ...customers.map((c) => ({ value: c.id, label: c.name }))]}
+          />
         }
         isLoading={isLoading}
         isError={isError}

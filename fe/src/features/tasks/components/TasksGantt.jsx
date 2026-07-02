@@ -337,10 +337,10 @@ export default function TasksGantt({ onCreate, onEdit, visibleStatuses }) {
             {TASK_TEXT.gantt.noTasks}
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-auto" style={{ maxHeight: '560px' }}>
             <div style={{ minWidth: `${Math.max(600, totalDays * 32)}px` }}>
               {/* Column headers */}
-              <div className="flex border-b border-slate-100">
+              <div className="flex border-b border-slate-100 sticky top-0 z-10 bg-white">
                 {/* Task name column header */}
                 <div className="w-44 shrink-0 border-r border-slate-100 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
                   {TASK_TEXT.gantt.taskName}
