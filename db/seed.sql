@@ -1,14 +1,15 @@
 -- db/seed.sql
--- DEV ONLY: quick seed for local development. Do NOT run in production.
--- This file intentionally inserts a cleartext password for fast dev testing.
-
--- Usage (example):
--- psql "postgresql://sivi_user:sivi_pass@localhost:5432/sivi_db" -f db/seed.sql
+-- Minimal seed: creates the admin user.
+-- Password is bcrypt-hashed via pgcrypto — safe to run in staging.
+-- Change 'sivi' to a strong password before running in any shared environment.
+--
+-- Usage:
+--   psql "postgresql://sivi_user:sivi_pass@localhost:5432/sivi_db" -f db/seed.sql
 
 BEGIN;
 
--- DEV ONLY: cleartext password for fast dev testing. Do NOT use in production.
-INSERT INTO users (username, password, role) VALUES ('sivi', 'sivi', 'admin')
+INSERT INTO users (username, password, role)
+VALUES ('sivi', crypt('sivi', gen_salt('bf')), 'admin')
 ON CONFLICT (username) DO NOTHING;
 
 COMMIT;
