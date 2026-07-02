@@ -1,6 +1,8 @@
 import { useState } from 'react';
-import EyeIcon from '@/components/chadcn/icons/EyeIcon';
+import TrashIcon from '@/components/chadcn/icons/TrashIcon';
+import useToast from '@/components/chadcn/useToast';
 import useReceipts from './hooks/useReceipts';
+import DeleteReceiptDialog from './components/DeleteReceiptDialog';
 import ReceiptDetailModal from './components/ReceiptDetailModal';
 
 function fmtDate(iso) {
@@ -26,7 +28,9 @@ const FileChip = ({ fileName, fileMimeType }) => {
 
 export default function ReceiptsFeature() {
   const { data: receipts = [], isLoading, isError } = useReceipts();
+  const { showToast } = useToast();
   const [detailId, setDetailId] = useState(null);
+  const [deleteReceipt, setDeleteReceipt] = useState(null);
 
   return (
     <div className="space-y-6">
@@ -62,7 +66,7 @@ export default function ReceiptsFeature() {
                 <th className="px-4 py-3">Total</th>
                 <th className="px-4 py-3">Paid on</th>
                 <th className="px-4 py-3">Attachment</th>
-                <th className="px-4 py-3 text-center">View</th>
+                <th className="px-4 py-3" />
               </tr>
             </thead>
             <tbody>
@@ -80,14 +84,14 @@ export default function ReceiptsFeature() {
                   <td className="px-4 py-3">
                     <FileChip fileName={r.fileName} fileMimeType={r.fileMimeType} />
                   </td>
-                  <td className="px-4 py-3 text-center">
+                  <td className="px-4 py-3 text-right">
                     <button
                       type="button"
-                      onClick={(e) => { e.stopPropagation(); setDetailId(r.id); }}
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700"
-                      aria-label="View receipt"
+                      onClick={(e) => { e.stopPropagation(); setDeleteReceipt(r); }}
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-rose-50 hover:text-rose-600 transition-colors"
+                      aria-label="Delete receipt"
                     >
-                      <EyeIcon className="h-4 w-4" />
+                      <TrashIcon className="h-4 w-4" />
                     </button>
                   </td>
                 </tr>
@@ -99,6 +103,17 @@ export default function ReceiptsFeature() {
 
       {detailId != null && (
         <ReceiptDetailModal receiptId={detailId} onClose={() => setDetailId(null)} />
+      )}
+
+      {deleteReceipt && (
+        <DeleteReceiptDialog
+          receipt={deleteReceipt}
+          onClose={() => setDeleteReceipt(null)}
+          onSuccess={() => {
+            setDeleteReceipt(null);
+            showToast('Receipt deleted.', 'success');
+          }}
+        />
       )}
     </div>
   );
