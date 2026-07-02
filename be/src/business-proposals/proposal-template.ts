@@ -121,13 +121,19 @@ const ACCENT = '#f04e63';
 const GUTTER = '34mm';
 
 const CSS = `
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Assistant:wght@400;600;700&display=swap');
 
 @page { size: A4; margin: 0; }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+/*
+ * Latin renders in Montserrat; Hebrew glyphs (absent in Montserrat) fall
+ * through per-glyph to FB Pilot when the brand font is installed, otherwise to
+ * Assistant — the closest freely available Hebrew face. Drop FbPilot .ttf/.otf
+ * on the system (or embed via @font-face) to render Hebrew in the exact brand font.
+ */
 body {
-  font-family: 'Montserrat', Arial, sans-serif;
+  font-family: 'Montserrat', 'FB Pilot', 'FbPilot', 'Assistant', 'Arial Hebrew', Arial, sans-serif;
   font-size: 9.5pt;
   color: #111;
   background: #fff;
@@ -160,12 +166,22 @@ body {
 .sec { margin-bottom: 6mm; }
 .sec-head {
   color: ${ACCENT}; font-weight: 700; font-size: 13pt;
-  text-align: start; padding-inline-start: ${GUTTER}; margin-bottom: 2.5mm;
+  text-align: start; margin-bottom: 2.5mm;
 }
 .sec-body {
-  text-align: start; padding-inline-start: ${GUTTER};
+  text-align: start;
   font-size: 9.5pt; line-height: 1.6; color: #222;
 }
+/*
+ * The pink field-labels sit in a gutter on the reading-start side. In RTL that
+ * gutter is on the right, so headings/body are inset to align at the values'
+ * edge. In LTR the labels form the left column, so headings/body stay flush to
+ * the outer margin (no inset) — otherwise the whole content column looks
+ * indented and unaligned.
+ */
+[dir="rtl"] .sec-head,
+[dir="rtl"] .sec-body,
+[dir="rtl"] .notes { padding-inline-start: ${GUTTER}; }
 
 /* ── Key / value rows (pink key in gutter, value inset) ── */
 .kv { display: flex; gap: 4mm; margin-bottom: 0.6mm; align-items: flex-start; }
@@ -186,8 +202,7 @@ body {
 .struct-desc { font-size: 9pt; color: #333; margin-bottom: 1mm; line-height: 1.5; }
 .deliv { font-size: 9pt; line-height: 1.7; text-align: start; }
 
-/* ── Notes (bullet list, inset) ── */
-.notes { padding-inline-start: ${GUTTER}; }
+/* ── Notes (bullet list; inset handled by the [dir=rtl] rule above) ── */
 .notes .n { position: relative; padding-inline-start: 4mm; margin-bottom: 0.6mm; font-size: 9pt; line-height: 1.5; text-align: start; }
 .notes .n::before { content: '•'; position: absolute; inset-inline-start: 0; color: #111; }
 
