@@ -1,7 +1,15 @@
 import PropTypes from 'prop-types';
+import Dropdown from '@/components/chadcn/Dropdown';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const now = new Date();
+
+const YEAR_OPTIONS = Array.from({ length: 6 }, (_, i) => {
+  const y = now.getFullYear() - i;
+  return { value: y, label: String(y) };
+});
+
+const MONTH_OPTIONS = MONTHS.map((m, i) => ({ value: i + 1, label: m }));
 
 export default function PeriodFilter({ value, onChange }) {
   const { period, year, month, from, to } = value;
@@ -32,43 +40,25 @@ export default function PeriodFilter({ value, onChange }) {
 
       {period === 'monthly' && (
         <>
-          <select
+          <Dropdown
             value={month}
-            onChange={(e) => set({ month: parseInt(e.target.value, 10) })}
-            className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700"
-          >
-            {MONTHS.map((m, i) => (
-              <option key={m} value={i + 1}>
-                {m}
-              </option>
-            ))}
-          </select>
-          <select
+            onChange={(v) => set({ month: Number(v) })}
+            options={MONTH_OPTIONS}
+          />
+          <Dropdown
             value={year}
-            onChange={(e) => set({ year: parseInt(e.target.value, 10) })}
-            className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700"
-          >
-            {Array.from({ length: 6 }, (_, i) => now.getFullYear() - i).map((y) => (
-              <option key={y} value={y}>
-                {y}
-              </option>
-            ))}
-          </select>
+            onChange={(v) => set({ year: Number(v) })}
+            options={YEAR_OPTIONS}
+          />
         </>
       )}
 
       {period === 'yearly' && (
-        <select
+        <Dropdown
           value={year}
-          onChange={(e) => set({ year: parseInt(e.target.value, 10) })}
-          className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700"
-        >
-          {Array.from({ length: 6 }, (_, i) => now.getFullYear() - i).map((y) => (
-            <option key={y} value={y}>
-              {y}
-            </option>
-          ))}
-        </select>
+          onChange={(v) => set({ year: Number(v) })}
+          options={YEAR_OPTIONS}
+        />
       )}
 
       {period === 'range' && (
@@ -77,14 +67,14 @@ export default function PeriodFilter({ value, onChange }) {
             type="date"
             value={from ?? ''}
             onChange={(e) => set({ from: e.target.value })}
-            className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700"
+            className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700 shadow-sm"
           />
           <span className="text-slate-400 text-xs">to</span>
           <input
             type="date"
             value={to ?? ''}
             onChange={(e) => set({ to: e.target.value })}
-            className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700"
+            className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700 shadow-sm"
           />
         </>
       )}

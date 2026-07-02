@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import ClipboardIcon from '@/components/chadcn/icons/ClipboardIcon';
+import Dropdown from '@/components/chadcn/Dropdown';
 import {
   Area,
   AreaChart,
@@ -90,18 +91,12 @@ export default function CustomerStatementReport({ customers = [] }) {
       title="Customer Statement"
       controls={
         <div className="flex flex-wrap gap-3 items-center">
-          <select
+          <Dropdown
             value={customerId}
-            onChange={(e) => setCustomerId(e.target.value)}
-            className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700"
-          >
-            <option value="">Select customer…</option>
-            {customers.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
+            onChange={setCustomerId}
+            placeholder="Select customer…"
+            options={[{ value: '', label: 'Select customer…' }, ...customers.map((c) => ({ value: c.id, label: c.name }))]}
+          />
           <PeriodFilter value={filter} onChange={setFilter} />
         </div>
       }
