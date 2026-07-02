@@ -45,21 +45,10 @@ export interface CustomerInfo {
   email?: string;
 }
 
-const LOGO_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 256 256">
-  <rect width="256" height="256" rx="44" fill="#ffffff"/>
-  <rect x="10" y="10" width="236" height="236" rx="34" fill="none" stroke="#dc2626" stroke-width="12"/>
-  <text x="128" y="108" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="56" font-weight="900" letter-spacing="1.2" fill="#dc2626">Sivi</text>
-  <text x="128" y="168" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="44" font-weight="900" letter-spacing="0.8" fill="#dc2626">Design</text>
-</svg>`;
+// ─── Fixed terms (identical across all proposals) ────────────────────────────
 
-const SERVICES = 'AI · Design · Creative · Marketing · Digital · UX/UI · Web · Illustration';
-
-const ACCENT = '#c8365a';
-const FOOTER_TEXT = '052-6613709 &nbsp;&nbsp; sivandarmon@gmail.com &nbsp;&nbsp; sivi-design.com';
-
-const FIXED_TERMS = {
+const FIXED = {
   he: {
-    notesTitle: 'הערות',
     notes: [
       'לכל עבודה יוגשו עד 2 סקיצות + 3 סבבי תיקונים. לאחר מכן כל תיקון ידרש בתשלום נוסף.',
       'עבור עבודה שהוכנה ובוטלה בסקיצה, ישולמו 50% ממחירה הנקוב.',
@@ -67,13 +56,11 @@ const FIXED_TERMS = {
       'בתום העבודה ולאחר אישור תשלום על ידי הלקוחה, יועברו קבצים פתוחים – לפני ביצוע הדפסות ולפני העברת קבצים.',
       'אין להעביר הצעת מחיר/חוזה זה לצד ג׳ ואין לחשוף את הפרטים הנ"ל ללא אישור מראש ובכתב מסיון דרמון פריצקר.',
     ],
-    rightsTitle: 'זכויות',
     rights: [
       { label: 'זכויות יוצרים', text: 'מוסכם כי המעצבת אינה מוותרת על זכויותיה הרוחניות וקניינה הפרטי בשום פרק במהלך הפרויקט.' },
       { label: 'זכויות שימוש', text: 'מוסכם כי זכויות השימוש הבלעדיות על היצירות ותוצרי העיצוב שייכות ללקוחה.' },
       { label: 'זכויות מוצרי גלם', text: 'מוסכם כי האחריות הבלעדית לכל דיני הזכויות על חומרי הגלם שהלקוחה מספקת מוטלת על הלקוחה, ואין לראות בהם כמעצבת מולם כלפי צד שלישי.' },
     ],
-    addTitle: 'פרטים נוספים',
     additional: [
       { label: 'תהליך העבודה', text: 'בכלל, התקשורת המחייבת בין הלקוחה למעצבת תבוצע בכתב, בואטסאפ או בדוא"ל. שינוי משמעותי של עיצוב לאחר שכבר אושר, או עדכון חומרים לאחר שליחתם, עלול לגרור תשלום נוסף לפי תעריף ועל פי תנאי ושנות מספורות למעלה.' },
       { label: 'הפסקת התקשרות', text: 'שני הצדדים מחזיקים בזכות להפסיק את ההתקשרות בזכות בכל עת, הודעה מוקדמת. מצב כזה לא יזוכו תשלומים שבוצעו ולא יועברו קבצים ונכסים דיגיטליים ללקוחה. הפסקה של 20 יום במהלך הפרויקט, הפסקה אלא אם סוכם אחרת.' },
@@ -82,12 +69,10 @@ const FIXED_TERMS = {
       { label: 'קרדיט', text: 'המעצבת שומרת לעצמה את הזכות לציין קרדיט בגוף היצירות. באופן שלא יפגע בגוף היצירות ובנראות העבודה ולא מזיק ללקוחה במישרין ובגבולות הסבירות. כנהוג. במקרה של אתר אינטרנט, הקרדיט יכול להיות מלווה לבקשות.' },
       { label: 'תוקף החוזה', text: 'חוזה זה, כל עוד לא החזיר הלקוחה למעצבת, תקף לחודש לאחר שליחתו ללקוחה.' },
     ],
-    signatureTitle: 'חתימה ומתחילים :)',
-    signatureNote: 'ניתן להחזיר מייל עם אישור ותופס זה מצורף',
-    designerLabel: 'סיון דרמון פריצקר',
+    sigNote: 'ניתן להחזיר מייל עם אישור ותופס זה מצורף',
+    designer: 'סיון דרמון פריצקר',
   },
   en: {
-    notesTitle: 'Notes',
     notes: [
       'Every deliverable includes up to 2 full revision rounds + 3 sub-revisions per item. Additional revisions are billed at the hourly rate.',
       'A cancelled sketch/draft after production is billed at 50% of the quoted price.',
@@ -95,340 +80,462 @@ const FIXED_TERMS = {
       'Final open files are transferred to the client after all payments are received and prior to printing or file handoff.',
       'This proposal/contract may not be transferred to a third party without prior written consent signed by Sivan Darmon Pritsker.',
     ],
-    rightsTitle: 'Rights',
     rights: [
       { label: 'Creator Rights', text: 'The designer retains all moral and personal rights to the work throughout the project.' },
       { label: 'Usage Rights', text: 'Exclusive usage rights to the designs and creative outputs belong to the client, as agreed.' },
-      { label: 'Raw Materials Rights', text: 'Full responsibility for the rights to any raw materials supplied by the client lies solely with the client. The designer bears no liability to any third party in this regard.' },
+      { label: 'Raw Materials Rights', text: 'Full responsibility for the rights to any raw materials supplied by the client lies solely with the client.' },
     ],
-    addTitle: 'Additional Details',
     additional: [
       { label: 'Work Process', text: 'All binding communication between client and designer takes place in writing (WhatsApp or email). Significant changes to already-approved designs, or supplying updated materials after delivery, may incur additional charges at the hourly rate.' },
       { label: 'Termination', text: 'Either party may terminate the engagement with advance written notice. Payments already made are non-refundable, and no digital files or assets will be transferred. A 20-day pause clause applies as separately agreed.' },
       { label: 'Work Start & End', text: 'Work begins after a signed contract and advance payment are received, and ends upon delivery of final files following receipt of the last payment. Both parties commit to meeting the agreed schedule.' },
-      { label: 'Publication', text: 'The designer reserves the right to publish the work in a portfolio, website, social media, and any relevant platform, in a manner that does not harm the client and is within reasonable boundaries, as is customary.' },
-      { label: 'Credit', text: 'The designer reserves the right to include a credit notice within the work, in a manner that does not harm the client. For websites, a credit link may accompany the request.' },
+      { label: 'Publication', text: 'The designer reserves the right to publish the work in a portfolio, website, social media, and any relevant platform, in a manner that does not harm the client and is within reasonable boundaries.' },
+      { label: 'Credit', text: 'The designer reserves the right to include a credit notice within the work. For websites, a credit link may accompany the request.' },
       { label: 'Contract Validity', text: 'This contract is valid for one month from the date it was sent to the client.' },
     ],
-    signatureTitle: "Let's Sign and Begin :)",
-    signatureNote: 'You may reply by email with approval and attach this document.',
-    designerLabel: 'Sivan Darmon Pritsker',
+    sigNote: 'You may reply by email with approval and attach this document.',
+    designer: 'Sivan Darmon Pritsker',
   },
 };
 
-function esc(str: string | undefined): string {
-  return (str ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+function e(s: string | undefined): string {
+  return (s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-function buildPage(content: string, lang: 'he' | 'en'): string {
-  const dir = lang === 'he' ? 'rtl' : 'ltr';
+function formatDate(iso: string): string {
+  const d = new Date(iso);
+  return `${d.getDate()}.${d.getMonth() + 1}.${String(d.getFullYear()).slice(2)}`;
+}
+
+// ─── CSS ─────────────────────────────────────────────────────────────────────
+
+const ACCENT = '#c8365a';
+
+const CSS = `
+@import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&display=swap');
+
+@page { size: A4; margin: 0; }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: Arial, 'Arial Unicode MS', sans-serif;
+  font-size: 9.5pt;
+  color: #1a1a1a;
+  background: #fff;
+}
+
+/* ── Page wrapper ── */
+.page {
+  width: 210mm;
+  min-height: 297mm;
+  position: relative;
+  display: flex;
+  page-break-after: always;
+}
+
+/* ── Left sidebar (identical for HE and EN) ── */
+.sidebar {
+  width: 20mm;
+  min-height: 297mm;
+  border-right: 1px solid #d0d0d0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 7mm 0 7mm;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.logo-text {
+  font-family: 'Dancing Script', cursive;
+  font-size: 13pt;
+  font-weight: 700;
+  color: #1a1a1a;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  letter-spacing: 1px;
+  line-height: 1;
+  margin-top: 0;
+}
+
+.logo-divider {
+  width: 60%;
+  height: 1px;
+  background: #d0d0d0;
+  margin: 5mm 0;
+}
+
+.services {
+  font-size: 5pt;
+  color: #666;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  letter-spacing: 0.8px;
+  line-height: 2;
+  text-align: center;
+  flex: 1;
+  white-space: nowrap;
+}
+
+/* ── Main content area ── */
+.main {
+  flex: 1;
+  padding: 7mm 13mm 20mm 11mm;
+  min-height: 297mm;
+  position: relative;
+}
+
+/* ── Footer ── */
+.footer {
+  position: absolute;
+  bottom: 5mm;
+  left: 20mm;
+  right: 0;
+  padding: 1.5mm 13mm 0 11mm;
+  border-top: 1px solid #e8e8e8;
+  font-size: 7.5pt;
+  color: #555;
+}
+
+/* ── Typography ── */
+.date { font-size: 8.5pt; color: #777; margin-bottom: 3.5mm; }
+.subject {
+  font-size: 13pt;
+  font-weight: bold;
+  margin-bottom: 4mm;
+  line-height: 1.3;
+}
+.greeting { font-size: 10pt; margin-bottom: 1.5mm; }
+.intro { font-size: 9pt; color: #444; line-height: 1.6; margin-bottom: 5mm; }
+
+/* ── Sections ── */
+.section { margin-bottom: 5mm; }
+.sec-title {
+  font-size: 10.5pt;
+  font-weight: bold;
+  color: ${ACCENT};
+  margin-bottom: 2.5mm;
+}
+
+/* ── Client details ── */
+.details-table { width: 100%; border-collapse: collapse; }
+.details-table td { padding: 0.8mm 0; vertical-align: top; font-size: 9pt; }
+.det-label { color: ${ACCENT}; font-size: 8.5pt; white-space: nowrap; width: 25mm; }
+.det-value { color: #1a1a1a; }
+/* RTL: label on right */
+[dir="rtl"] .det-label { text-align: right; padding-right: 0; padding-left: 4mm; }
+[dir="rtl"] .det-value { text-align: right; }
+[dir="ltr"] .det-label { text-align: left; padding-right: 4mm; }
+
+/* ── Timeline ── */
+.timeline-wrap { position: relative; }
+.timeline-note {
+  position: absolute;
+  top: 0;
+  font-size: 7.5pt;
+  color: ${ACCENT};
+  font-style: italic;
+  max-width: 28mm;
+  line-height: 1.4;
+}
+[dir="rtl"] .timeline-note { left: 0; }
+[dir="ltr"] .timeline-note { right: 0; }
+
+.phase { margin-bottom: 3mm; }
+.phase-header { font-size: 9.5pt; font-weight: normal; }
+.phase-header strong { font-weight: bold; }
+.phase-dur { color: #555; }
+.phase-tasks {
+  margin-top: 1mm;
+  font-size: 8.5pt;
+  color: #444;
+  line-height: 1.7;
+}
+[dir="rtl"] .phase-tasks { padding-right: 5mm; }
+[dir="ltr"] .phase-tasks { padding-left: 5mm; }
+.phase-tasks li { list-style: disc; }
+
+/* ── Payment ── */
+.pay-price-row { display: flex; align-items: baseline; gap: 5mm; margin-bottom: 2mm; }
+[dir="rtl"] .pay-price-row { flex-direction: row-reverse; justify-content: flex-end; }
+.pay-price-label { color: ${ACCENT}; font-size: 8.5pt; }
+.pay-price-val { font-size: 12pt; font-weight: bold; }
+
+.pay-schedule-title { color: ${ACCENT}; font-size: 8.5pt; font-weight: bold; margin-bottom: 1.5mm; }
+
+.pay-row { display: flex; align-items: flex-start; gap: 3mm; margin-bottom: 1.5mm; font-size: 8.5pt; }
+[dir="rtl"] .pay-row { flex-direction: row-reverse; }
+.pay-label { color: ${ACCENT}; min-width: 18mm; flex-shrink: 0; }
+.pay-amount { font-weight: bold; white-space: nowrap; min-width: 16mm; flex-shrink: 0; }
+.pay-cond { color: #555; }
+
+.rate-row { font-size: 7.5pt; color: #666; margin-top: 2mm; }
+.rate-row span { color: #1a1a1a; font-weight: bold; }
+
+/* ── Project structure ── */
+.struct-item { margin-bottom: 4mm; }
+.struct-name { font-weight: bold; font-size: 10pt; margin-bottom: 0.5mm; }
+.struct-desc { font-size: 8.5pt; color: #555; margin-bottom: 1.5mm; }
+.struct-table { width: 100%; border-collapse: collapse; font-size: 8.5pt; }
+.struct-table td { padding: 0.6mm 0; }
+.s-item { color: #333; }
+.s-price { white-space: nowrap; color: #555; }
+[dir="rtl"] .s-price { text-align: left; }
+[dir="ltr"] .s-price { text-align: right; }
+
+/* ── Notes ── */
+.notes-list { font-size: 8.5pt; line-height: 1.65; color: #333; }
+[dir="rtl"] .notes-list { padding-right: 4mm; }
+[dir="ltr"] .notes-list { padding-left: 4mm; }
+.notes-list li { list-style: disc; margin-bottom: 1mm; }
+
+/* ── Rights ── */
+.rights-row { display: flex; align-items: flex-start; gap: 3mm; margin-bottom: 2mm; }
+[dir="rtl"] .rights-row { flex-direction: row-reverse; }
+.r-label { color: ${ACCENT}; font-size: 8.5pt; min-width: 28mm; flex-shrink: 0; }
+.r-text { font-size: 8.5pt; color: #333; line-height: 1.55; }
+
+/* ── Additional details ── */
+.add-row { display: flex; align-items: flex-start; gap: 3mm; margin-bottom: 2mm; }
+[dir="rtl"] .add-row { flex-direction: row-reverse; }
+.a-label { color: ${ACCENT}; font-size: 8.5pt; font-weight: bold; min-width: 28mm; flex-shrink: 0; }
+.a-text { font-size: 8.5pt; color: #333; line-height: 1.55; }
+
+/* ── Signature ── */
+.sig-heading {
+  text-align: center;
+  font-size: 12pt;
+  font-weight: bold;
+  color: ${ACCENT};
+  margin-bottom: 2mm;
+  margin-top: 4mm;
+}
+.sig-note { text-align: center; font-size: 8pt; color: #666; margin-bottom: 10mm; }
+.sig-blocks { display: flex; justify-content: space-between; gap: 20mm; margin-top: 2mm; }
+.sig-block { flex: 1; text-align: center; }
+.sig-line { border-bottom: 1px solid #1a1a1a; height: 14mm; margin-bottom: 2mm; }
+.sig-name { font-size: 8.5pt; font-weight: bold; }
+.sig-sub { font-size: 8pt; color: #666; }
+
+@media print {
+  body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .page { page-break-after: always; }
+}
+`;
+
+// ─── Sidebar (shared) ─────────────────────────────────────────────────────────
+
+const SIDEBAR = `
+<div class="sidebar">
+  <div class="logo-text">Sivi-Design</div>
+  <div class="logo-divider"></div>
+  <div class="services">AI &nbsp;·&nbsp; Design &nbsp;·&nbsp; Creative &nbsp;·&nbsp; Marketing &nbsp;·&nbsp; Digital &nbsp;·&nbsp; UX/UI &nbsp;·&nbsp; Web &nbsp;·&nbsp; Illustration</div>
+</div>`;
+
+const FOOTER_HTML = `<div class="footer">052-6613709 &nbsp;&nbsp; sivandarmon@gmail.com &nbsp;&nbsp; sivi-design.com</div>`;
+
+// ─── Page builder ─────────────────────────────────────────────────────────────
+
+function page(inner: string, dir: 'rtl' | 'ltr'): string {
   return `
-  <div class="page" lang="${lang}">
-    <div class="sidebar">
-      ${LOGO_SVG}
-      <div class="services">${SERVICES}</div>
-    </div>
-    <div class="main" dir="${dir}">
-      ${content}
-    </div>
-    <div class="footer" dir="ltr">${FOOTER_TEXT}</div>
-  </div>`;
+<div class="page">
+  ${SIDEBAR}
+  <div class="main" dir="${dir}">
+    ${inner}
+  </div>
+  ${FOOTER_HTML}
+</div>`;
 }
 
-function buildDynamicPages(content: ProposalContent, customer: CustomerInfo, dateStr: string, lang: 'he' | 'en'): string {
+// ─── Dynamic content pages ────────────────────────────────────────────────────
+
+function dynamicPages(c: ProposalContent, cust: CustomerInfo, dateStr: string, lang: 'he' | 'en'): string {
+  const dir = lang === 'he' ? 'rtl' : 'ltr';
   const isHe = lang === 'he';
-  const L = isHe
-    ? {
-        subject: `הנדון: הצעת מחיר וחוזה עבודה – ${esc(customer.businessName)}`,
-        clientTitle: 'פרטי הלקוח',
-        businessName: 'שם העסק', regNum: 'ח.פ.', address: 'כתובת',
-        contact: 'איש קשר', phone: 'טלפון', email: 'דוא"ל',
-        projectTitle: 'תיאור הפרויקט',
-        timelineTitle: 'לוח זמנים', timelineQuestion: 'מתי זה יהיה מוכן?',
-        paymentTitle: 'תשלום', priceLabel: 'מחיר הפרויקט', scheduleLabel: 'חלוקה לתשלומים',
-        hourlyLabel: 'מחיר שעת עבודה', additionalLabel: 'תנאי לשעות נוספות',
-        workApproval: 'אישור הלקוחה לפני ביצוע ובמסמך משותף אין ליין',
-        structureTitle: 'מבנה הפרויקט',
-      }
-    : {
-        subject: `Re: Price Proposal & Work Contract – ${esc(customer.businessName)}`,
-        clientTitle: 'Client Details',
-        businessName: 'Business Name', regNum: 'Reg. No.', address: 'Address',
-        contact: 'Contact', phone: 'Phone', email: 'Email',
-        projectTitle: 'Project Description',
-        timelineTitle: 'Timeline', timelineQuestion: 'When will it be ready?',
-        paymentTitle: 'Payment', priceLabel: 'Project Price', scheduleLabel: 'Payment Schedule',
-        hourlyLabel: 'Hourly Rate', additionalLabel: 'Additional Hours',
-        workApproval: 'Client approval via shared online document before production',
-        structureTitle: 'Project Structure',
-      };
 
-  const timelineSide = isHe ? 'right' : 'left';
+  const L = isHe ? {
+    subject: `הנדון: הצעת מחיר וחוזה עבודה – ${e(cust.businessName)}`,
+    clientTitle: 'פרטי הלקוח',
+    lBusinessName: 'שם העסק', lReg: 'ח.פ.', lAddress: 'כתובת',
+    lContact: 'איש קשר', lPhone: 'טלפון', lEmail: 'דוא"ל',
+    projectTitle: 'תיאור הפרויקט',
+    timelineTitle: 'לוח זמנים', timelineNote: 'מתי זה יהיה מוכן?',
+    payTitle: 'תשלום', priceLabel: 'מחיר הפרויקט', schedLabel: 'חלוקה לתשלומים',
+    rateLabel: 'מחיר שעת עבודה נוספת', addRateLabel: 'מחיר לשעות נוספות',
+    approval: 'אישור הלקוחה לפני ביצוע ובמסמך משותף אין ליין',
+    structTitle: 'מבנה הפרויקט',
+  } : {
+    subject: `Re: Price Proposal & Work Contract – ${e(cust.businessName)}`,
+    clientTitle: 'Client Details',
+    lBusinessName: 'Business Name', lReg: 'Reg. No.', lAddress: 'Address',
+    lContact: 'Contact', lPhone: 'Phone', lEmail: 'Email',
+    projectTitle: 'Project Description',
+    timelineTitle: 'Timeline', timelineNote: 'When will it be ready?',
+    payTitle: 'Payment', priceLabel: 'Project Price', schedLabel: 'Payment Schedule',
+    rateLabel: 'Additional Hours Rate', addRateLabel: 'Extra Hours Rate',
+    approval: 'Client approval required via shared online document before production',
+    structTitle: 'Project Structure',
+  };
 
-  const timelineHtml = content.timeline.map(ph => `
+  // Timeline phases
+  const phasesHtml = c.timeline.map(ph => `
     <div class="phase">
-      <div class="phase-header"><strong>${esc(ph.phase)}</strong> <span class="phase-dur">– ${esc(ph.duration)}</span></div>
-      <ul class="phase-tasks">${ph.tasks.map(t => `<li>${esc(t)}</li>`).join('')}</ul>
+      <div class="phase-header"><strong>${e(ph.phase)}</strong> <span class="phase-dur">– ${e(ph.duration)}</span></div>
+      <ul class="phase-tasks">${ph.tasks.map(t => `<li>${e(t)}</li>`).join('')}</ul>
     </div>`).join('');
 
-  const paymentRows = content.paymentSchedule.map(p => `
+  // Payment rows
+  const payRows = c.paymentSchedule.map(p => `
     <div class="pay-row">
-      <span class="pay-label">${esc(p.label)}</span>
-      <span class="pay-amount">${esc(p.amount)}</span>
-      <span class="pay-cond">${esc(p.condition)}</span>
+      <span class="pay-label">${e(p.label)}</span>
+      <span class="pay-amount">${e(p.amount)}</span>
+      <span class="pay-cond">${e(p.condition)}</span>
     </div>`).join('');
 
-  const structureHtml = content.projectStructure.map(sec => `
-    <div class="struct-section">
-      <div class="struct-name">${esc(sec.name)}</div>
-      ${sec.description ? `<div class="struct-desc">${esc(sec.description)}</div>` : ''}
+  // Structure sections
+  const structHtml = c.projectStructure.map(s => `
+    <div class="struct-item">
+      <div class="struct-name">${e(s.name)}</div>
+      ${s.description ? `<div class="struct-desc">${e(s.description)}</div>` : ''}
       <table class="struct-table">
-        ${sec.deliverables.map(d => `
+        ${s.deliverables.map(d => `
         <tr>
-          <td class="struct-item">${esc(d.item)}</td>
-          <td class="struct-price">${esc(d.price ?? '')}</td>
+          <td class="s-item">${e(d.item)}</td>
+          <td class="s-price">${e(d.price ?? '')}</td>
         </tr>`).join('')}
       </table>
     </div>`).join('');
 
-  const page1 = buildPage(`
-    <div class="date-line">${esc(dateStr)}</div>
-    <h1 class="subject">${L.subject}</h1>
-    <p class="greeting">${esc(content.greeting)}</p>
-    <p class="intro">${esc(content.intro)}</p>
+  // Client details rows
+  const detRows = [
+    { l: L.lBusinessName, v: cust.businessName },
+    { l: L.lReg, v: cust.registrationNumber },
+    { l: L.lAddress, v: cust.address },
+    { l: L.lContact, v: cust.contactName },
+    { l: L.lPhone, v: cust.phone },
+    { l: L.lEmail, v: cust.email },
+  ].filter(r => r.v).map(r => `
+    <tr>
+      <td class="det-label">${r.l}</td>
+      <td class="det-value">${e(r.v)}</td>
+    </tr>`).join('');
+
+  const p1 = page(`
+    <div class="date">${e(dateStr)}</div>
+    <div class="subject">${L.subject}</div>
+    <div class="greeting">${e(c.greeting)}</div>
+    <p class="intro">${e(c.intro)}</p>
 
     <div class="section">
-      <div class="sec-heading">${L.clientTitle}</div>
-      <div class="details-grid">
-        <span class="dl">${L.businessName}</span><span class="dv">${esc(customer.businessName)}</span>
-        ${customer.registrationNumber ? `<span class="dl">${L.regNum}</span><span class="dv">${esc(customer.registrationNumber)}</span>` : ''}
-        ${customer.address ? `<span class="dl">${L.address}</span><span class="dv">${esc(customer.address)}</span>` : ''}
-        ${customer.contactName ? `<span class="dl">${L.contact}</span><span class="dv">${esc(customer.contactName)}</span>` : ''}
-        ${customer.phone ? `<span class="dl">${L.phone}</span><span class="dv">${esc(customer.phone)}</span>` : ''}
-        ${customer.email ? `<span class="dl">${L.email}</span><span class="dv">${esc(customer.email)}</span>` : ''}
+      <div class="sec-title">${L.clientTitle}</div>
+      <table class="details-table"><tbody>${detRows}</tbody></table>
+    </div>
+
+    <div class="section">
+      <div class="sec-title">${L.projectTitle}</div>
+      <p style="font-size:9.5pt;line-height:1.6;color:#333">${e(c.projectDescription)}</p>
+    </div>
+
+    <div class="section">
+      <div class="sec-title">${L.timelineTitle}</div>
+      <div class="timeline-wrap" style="position:relative">
+        <div class="timeline-note">${L.timelineNote}</div>
+        ${phasesHtml}
       </div>
     </div>
+  `, dir);
 
+  const p2 = page(`
     <div class="section">
-      <div class="sec-heading">${L.projectTitle}</div>
-      <p class="body-text">${esc(content.projectDescription)}</p>
-    </div>
-
-    <div class="section timeline-section" style="position:relative">
-      <div class="sec-heading">${L.timelineTitle}</div>
-      <div class="timeline-note" style="${timelineSide}:0">${L.timelineQuestion}</div>
-      ${timelineHtml}
-    </div>
-  `, lang);
-
-  const page2 = buildPage(`
-    <div class="section">
-      <div class="sec-heading">${L.paymentTitle}</div>
-      <div class="price-total">
-        <span class="price-label">${L.priceLabel}</span>
-        <span class="price-value">${esc(content.totalPrice)}</span>
+      <div class="sec-title">${L.payTitle}</div>
+      <div class="pay-price-row">
+        <span class="pay-price-label">${L.priceLabel}</span>
+        <span class="pay-price-val">${e(c.totalPrice)}</span>
       </div>
-      <div class="sec-sub-heading">${L.scheduleLabel}</div>
-      ${paymentRows}
-      <div class="work-approval">${L.workApproval}</div>
+      <div class="pay-schedule-title">${L.schedLabel}</div>
+      ${payRows}
+      <div class="rate-row">${L.rateLabel} – <span>250 ₪</span> &nbsp;&nbsp; ${L.addRateLabel} – <span>230 ₪</span></div>
+      <div class="rate-row" style="margin-top:1mm;color:#999">${L.approval}</div>
     </div>
 
     <div class="section">
-      <div class="sec-heading">${L.structureTitle}</div>
-      ${structureHtml}
+      <div class="sec-title">${L.structTitle}</div>
+      ${structHtml}
     </div>
-  `, lang);
+  `, dir);
 
-  return page1 + page2;
+  return p1 + p2;
 }
 
-function buildFixedTermsPage(lang: 'he' | 'en', clientName: string): string {
-  const T = FIXED_TERMS[lang];
+// ─── Fixed terms page ─────────────────────────────────────────────────────────
+
+function termsPage(lang: 'he' | 'en', clientName: string): string {
   const dir = lang === 'he' ? 'rtl' : 'ltr';
+  const F = FIXED[lang];
 
-  const notesHtml = T.notes.map(n => `<li>${esc(n)}</li>`).join('');
-  const rightsHtml = T.rights.map(r => `
+  const notesHtml = F.notes.map(n => `<li>${e(n)}</li>`).join('');
+  const rightsHtml = F.rights.map(r => `
     <div class="rights-row">
-      <span class="rights-label">${esc(r.label)}</span>
-      <span class="rights-text">${esc(r.text)}</span>
+      <span class="r-label">${e(r.label)}</span>
+      <span class="r-text">${e(r.text)}</span>
     </div>`).join('');
-  const addHtml = T.additional.map(a => `
+  const addHtml = F.additional.map(a => `
     <div class="add-row">
-      <span class="add-label">${esc(a.label)}</span>
-      <span class="add-text">${esc(a.text)}</span>
+      <span class="a-label">${e(a.label)}</span>
+      <span class="a-text">${e(a.text)}</span>
     </div>`).join('');
 
-  return buildPage(`
+  const notesTitle = lang === 'he' ? 'הערות' : 'Notes';
+  const rightsTitle = lang === 'he' ? 'זכויות' : 'Rights';
+  const addTitle = lang === 'he' ? 'פרטים נוספים' : 'Additional Details';
+  const sigTitle = lang === 'he' ? 'חתימה ומתחילים :)' : "Let's Sign and Begin :)";
+
+  return page(`
     <div class="section">
-      <div class="sec-heading">${T.notesTitle}</div>
+      <div class="sec-title">${notesTitle}</div>
       <ul class="notes-list">${notesHtml}</ul>
     </div>
 
     <div class="section">
-      <div class="sec-heading">${T.rightsTitle}</div>
+      <div class="sec-title">${rightsTitle}</div>
       ${rightsHtml}
     </div>
 
     <div class="section">
-      <div class="sec-heading">${T.addTitle}</div>
+      <div class="sec-title">${addTitle}</div>
       ${addHtml}
     </div>
 
-    <div class="sig-section">
-      <div class="sig-title">${T.signatureTitle}</div>
-      <p class="sig-note" dir="${dir}">${T.signatureNote}</p>
-      <div class="sig-row">
-        <div class="sig-block">
-          <div class="sig-line"></div>
-          <div class="sig-name">${esc(T.designerLabel)}</div>
-        </div>
-        <div class="sig-block">
-          <div class="sig-line"></div>
-          <div class="sig-name">${esc(clientName)}</div>
-        </div>
+    <div class="sig-heading">${sigTitle}</div>
+    <p class="sig-note" dir="${dir}">${e(F.sigNote)}</p>
+    <div class="sig-blocks">
+      <div class="sig-block">
+        <div class="sig-line"></div>
+        <div class="sig-name">${e(F.designer)}</div>
+      </div>
+      <div class="sig-block">
+        <div class="sig-line"></div>
+        <div class="sig-name">${e(clientName)}</div>
+        ${lang === 'he' ? `<div class="sig-sub">נתן להחזיר מייל עם אישור ותופס זה מצורף</div>` : ''}
       </div>
     </div>
-  `, lang);
+  `, dir);
 }
 
-const CSS = `
-  @page { size: A4; margin: 0; }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    font-family: Arial, 'Arial Unicode MS', 'Helvetica Neue', sans-serif;
-    font-size: 9.5pt;
-    color: #1a1a1a;
-    background: #fff;
-  }
-  .page {
-    width: 210mm;
-    min-height: 297mm;
-    position: relative;
-    display: flex;
-    page-break-after: always;
-    overflow: hidden;
-  }
-  /* ── Sidebar ── */
-  .sidebar {
-    width: 22mm;
-    min-height: 297mm;
-    border-right: 1px solid #e0e0e0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 8mm 0 6mm;
-    flex-shrink: 0;
-  }
-  .sidebar svg { width: 14mm; height: 14mm; }
-  .services {
-    font-size: 5pt;
-    letter-spacing: 0.3px;
-    color: #555;
-    writing-mode: vertical-rl;
-    transform: rotate(180deg);
-    margin-top: auto;
-    line-height: 2.2;
-    white-space: nowrap;
-  }
-  /* ── Main content ── */
-  .main {
-    flex: 1;
-    padding: 8mm 12mm 18mm 10mm;
-    position: relative;
-  }
-  .date-line { font-size: 8.5pt; color: #666; margin-bottom: 4mm; }
-  .subject { font-size: 13pt; font-weight: bold; color: #1a1a1a; margin-bottom: 4mm; line-height: 1.3; }
-  .greeting { font-size: 10pt; margin-bottom: 1.5mm; }
-  .intro { font-size: 9pt; color: #444; margin-bottom: 5mm; line-height: 1.55; }
-  /* ── Section ── */
-  .section { margin-bottom: 5.5mm; }
-  .sec-heading {
-    font-size: 11pt;
-    font-weight: bold;
-    color: ${ACCENT};
-    margin-bottom: 2.5mm;
-  }
-  .sec-sub-heading {
-    font-size: 9pt;
-    font-weight: bold;
-    color: ${ACCENT};
-    margin: 2mm 0 1mm;
-  }
-  .body-text { font-size: 9.5pt; line-height: 1.55; color: #333; }
-  /* ── Client details ── */
-  .details-grid {
-    display: grid;
-    grid-template-columns: auto 1fr;
-    gap: 1.2mm 5mm;
-    font-size: 9pt;
-  }
-  .dl { color: ${ACCENT}; white-space: nowrap; font-size: 8.5pt; }
-  .dv { color: #1a1a1a; }
-  /* ── Timeline ── */
-  .timeline-section { padding-top: 1mm; }
-  .timeline-note {
-    position: absolute;
-    font-size: 7.5pt;
-    color: ${ACCENT};
-    font-style: italic;
-    top: 0;
-    max-width: 30mm;
-    line-height: 1.3;
-  }
-  .phase { margin-bottom: 2.5mm; }
-  .phase-header { font-size: 9.5pt; }
-  .phase-dur { font-weight: normal; color: #555; }
-  .phase-tasks { margin-top: 1mm; padding-inline-start: 5mm; }
-  .phase-tasks li { font-size: 8.5pt; color: #444; margin-bottom: 0.5mm; list-style-type: disc; }
-  /* ── Payment ── */
-  .price-total { display: flex; align-items: baseline; gap: 4mm; margin-bottom: 2mm; }
-  .price-label { font-size: 9pt; color: ${ACCENT}; }
-  .price-value { font-size: 12pt; font-weight: bold; }
-  .pay-row { display: flex; align-items: flex-start; gap: 3mm; margin-bottom: 1.5mm; font-size: 8.5pt; }
-  .pay-label { color: ${ACCENT}; min-width: 20mm; flex-shrink: 0; font-size: 8pt; }
-  .pay-amount { font-weight: bold; white-space: nowrap; }
-  .pay-cond { color: #555; }
-  .work-approval { font-size: 7.5pt; color: #777; margin-top: 2mm; }
-  /* ── Project structure ── */
-  .struct-section { margin-bottom: 3.5mm; }
-  .struct-name { font-weight: bold; font-size: 9.5pt; margin-bottom: 0.5mm; }
-  .struct-desc { font-size: 8pt; color: #555; margin-bottom: 1.5mm; }
-  .struct-table { width: 100%; border-collapse: collapse; font-size: 8.5pt; }
-  .struct-item { padding: 0.5mm 0; color: #333; }
-  .struct-price { text-align: end; color: #666; white-space: nowrap; padding-inline-start: 4mm; }
-  /* ── Fixed terms ── */
-  .notes-list { padding-inline-start: 4mm; font-size: 8.5pt; line-height: 1.6; color: #333; }
-  .notes-list li { margin-bottom: 1.2mm; list-style-type: disc; }
-  .rights-row { display: flex; gap: 3mm; margin-bottom: 2mm; align-items: flex-start; }
-  .rights-label { color: ${ACCENT}; font-size: 8.5pt; min-width: 28mm; flex-shrink: 0; }
-  .rights-text { font-size: 8.5pt; color: #333; line-height: 1.5; }
-  .add-row { display: flex; gap: 3mm; margin-bottom: 2mm; align-items: flex-start; }
-  .add-label { color: ${ACCENT}; font-size: 8.5pt; font-weight: bold; min-width: 28mm; flex-shrink: 0; }
-  .add-text { font-size: 8.5pt; color: #333; line-height: 1.5; }
-  /* ── Signature ── */
-  .sig-section { margin-top: 5mm; }
-  .sig-title { font-size: 12pt; font-weight: bold; color: ${ACCENT}; text-align: center; margin-bottom: 3mm; }
-  .sig-note { font-size: 8pt; color: #666; margin-bottom: 8mm; text-align: center; }
-  .sig-row { display: flex; gap: 15mm; justify-content: space-between; }
-  .sig-block { flex: 1; }
-  .sig-line { border-bottom: 1px solid #1a1a1a; height: 14mm; margin-bottom: 2mm; }
-  .sig-name { font-size: 8.5pt; font-weight: bold; text-align: center; }
-  /* ── Footer ── */
-  .footer {
-    position: absolute;
-    bottom: 5mm;
-    left: 22mm;
-    right: 0;
-    font-size: 7.5pt;
-    color: #555;
-    padding: 1.5mm 12mm 0 10mm;
-    border-top: 1px solid #eee;
-  }
-  @media print {
-    body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    .page { page-break-after: always; }
-  }
-`;
+// ─── Public API ───────────────────────────────────────────────────────────────
+
+function wrapHtml(body: string): string {
+  return `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>${CSS}</style>
+</head>
+<body>${body}</body>
+</html>`;
+}
 
 export function buildProposalHtml(params: {
   contentJson: ContentJson;
@@ -437,20 +544,11 @@ export function buildProposalHtml(params: {
   lang: 'he' | 'en';
 }): string {
   const { contentJson, customer, dateStr, lang } = params;
-  const content = contentJson[lang];
   const clientName = customer.contactName || customer.businessName;
-
-  return `<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<style>${CSS}</style>
-</head>
-<body>
-${buildDynamicPages(content, customer, dateStr, lang)}
-${buildFixedTermsPage(lang, clientName)}
-</body>
-</html>`;
+  return wrapHtml(
+    dynamicPages(contentJson[lang], customer, dateStr, lang) +
+    termsPage(lang, clientName),
+  );
 }
 
 export function buildBilingualPdf(params: {
@@ -460,18 +558,12 @@ export function buildBilingualPdf(params: {
 }): string {
   const { contentJson, customer, dateStr } = params;
   const clientName = customer.contactName || customer.businessName;
-
-  return `<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<style>${CSS}</style>
-</head>
-<body>
-${buildDynamicPages(contentJson.he, customer, dateStr, 'he')}
-${buildFixedTermsPage('he', clientName)}
-${buildDynamicPages(contentJson.en, customer, dateStr, 'en')}
-${buildFixedTermsPage('en', clientName)}
-</body>
-</html>`;
+  return wrapHtml(
+    dynamicPages(contentJson.he, customer, dateStr, 'he') +
+    termsPage('he', clientName) +
+    dynamicPages(contentJson.en, customer, dateStr, 'en') +
+    termsPage('en', clientName),
+  );
 }
+
+export { formatDate };

@@ -36,11 +36,18 @@ export class BusinessProposalsController {
   }
 
   @Get(':id/pdf')
-  async downloadPdf(@Param('id') id: string, @Res() res: Response) {
+  async downloadPdf(
+    @Param('id') id: string,
+    @Query('inline') inline: string,
+    @Res() res: Response,
+  ) {
     const buffer = await this.service.getPdfBuffer(id);
+    const disposition = inline === '1'
+      ? 'inline'
+      : `attachment; filename="proposal-${id}.pdf"`;
     res.set({
       'Content-Type': 'application/pdf',
-      'Content-Disposition': `attachment; filename="proposal-${id}.pdf"`,
+      'Content-Disposition': disposition,
       'Content-Length': buffer.length,
     });
     res.end(buffer);

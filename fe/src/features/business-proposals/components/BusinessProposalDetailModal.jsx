@@ -12,7 +12,10 @@ import {
 import useBusinessProposal from '@/features/business-proposals/hooks/useBusinessProposal';
 import useRefineBusinessProposal from '@/features/business-proposals/hooks/useRefineBusinessProposal';
 import useUpdateProposalContent from '@/features/business-proposals/hooks/useUpdateProposalContent';
-import { getBusinessProposalPdfUrl } from '@/features/business-proposals/services/businessProposalsApi';
+import {
+  getBusinessProposalPdfUrl,
+  getBusinessProposalPdfPreviewUrl,
+} from '@/features/business-proposals/services/businessProposalsApi';
 
 const T = BUSINESS_PROPOSALS_TEXT.detail;
 const TEXTAREA = 'block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 shadow-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 resize-none';
@@ -177,6 +180,7 @@ export default function BusinessProposalDetailModal({ proposalId, isOpen, onClos
   const [editedContent, setEditedContent] = useState(null);
   const [refinementText, setRefinementText] = useState('');
   const [refineError, setRefineError] = useState('');
+  const [showPreview, setShowPreview] = useState(false);
   const { showToast } = useToast();
   const { data, isLoading, isError } = useBusinessProposal(proposalId, isOpen);
   const refineMutation = useRefineBusinessProposal();
@@ -189,6 +193,7 @@ export default function BusinessProposalDetailModal({ proposalId, isOpen, onClos
     setRefinementText('');
     setRefineError('');
     setEditedContent(null);
+    setShowPreview(false);
     refineMutation.reset();
     updateMutation.reset();
   }, [isOpen]);
@@ -311,11 +316,39 @@ export default function BusinessProposalDetailModal({ proposalId, isOpen, onClos
                   <Button type="button" variant="ghost" className="h-8 px-3 text-xs" onClick={handleSave} disabled={isSaving}>
                     {T.saveContent}
                   </Button>
-                  <Button type="button" variant="primary" className="h-8 px-3 text-xs" onClick={handleDownloadPdf}>
-                    {T.downloadPdf}
+                  <Button
+                    type="button"
+                    variant={showPreview ? 'ghost' : 'primary'}
+                    className="h-8 px-3 text-xs"
+                    onClick={() => setShowPreview((v) => !v)}
+                  >
+                    {showPreview ? 'Hide Preview' : 'Preview PDF'}
                   </Button>
                 </div>
               )}
+            </div>
+          )}
+
+          {/* PDF Preview */}
+          {showPreview && data?.id && (
+            <div className="rounded-xl border border-slate-200 overflow-hidden">
+              <div className="flex items-center justify-between bg-slate-50 px-4 py-2 border-b border-slate-200">
+                <span className="text-xs font-medium text-slate-600">PDF Preview</span>
+                <Button
+                  type="button"
+                  variant="primary"
+                  className="h-7 px-3 text-xs"
+                  onClick={handleDownloadPdf}
+                >
+                  {T.downloadPdf}
+                </Button>
+              </div>
+              <iframe
+                src={getBusinessProposalPdfPreviewUrl(data.id)}
+                title="Proposal PDF Preview"
+                className="w-full"
+                style={{ height: '70vh' }}
+              />
             </div>
           )}
 
