@@ -13,6 +13,11 @@ const pool = new Pool({
   user: process.env.PGUSER || 'sivi_user',
   password: process.env.PGPASSWORD || 'sivi_pass',
   database: process.env.PGDATABASE || 'sivi_db',
+  // SSL required by hosted providers (Supabase, Railway postgres, etc.)
+  // Falls back to no-SSL when PGHOST is localhost for local dev.
+  ssl: process.env.PGHOST && process.env.PGHOST !== 'localhost'
+    ? { rejectUnauthorized: false }
+    : false,
 });
 
 export default pool;
