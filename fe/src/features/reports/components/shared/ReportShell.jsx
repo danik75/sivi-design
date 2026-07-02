@@ -27,6 +27,7 @@ export default function ReportShell({
   isError,
   onRetry,
   extraActions,
+  emptyMessage,
 }) {
   const [tab, setTab] = useState('chart');
 
@@ -98,7 +99,7 @@ export default function ReportShell({
               <div className="overflow-x-auto">
                 {tableRows?.length === 0 ? (
                   <p className="py-10 text-center text-sm text-slate-400">
-                    No data for this period.
+                    {emptyMessage ?? 'No data for this period.'}
                   </p>
                 ) : (
                   <table className="w-full text-sm bg-white">

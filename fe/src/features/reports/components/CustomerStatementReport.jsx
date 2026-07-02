@@ -103,6 +103,7 @@ export default function CustomerStatementReport({ customers = [] }) {
       isLoading={isLoading}
       isError={isError}
       onRetry={refetch}
+      emptyMessage={!customerId ? 'Select a customer to view the statement.' : 'No transactions found for this period.'}
       tableHeaders={['Date', 'Type', 'Reference', 'Description', 'Amount', 'Balance', 'Status']}
       tableRows={tableRows}
       extraActions={
