@@ -1,12 +1,21 @@
-import puppeteer from 'puppeteer';
 import { execSync } from 'child_process';
+
+/**
+ * Puppeteer v25 is ESM-only. This project compiles to CommonJS, where
+ * TypeScript would turn `import puppeteer from 'puppeteer'` (and even a plain
+ * `import('puppeteer')`) into `require()`, which throws ERR_REQUIRE_ESM on
+ * Node < 22.12 (Railway runs Node 20). The `Function` wrapper keeps a genuine
+ * dynamic `import()` in the emitted JS so the ES module loads correctly.
+ */
+const dynamicImport = new Function('m', 'return import(m)') as (
+  m: string,
+) => Promise<any>;
 
 /**
  * Resolve the Chromium executable.
  * - Local dev: returns undefined so Puppeteer uses the browser it downloaded on install.
  * - Railway (PUPPETEER_SKIP_DOWNLOAD=true): no browser was downloaded, so locate the
- *   nix-provided `chromium` on PATH instead. This avoids the fragile Ubuntu 24.04
- *   apt package naming (the t64 transition) and lets nix supply all runtime libs.
+ *   nix-provided `chromium` on PATH instead.
  */
 let cachedExecPath: string | null | undefined;
 
@@ -43,6 +52,9 @@ function resolveChromePath(): string | undefined {
 }
 
 export async function htmlToPdfBuffer(html: string): Promise<Buffer> {
+  const puppeteerModule = await dynamicImport('puppeteer');
+  const puppeteer = puppeteerModule.default ?? puppeteerModule;
+
   const executablePath = resolveChromePath();
   const browser = await puppeteer.launch({
     headless: true,
