@@ -1,26 +1,39 @@
+# Chromium runtime libraries for Puppeteer's headless PDF rendering.
+#
+# IMPORTANT: install these via `aptPkgs` (Debian packages in standard /usr/lib),
+# NOT via `nixPkgs`. Setting `[phases.setup].nixPkgs` REPLACES the Node.js
+# toolchain that nixpacks auto-detects, which makes `npm ci` fail with
+# "exit code 127" (npm not found). `aptPkgs` is merged on top of the
+# auto-detected Node setup, so Node/npm stay available and the
+# Puppeteer-downloaded Chromium finds its libs in the standard locations.
 [phases.setup]
-nixPkgs = [
-  "glib",
-  "nss",
-  "nspr",
-  "atk",
-  "dbus",
-  "expat",
-  "xorg.libXcomposite",
-  "xorg.libXcursor",
-  "xorg.libXdamage",
-  "xorg.libXext",
-  "xorg.libXfixes",
-  "xorg.libXi",
-  "xorg.libXrandr",
-  "xorg.libXrender",
-  "xorg.libXtst",
-  "pango",
-  "cairo",
-  "cups",
-  "alsa-lib",
-  "mesa",
-  "freetype",
-  "fontconfig",
-  "dejavu_fonts",
+aptPkgs = [
+  "libnss3",
+  "libnspr4",
+  "libatk1.0-0",
+  "libatk-bridge2.0-0",
+  "libatspi2.0-0",
+  "libcups2",
+  "libdrm2",
+  "libdbus-1-3",
+  "libxkbcommon0",
+  "libxcomposite1",
+  "libxdamage1",
+  "libxfixes3",
+  "libxrandr2",
+  "libxext6",
+  "libxrender1",
+  "libx11-6",
+  "libxcb1",
+  "libgbm1",
+  "libasound2",
+  "libpango-1.0-0",
+  "libcairo2",
+  "libgtk-3-0",
+  "libglib2.0-0",
+  "libexpat1",
+  "libfontconfig1",
+  "libfreetype6",
+  "fonts-liberation",
+  "fonts-dejavu",
 ]
