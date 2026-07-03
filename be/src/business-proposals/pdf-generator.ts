@@ -1,8 +1,52 @@
 import puppeteer from 'puppeteer';
+import { execSync } from 'child_process';
+
+/**
+ * Resolve the Chromium executable.
+ * - Local dev: returns undefined so Puppeteer uses the browser it downloaded on install.
+ * - Railway (PUPPETEER_SKIP_DOWNLOAD=true): no browser was downloaded, so locate the
+ *   nix-provided `chromium` on PATH instead. This avoids the fragile Ubuntu 24.04
+ *   apt package naming (the t64 transition) and lets nix supply all runtime libs.
+ */
+let cachedExecPath: string | null | undefined;
+
+function resolveChromePath(): string | undefined {
+  if (cachedExecPath !== undefined) {
+    return cachedExecPath ?? undefined;
+  }
+  if (process.env.PUPPETEER_EXECUTABLE_PATH) {
+    cachedExecPath = process.env.PUPPETEER_EXECUTABLE_PATH;
+    return cachedExecPath;
+  }
+  const downloadSkipped =
+    process.env.PUPPETEER_SKIP_DOWNLOAD === 'true' ||
+    process.env.PUPPETEER_SKIP_CHROMIUM_DOWNLOAD === 'true';
+  if (downloadSkipped) {
+    for (const bin of ['chromium', 'chromium-browser', 'google-chrome-stable']) {
+      try {
+        const found = execSync(`command -v ${bin}`, {
+          stdio: ['ignore', 'pipe', 'ignore'],
+        })
+          .toString()
+          .trim();
+        if (found) {
+          cachedExecPath = found;
+          return found;
+        }
+      } catch {
+        // not on PATH — try the next candidate
+      }
+    }
+  }
+  cachedExecPath = null; // resolved: fall back to Puppeteer's bundled browser
+  return undefined;
+}
 
 export async function htmlToPdfBuffer(html: string): Promise<Buffer> {
+  const executablePath = resolveChromePath();
   const browser = await puppeteer.launch({
     headless: true,
+    ...(executablePath ? { executablePath } : {}),
     args: [
       '--no-sandbox',
       '--disable-setuid-sandbox',

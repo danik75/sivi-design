@@ -1,39 +1,17 @@
-# Chromium runtime libraries for Puppeteer's headless PDF rendering.
+# Provide Node.js AND Chromium through nix.
 #
-# IMPORTANT: install these via `aptPkgs` (Debian packages in standard /usr/lib),
-# NOT via `nixPkgs`. Setting `[phases.setup].nixPkgs` REPLACES the Node.js
-# toolchain that nixpacks auto-detects, which makes `npm ci` fail with
-# "exit code 127" (npm not found). `aptPkgs` is merged on top of the
-# auto-detected Node setup, so Node/npm stay available and the
-# Puppeteer-downloaded Chromium finds its libs in the standard locations.
+# Why nix (not apt): the Railway base is Ubuntu 24.04 (noble), where the t64
+# transition renamed many libs (libasound2 -> libasound2t64, etc.), so pinning
+# apt package names is fragile. The nix `chromium` package is self-contained —
+# it ships all its own runtime libraries — so there are no missing-lib or
+# renamed-package failures.
+#
+# IMPORTANT: `nixPkgs` REPLACES the auto-detected toolchain, so Node MUST be
+# listed here explicitly (omitting it caused `npm ci` to fail with exit 127).
 [phases.setup]
-aptPkgs = [
-  "libnss3",
-  "libnspr4",
-  "libatk1.0-0",
-  "libatk-bridge2.0-0",
-  "libatspi2.0-0",
-  "libcups2",
-  "libdrm2",
-  "libdbus-1-3",
-  "libxkbcommon0",
-  "libxcomposite1",
-  "libxdamage1",
-  "libxfixes3",
-  "libxrandr2",
-  "libxext6",
-  "libxrender1",
-  "libx11-6",
-  "libxcb1",
-  "libgbm1",
-  "libasound2",
-  "libpango-1.0-0",
-  "libcairo2",
-  "libgtk-3-0",
-  "libglib2.0-0",
-  "libexpat1",
-  "libfontconfig1",
-  "libfreetype6",
-  "fonts-liberation",
-  "fonts-dejavu",
-]
+nixPkgs = ["nodejs_20", "chromium"]
+
+[variables]
+# Don't download Chromium during `npm ci`; use the nix-provided one at runtime
+# (pdf-generator.ts locates it on PATH). Puppeteer respects this env var.
+PUPPETEER_SKIP_DOWNLOAD = "true"
