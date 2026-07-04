@@ -121,7 +121,7 @@ export default function TasksFeature() {
   const [view, setView] = useState(loadView);
   const [showCreate, setShowCreate] = useState(false);
   const [editTask, setEditTask] = useState(null);
-  const [completeTask, setCompleteTask] = useState(null);
+  const [completeTarget, setCompleteTarget] = useState(null); // { task, extra? }
   const [visibleStatuses, setVisibleStatuses] = useState(() => new Set(['pending', 'in_progress']));
 
   const handleViewChange = (nextView) => {
@@ -174,14 +174,14 @@ export default function TasksFeature() {
         <TasksGantt
           onCreate={() => setShowCreate(true)}
           onEdit={(task) => setEditTask(task)}
-          onComplete={(task) => setCompleteTask(task)}
+          onComplete={(task) => setCompleteTarget({ task })}
           visibleStatuses={visibleStatuses}
         />
       ) : (
         <TasksGrid
           onCreate={() => setShowCreate(true)}
           onEdit={(task) => setEditTask(task)}
-          onComplete={(task) => setCompleteTask(task)}
+          onComplete={(task) => setCompleteTarget({ task })}
           visibleStatuses={visibleStatuses}
         />
       )}
@@ -198,12 +198,17 @@ export default function TasksFeature() {
         onClose={() => setEditTask(null)}
         task={editTask}
         onSuccess={handleSuccess}
+        onComplete={(task, extra) => {
+          setEditTask(null);
+          setCompleteTarget({ task, extra });
+        }}
       />
 
       <TaskCompleteDialog
-        isOpen={Boolean(completeTask)}
-        onClose={() => setCompleteTask(null)}
-        task={completeTask}
+        isOpen={Boolean(completeTarget)}
+        onClose={() => setCompleteTarget(null)}
+        task={completeTarget?.task}
+        extraData={completeTarget?.extra}
         onSuccess={handleSuccess}
       />
     </>

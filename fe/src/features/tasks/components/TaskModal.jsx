@@ -72,13 +72,12 @@ function buildInitialState(task) {
     status: task?.status ?? DEFAULT_STATUS,
     customerId: task?.customerId != null ? String(task.customerId) : '',
     estimatedHours: task?.estimatedHours != null ? String(task.estimatedHours) : '',
-    actualHours: task?.actualHours != null ? String(task.actualHours) : '',
     percentComplete: task?.percentComplete ?? 0,
     color: task?.color ?? '',
   };
 }
 
-export default function TaskModal({ isOpen, onClose, task, onSuccess }) {
+export default function TaskModal({ isOpen, onClose, task, onSuccess, onComplete }) {
   const createMutation = useCreateTask();
   const updateMutation = useUpdateTask();
   const activeMutation = task ? updateMutation : createMutation;
@@ -130,11 +129,6 @@ export default function TaskModal({ isOpen, onClose, task, onSuccess }) {
       if (field === 'status' && value === 'done') {
         next.percentComplete = 100;
       }
-      // Entering "done" prefills actual hours with the estimate so the user
-      // only has to confirm/adjust (actual hours is required to complete).
-      if (next.status === 'done' && prev.status !== 'done' && next.actualHours === '') {
-        next.actualHours = prev.estimatedHours ?? '';
-      }
       return next;
     });
     if (errors[field]) {
@@ -161,12 +155,6 @@ export default function TaskModal({ isOpen, onClose, task, onSuccess }) {
       next.endDate = TASK_TEXT.modal.endDateBeforeStart;
     }
     // Completing a task requires actual hours (edit mode only)
-    if (task && fields.status === 'done') {
-      const h = Number(fields.actualHours);
-      if (fields.actualHours === '' || Number.isNaN(h) || h < 0) {
-        next.actualHours = TASK_TEXT.modal.actualHoursRequired;
-      }
-    }
     return next;
   };
 
@@ -197,11 +185,6 @@ export default function TaskModal({ isOpen, onClose, task, onSuccess }) {
       color: fields.color || null,
     };
 
-    // actual_hours is only meaningful on an existing task
-    if (task) {
-      payload.actualHours = fields.actualHours !== '' ? Number(fields.actualHours) : null;
-    }
-
     const onError = (error) => {
       setSubmitError(getApiErrorMessage(error, TASK_TEXT.modal.saveError));
     };
@@ -219,6 +202,15 @@ export default function TaskModal({ isOpen, onClose, task, onSuccess }) {
     };
 
     if (task) {
+      // Moving to "done" hands off to the completion prompt to capture actual
+      // hours; any edits made here are carried along. Any other status zeroes
+      // actual hours (a non-done task has no actual time logged).
+      if (fields.status === 'done' && onComplete) {
+        onComplete(task, payload);
+        onClose();
+        return;
+      }
+      payload.actualHours = null;
       updateMutation.mutate({ id: task.id, data: payload }, mutationOptions);
       return;
     }
@@ -358,39 +350,17 @@ export default function TaskModal({ isOpen, onClose, task, onSuccess }) {
             )}
           </FormField>
 
-          {/* Estimated / Actual hours */}
-          <div className={task ? 'grid grid-cols-2 gap-4' : ''}>
-            <FormField label={TASK_TEXT.modal.estimatedHoursLabel}>
-              <Input
-                type="number"
-                min="0"
-                step="0.5"
-                value={fields.estimatedHours}
-                onChange={set('estimatedHours')}
-                placeholder={TASK_TEXT.modal.estimatedHoursPlaceholder}
-              />
-            </FormField>
-
-            {/* Actual hours — edit mode only; required when marking done */}
-            {task ? (
-              <FormField
-                label={`${TASK_TEXT.modal.actualHoursLabel}${fields.status === 'done' ? ' *' : ''}`}
-              >
-                <Input
-                  type="number"
-                  min="0"
-                  step="0.25"
-                  value={fields.actualHours}
-                  onChange={set('actualHours')}
-                  placeholder={TASK_TEXT.modal.actualHoursPlaceholder}
-                  aria-invalid={Boolean(errors.actualHours)}
-                />
-                {errors.actualHours ? (
-                  <p className="text-xs font-medium text-rose-600">{errors.actualHours}</p>
-                ) : null}
-              </FormField>
-            ) : null}
-          </div>
+          {/* Estimated hours (actual hours is captured via the completion prompt) */}
+          <FormField label={TASK_TEXT.modal.estimatedHoursLabel}>
+            <Input
+              type="number"
+              min="0"
+              step="0.5"
+              value={fields.estimatedHours}
+              onChange={set('estimatedHours')}
+              placeholder={TASK_TEXT.modal.estimatedHoursPlaceholder}
+            />
+          </FormField>
 
           {/* % Complete — edit mode only */}
           {task ? (
@@ -441,4 +411,5 @@ TaskModal.propTypes = {
     color: PropTypes.string,
   }),
   onSuccess: PropTypes.func.isRequired,
+  onComplete: PropTypes.func,
 };

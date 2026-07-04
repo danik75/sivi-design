@@ -9,14 +9,21 @@ import useUpdateTask from '@/features/tasks/hooks/useUpdateTask';
 
 const T = TASK_TEXT.complete;
 
-// Pre-fill actual hours with any existing value, otherwise the estimate.
-function initialHours(task) {
-  if (task?.actualHours != null) return String(task.actualHours);
-  if (task?.estimatedHours != null) return String(task.estimatedHours);
-  return '';
+// The estimate to prefill/show — prefer an edit in flight (extraData) over the
+// saved task value.
+function effectiveEstimate(task, extraData) {
+  if (extraData && extraData.estimatedHours != null) return extraData.estimatedHours;
+  return task?.estimatedHours ?? null;
 }
 
-export default function TaskCompleteDialog({ isOpen, onClose, task, onSuccess }) {
+// Pre-fill actual hours with any existing value, otherwise the estimate.
+function initialHours(task, extraData) {
+  if (task?.actualHours != null) return String(task.actualHours);
+  const est = effectiveEstimate(task, extraData);
+  return est != null ? String(est) : '';
+}
+
+export default function TaskCompleteDialog({ isOpen, onClose, task, extraData, onSuccess }) {
   const updateMutation = useUpdateTask();
   const [actualHours, setActualHours] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
@@ -24,12 +31,13 @@ export default function TaskCompleteDialog({ isOpen, onClose, task, onSuccess })
 
   useEffect(() => {
     if (isOpen) {
-      setActualHours(initialHours(task));
+      setActualHours(initialHours(task, extraData));
       setErrorMessage('');
       updateMutation.reset();
     }
   }, [isOpen, task?.id]);
 
+  const estimate = effectiveEstimate(task, extraData);
   const hoursNum = Number(actualHours);
   const isValid = actualHours !== '' && !Number.isNaN(hoursNum) && hoursNum >= 0;
 
@@ -44,6 +52,7 @@ export default function TaskCompleteDialog({ isOpen, onClose, task, onSuccess })
       {
         id: task.id,
         data: {
+          ...(extraData ?? {}),
           status: 'done',
           actualHours: hoursNum,
         },
@@ -87,7 +96,7 @@ export default function TaskCompleteDialog({ isOpen, onClose, task, onSuccess })
           />
         </FormField>
         <p className="text-xs text-slate-400">
-          {task?.estimatedHours != null ? T.estimateHint(task.estimatedHours) : T.noEstimate}
+          {estimate != null ? T.estimateHint(estimate) : T.noEstimate}
         </p>
         {errorMessage ? (
           <p className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-600">
@@ -108,5 +117,7 @@ TaskCompleteDialog.propTypes = {
     estimatedHours: PropTypes.number,
     actualHours: PropTypes.number,
   }),
+  // Optional edits carried over from the edit modal to save alongside completion.
+  extraData: PropTypes.object,
   onSuccess: PropTypes.func.isRequired,
 };
