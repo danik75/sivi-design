@@ -15,7 +15,8 @@ export class TaskRepository {
       SELECT t.id, t.name, t.description, t.start_date AS "startDate", t.end_date AS "endDate",
              t.status, t.customer_id AS "customerId", c.name AS "customerName",
              t.start_time AS "startTime", t.end_time AS "endTime",
-             t.estimated_hours AS "estimatedHours", t.percent_complete AS "percentComplete",
+             t.estimated_hours AS "estimatedHours", t.actual_hours AS "actualHours",
+             t.percent_complete AS "percentComplete",
              t.color,
              t.created_at AS "createdAt", t.updated_at AS "updatedAt"
       FROM tasks t
@@ -55,7 +56,8 @@ export class TaskRepository {
         SELECT t.id, t.name, t.description, t.start_date AS "startDate", t.end_date AS "endDate",
                t.status, t.customer_id AS "customerId", c.name AS "customerName",
                t.start_time AS "startTime", t.end_time AS "endTime",
-               t.estimated_hours AS "estimatedHours", t.percent_complete AS "percentComplete",
+               t.estimated_hours AS "estimatedHours", t.actual_hours AS "actualHours",
+               t.percent_complete AS "percentComplete",
                t.color,
                t.created_at AS "createdAt", t.updated_at AS "updatedAt"
         FROM tasks t
@@ -153,6 +155,10 @@ export class TaskRepository {
     if (dto.percentComplete !== undefined) {
       values.push(dto.percentComplete);
       setClauses.push(`percent_complete = $${values.length}`);
+    }
+    if (dto.actualHours !== undefined) {
+      values.push(dto.actualHours ?? null);
+      setClauses.push(`actual_hours = $${values.length}`);
     }
     if (dto.color !== undefined) {
       values.push(dto.color ?? null);

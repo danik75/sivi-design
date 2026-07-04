@@ -2,6 +2,7 @@ import PropTypes from 'prop-types';
 import { useState } from 'react';
 import useToast from '@/components/chadcn/useToast';
 import TaskModal from '@/features/tasks/components/TaskModal';
+import TaskCompleteDialog from '@/features/tasks/components/TaskCompleteDialog';
 import TasksGantt from '@/features/tasks/components/TasksGantt';
 import TasksGrid from '@/features/tasks/components/TasksGrid';
 import { STATUS_CONFIG, STATUS_OPTIONS, TASK_TEXT } from '@/features/tasks/constants';
@@ -120,6 +121,7 @@ export default function TasksFeature() {
   const [view, setView] = useState(loadView);
   const [showCreate, setShowCreate] = useState(false);
   const [editTask, setEditTask] = useState(null);
+  const [completeTask, setCompleteTask] = useState(null);
   const [visibleStatuses, setVisibleStatuses] = useState(() => new Set(['pending', 'in_progress']));
 
   const handleViewChange = (nextView) => {
@@ -172,12 +174,14 @@ export default function TasksFeature() {
         <TasksGantt
           onCreate={() => setShowCreate(true)}
           onEdit={(task) => setEditTask(task)}
+          onComplete={(task) => setCompleteTask(task)}
           visibleStatuses={visibleStatuses}
         />
       ) : (
         <TasksGrid
           onCreate={() => setShowCreate(true)}
           onEdit={(task) => setEditTask(task)}
+          onComplete={(task) => setCompleteTask(task)}
           visibleStatuses={visibleStatuses}
         />
       )}
@@ -193,6 +197,13 @@ export default function TasksFeature() {
         isOpen={Boolean(editTask)}
         onClose={() => setEditTask(null)}
         task={editTask}
+        onSuccess={handleSuccess}
+      />
+
+      <TaskCompleteDialog
+        isOpen={Boolean(completeTask)}
+        onClose={() => setCompleteTask(null)}
+        task={completeTask}
         onSuccess={handleSuccess}
       />
     </>

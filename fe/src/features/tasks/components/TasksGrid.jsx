@@ -2,6 +2,7 @@ import PropTypes from 'prop-types';
 import { useMemo, useState } from 'react';
 import Button from '@/components/chadcn/Button';
 import EmptyState from '@/components/chadcn/EmptyState';
+import CheckIcon from '@/components/chadcn/icons/CheckIcon';
 import PencilIcon from '@/components/chadcn/icons/PencilIcon';
 import XIcon from '@/components/chadcn/icons/XIcon';
 import SearchInput from '@/components/chadcn/SearchInput';
@@ -58,8 +59,9 @@ function fmtDate(str) {
   return `${d}/${m}/${String(y).slice(-2)}`;
 }
 
-function TaskRow({ task, onEdit, onAbort, onDoubleClick }) {
+function TaskRow({ task, onEdit, onAbort, onComplete, onDoubleClick }) {
   const isAborted = task.status === 'cancelled';
+  const isDone = task.status === 'done';
   return (
     <TableRow onDoubleClick={onDoubleClick}>
       <TableCell>
@@ -78,10 +80,25 @@ function TaskRow({ task, onEdit, onAbort, onDoubleClick }) {
         {task.estimatedHours != null ? task.estimatedHours : TASK_TEXT.placeholder}
       </TableCell>
       <TableCell>
+        {task.actualHours != null ? task.actualHours : TASK_TEXT.placeholder}
+      </TableCell>
+      <TableCell>
         <ProgressBar value={task.percentComplete} />
       </TableCell>
       <TableCell>
         <div className="flex items-center justify-center gap-1">
+          {!isDone && !isAborted && (
+            <Button
+              type="button"
+              variant="ghost"
+              className="h-8 w-8 !p-0 shrink-0 text-green-600"
+              onClick={() => onComplete(task)}
+              aria-label="Mark task done"
+              title="Mark done"
+            >
+              <CheckIcon />
+            </Button>
+          )}
           <Button
             type="button"
             variant="ghost"
@@ -118,14 +135,16 @@ TaskRow.propTypes = {
     status: PropTypes.string,
     customerName: PropTypes.string,
     estimatedHours: PropTypes.number,
+    actualHours: PropTypes.number,
     percentComplete: PropTypes.number,
   }).isRequired,
   onEdit: PropTypes.func.isRequired,
   onAbort: PropTypes.func.isRequired,
+  onComplete: PropTypes.func.isRequired,
   onDoubleClick: PropTypes.func.isRequired,
 };
 
-export default function TasksGrid({ onCreate, onEdit, visibleStatuses }) {
+export default function TasksGrid({ onCreate, onEdit, onComplete, visibleStatuses }) {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const abortMutation = useUpdateTask();
@@ -220,6 +239,7 @@ export default function TasksGrid({ onCreate, onEdit, visibleStatuses }) {
                 <TableHeader>{TASK_TEXT.headers.end}</TableHeader>
                 <TableHeader>{TASK_TEXT.headers.status}</TableHeader>
                 <TableHeader>{TASK_TEXT.headers.estimatedHours}</TableHeader>
+                <TableHeader>{TASK_TEXT.headers.actualHours}</TableHeader>
                 <TableHeader>{TASK_TEXT.headers.percentComplete}</TableHeader>
                 <TableHeader />
               </TableRow>
@@ -231,6 +251,7 @@ export default function TasksGrid({ onCreate, onEdit, visibleStatuses }) {
                   task={task}
                   onEdit={onEdit}
                   onAbort={(t) => abortMutation.mutate({ id: t.id, data: { status: 'cancelled' } })}
+                  onComplete={onComplete}
                   onDoubleClick={() => onEdit(task)}
                 />
               ))}
@@ -276,5 +297,6 @@ export default function TasksGrid({ onCreate, onEdit, visibleStatuses }) {
 TasksGrid.propTypes = {
   onCreate: PropTypes.func.isRequired,
   onEdit: PropTypes.func.isRequired,
+  onComplete: PropTypes.func.isRequired,
   visibleStatuses: PropTypes.instanceOf(Set),
 };

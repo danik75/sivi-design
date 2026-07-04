@@ -36,7 +36,24 @@ function fmtMonth(d) {
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
-const VIEW_RANGES = { day: 14, week: 28, month: 84 };
+const VIEW_RANGES = { hour: 1, day: 14, week: 28, month: 84 };
+
+// Intra-day (hourly) view: visible window and helpers
+const HOUR_VIEW = { startHour: 7, endHour: 21 };
+
+function parseTimeToHour(t) {
+  if (!t || typeof t !== 'string') return null;
+  const [h, m] = t.split(':').map(Number);
+  if (Number.isNaN(h)) return null;
+  return h + (Number.isNaN(m) ? 0 : m) / 60;
+}
+function fmtHourLabel(h) {
+  return `${String(h).padStart(2, '0')}:00`;
+}
+function fmtHours(n) {
+  const s = Number(n).toFixed(2);
+  return s.replace(/\.?0+$/, '');
+}
 
 // ---------------------------------------------------------------------------
 // Sub-components
@@ -44,6 +61,7 @@ const VIEW_RANGES = { day: 14, week: 28, month: 84 };
 
 function ViewToggle({ view, onView }) {
   const opts = [
+    { key: 'hour', label: TASK_TEXT.gantt.viewHour },
     { key: 'day', label: TASK_TEXT.gantt.viewDay },
     { key: 'week', label: TASK_TEXT.gantt.viewWeek },
     { key: 'month', label: TASK_TEXT.gantt.viewMonth },
@@ -67,7 +85,7 @@ function ViewToggle({ view, onView }) {
 }
 
 ViewToggle.propTypes = {
-  view: PropTypes.oneOf(['day', 'week', 'month']).isRequired,
+  view: PropTypes.oneOf(['hour', 'day', 'week', 'month']).isRequired,
   onView: PropTypes.func.isRequired,
 };
 
@@ -156,7 +174,9 @@ function GanttBar({ task, rangeStart, totalDays, rangeEnd, onEdit, onDragEnd }) 
         touchAction: 'none',
       }}
       onMouseDown={moveDrag.start}
-      title={`${task.name} — ${fillPct}% complete`}
+      title={`${task.name} — ${fillPct}% complete${
+        task.estimatedHours != null ? ` · est ${fmtHours(task.estimatedHours)}h` : ''
+      }${task.actualHours != null ? ` · actual ${fmtHours(task.actualHours)}h` : ''}`}
     >
       {/* percent-complete fill */}
       {barBg !== null ? (
@@ -219,13 +239,199 @@ GanttBar.propTypes = {
 };
 
 // ---------------------------------------------------------------------------
+// Hourly (intra-day) view
+// ---------------------------------------------------------------------------
+
+function HourlyBar({ task, day, onEdit }) {
+  const config = STATUS_CONFIG[task.status] ?? STATUS_CONFIG.pending;
+  const { startHour: winStart, endHour: winEnd } = HOUR_VIEW;
+  const winLen = winEnd - winStart;
+
+  const startsToday = parseDate(task.startDate).getTime() === day.getTime();
+  const endsToday = parseDate(task.endDate).getTime() === day.getTime();
+  const sTime = parseTimeToHour(task.startTime);
+  const eTime = parseTimeToHour(task.endTime);
+  const est = task.estimatedHours != null ? Number(task.estimatedHours) : null;
+
+  let barStart;
+  let barEnd;
+  let estimated = false;
+  let untimed = false;
+
+  if (sTime != null || eTime != null) {
+    barStart = startsToday && sTime != null ? sTime : winStart;
+    barEnd = endsToday && eTime != null ? eTime : winEnd;
+  } else if (est != null && est > 0) {
+    barStart = winStart;
+    barEnd = barStart + est;
+    estimated = true;
+  } else {
+    barStart = winStart;
+    barEnd = winEnd;
+    untimed = true;
+  }
+
+  barStart = Math.max(winStart, Math.min(barStart, winEnd));
+  barEnd = Math.max(barStart, Math.min(barEnd, winEnd));
+
+  const leftPct = ((barStart - winStart) / winLen) * 100;
+  let widthPct = Math.max(((barEnd - barStart) / winLen) * 100, 4);
+  if (leftPct + widthPct > 100) widthPct = 100 - leftPct;
+
+  const fillPct = Math.min(100, Math.max(0, task.percentComplete ?? 0));
+  const barBg = task.color ?? null;
+
+  const timeStr = task.startTime
+    ? ` — ${task.startTime}${task.endTime ? `–${task.endTime}` : ''}`
+    : '';
+  const estStr = est != null ? ` · est ${fmtHours(est)}h` : '';
+  const actStr = task.actualHours != null ? ` · actual ${fmtHours(task.actualHours)}h` : '';
+  const tooltip = `${task.name}${timeStr}${estStr}${actStr}`;
+
+  return (
+    <div
+      className={`absolute top-1.5 bottom-1.5 rounded overflow-hidden shadow-sm cursor-pointer${
+        barBg === null ? ` ${config.barClass}` : ''
+      }${estimated ? ' opacity-80' : ''}${untimed ? ' opacity-50' : ''}`}
+      style={{
+        left: `${leftPct}%`,
+        width: `${widthPct}%`,
+        backgroundColor: barBg ?? undefined,
+        border: estimated ? '1px dashed rgba(255,255,255,0.8)' : undefined,
+      }}
+      onClick={() => onEdit(task)}
+      title={tooltip}
+    >
+      {barBg !== null ? (
+        <div className="absolute inset-y-0 left-0 bg-white/20" style={{ width: `${fillPct}%` }} />
+      ) : (
+        <div
+          className={`absolute inset-y-0 left-0 ${config.barFillClass}`}
+          style={{ width: `${fillPct}%` }}
+        />
+      )}
+      <span className="relative z-10 flex h-full items-center truncate px-2 text-xs font-medium leading-none text-white">
+        {task.name}
+        {estimated ? ` (${TASK_TEXT.gantt.estimatedTag})` : ''}
+      </span>
+      {!startsToday ? (
+        <span className="absolute inset-y-0 left-0.5 z-10 flex items-center text-[11px] text-white/80">‹</span>
+      ) : null}
+      {!endsToday ? (
+        <span className="absolute inset-y-0 right-0.5 z-10 flex items-center text-[11px] text-white/80">›</span>
+      ) : null}
+    </div>
+  );
+}
+
+HourlyBar.propTypes = {
+  task: PropTypes.object.isRequired,
+  day: PropTypes.instanceOf(Date).isRequired,
+  onEdit: PropTypes.func.isRequired,
+};
+
+function HourlyBody({ tasks, day, onEdit, onComplete }) {
+  const { startHour, endHour } = HOUR_VIEW;
+  const hours = Array.from({ length: endHour - startHour }, (_, i) => startHour + i);
+  const dayMs = day.getTime();
+
+  const dayTasks = tasks.filter((t) => {
+    if (!t.startDate || !t.endDate) return false;
+    return parseDate(t.startDate).getTime() <= dayMs && parseDate(t.endDate).getTime() >= dayMs;
+  });
+
+  if (dayTasks.length === 0) {
+    return (
+      <div className="px-6 py-12 text-center text-sm text-slate-500">{TASK_TEXT.gantt.noTasks}</div>
+    );
+  }
+
+  return (
+    <div className="overflow-auto" style={{ maxHeight: '560px' }}>
+      <div style={{ minWidth: `${Math.max(600, hours.length * 60)}px` }}>
+        {/* Column headers */}
+        <div className="sticky top-0 z-10 flex border-b border-slate-100 bg-white">
+          <div className="w-44 shrink-0 border-r border-slate-100 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+            {TASK_TEXT.gantt.taskName}
+          </div>
+          <div className="flex flex-1">
+            {hours.map((h) => (
+              <div
+                key={h}
+                className="flex-1 border-r border-slate-50 py-2 text-center text-xs text-slate-400"
+              >
+                {fmtHourLabel(h)}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Task rows */}
+        {dayTasks.map((task) => {
+          const canComplete = task.status !== 'done' && task.status !== 'cancelled';
+          return (
+            <div
+              key={task.id}
+              className="flex border-b border-slate-50 transition-colors last:border-b-0 hover:bg-slate-50/40"
+            >
+              <div className="flex w-44 shrink-0 items-center justify-between gap-1 border-r border-slate-100 px-3">
+                <div className="min-w-0 cursor-pointer py-2" onClick={() => onEdit(task)}>
+                  <p className="max-w-[130px] truncate text-xs font-medium text-slate-800">
+                    {task.name}
+                  </p>
+                  {task.customerName ? (
+                    <p className="max-w-[130px] truncate text-xs text-slate-400">
+                      {task.customerName}
+                    </p>
+                  ) : null}
+                </div>
+                {canComplete ? (
+                  <button
+                    type="button"
+                    onClick={() => onComplete(task)}
+                    title="Mark done"
+                    aria-label="Mark task done"
+                    className="shrink-0 text-sm font-bold text-green-600 hover:text-green-700"
+                  >
+                    ✓
+                  </button>
+                ) : null}
+              </div>
+
+              <div className="relative flex-1" style={{ height: '48px' }}>
+                {hours.map((h, i) => (
+                  <div
+                    key={h}
+                    className="absolute inset-y-0 border-r border-slate-50"
+                    style={{ left: `${((i + 1) / hours.length) * 100}%` }}
+                  />
+                ))}
+                <HourlyBar task={task} day={day} onEdit={onEdit} />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+HourlyBody.propTypes = {
+  tasks: PropTypes.arrayOf(PropTypes.object).isRequired,
+  day: PropTypes.instanceOf(Date).isRequired,
+  onEdit: PropTypes.func.isRequired,
+  onComplete: PropTypes.func.isRequired,
+};
+
+// ---------------------------------------------------------------------------
 // Main component
 // ---------------------------------------------------------------------------
 
-export default function TasksGantt({ onCreate, onEdit, visibleStatuses }) {
+export default function TasksGantt({ onCreate, onEdit, onComplete, visibleStatuses }) {
   const [view, setView] = useState('week');
   const [rangeStart, setRangeStart] = useState(() => startOfDay(new Date()));
 
+  const isHourly = view === 'hour';
   const totalDays = VIEW_RANGES[view];
   const rangeEnd = addDays(rangeStart, totalDays - 1);
 
@@ -263,10 +469,11 @@ export default function TasksGantt({ onCreate, onEdit, visibleStatuses }) {
   // Build day columns
   const days = Array.from({ length: totalDays }, (_, i) => addDays(rangeStart, i));
 
-  // Navigation handlers
+  // Navigation handlers — hourly view steps a single day at a time
+  const navStep = isHourly ? 1 : Math.floor(totalDays / 2);
   const goToday = () => setRangeStart(startOfDay(new Date()));
-  const goPrev = () => setRangeStart((d) => addDays(d, -Math.floor(totalDays / 2)));
-  const goNext = () => setRangeStart((d) => addDays(d, Math.floor(totalDays / 2)));
+  const goPrev = () => setRangeStart((d) => addDays(d, -navStep));
+  const goNext = () => setRangeStart((d) => addDays(d, navStep));
 
   const handleViewChange = (nextView) => {
     setView(nextView);
@@ -322,7 +529,13 @@ export default function TasksGantt({ onCreate, onEdit, visibleStatuses }) {
             {TASK_TEXT.gantt.next}
           </Button>
           <span className="text-xs text-slate-400">
-            {fmtShort(rangeStart)} – {fmtShort(rangeEnd)}
+            {isHourly
+              ? rangeStart.toLocaleDateString('en-US', {
+                  weekday: 'short',
+                  month: 'short',
+                  day: 'numeric',
+                })
+              : `${fmtShort(rangeStart)} – ${fmtShort(rangeEnd)}`}
           </span>
         </div>
         <ViewToggle view={view} onView={handleViewChange} />
@@ -336,6 +549,8 @@ export default function TasksGantt({ onCreate, onEdit, visibleStatuses }) {
           <div className="px-6 py-12 text-center text-sm text-slate-500">
             {TASK_TEXT.gantt.noTasks}
           </div>
+        ) : isHourly ? (
+          <HourlyBody tasks={tasks} day={rangeStart} onEdit={onEdit} onComplete={onComplete} />
         ) : (
           <div className="overflow-auto" style={{ maxHeight: '560px' }}>
             <div style={{ minWidth: `${Math.max(600, totalDays * 32)}px` }}>
@@ -465,5 +680,6 @@ export default function TasksGantt({ onCreate, onEdit, visibleStatuses }) {
 TasksGantt.propTypes = {
   onCreate: PropTypes.func.isRequired,
   onEdit: PropTypes.func.isRequired,
+  onComplete: PropTypes.func.isRequired,
   visibleStatuses: PropTypes.instanceOf(Set),
 };

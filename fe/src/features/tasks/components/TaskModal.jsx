@@ -75,6 +75,7 @@ function buildInitialState(task) {
     status: task?.status ?? DEFAULT_STATUS,
     customerId: task?.customerId != null ? String(task.customerId) : '',
     estimatedHours: task?.estimatedHours != null ? String(task.estimatedHours) : '',
+    actualHours: task?.actualHours != null ? String(task.actualHours) : '',
     percentComplete: task?.percentComplete ?? 0,
     color: task?.color ?? '',
   };
@@ -186,6 +187,11 @@ export default function TaskModal({ isOpen, onClose, task, onSuccess }) {
       percentComplete: task ? Number(fields.percentComplete) : 0,
       color: fields.color || null,
     };
+
+    // actual_hours is only meaningful on an existing task
+    if (task) {
+      payload.actualHours = fields.actualHours !== '' ? Number(fields.actualHours) : null;
+    }
 
     const onError = (error) => {
       setSubmitError(getApiErrorMessage(error, TASK_TEXT.modal.saveError));
@@ -343,17 +349,33 @@ export default function TaskModal({ isOpen, onClose, task, onSuccess }) {
             )}
           </FormField>
 
-          {/* Estimated hours */}
-          <FormField label={TASK_TEXT.modal.estimatedHoursLabel}>
-            <Input
-              type="number"
-              min="0"
-              step="0.5"
-              value={fields.estimatedHours}
-              onChange={set('estimatedHours')}
-              placeholder={TASK_TEXT.modal.estimatedHoursPlaceholder}
-            />
-          </FormField>
+          {/* Estimated / Actual hours */}
+          <div className={task ? 'grid grid-cols-2 gap-4' : ''}>
+            <FormField label={TASK_TEXT.modal.estimatedHoursLabel}>
+              <Input
+                type="number"
+                min="0"
+                step="0.5"
+                value={fields.estimatedHours}
+                onChange={set('estimatedHours')}
+                placeholder={TASK_TEXT.modal.estimatedHoursPlaceholder}
+              />
+            </FormField>
+
+            {/* Actual hours — edit mode only */}
+            {task ? (
+              <FormField label={TASK_TEXT.modal.actualHoursLabel}>
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.25"
+                  value={fields.actualHours}
+                  onChange={set('actualHours')}
+                  placeholder={TASK_TEXT.modal.actualHoursPlaceholder}
+                />
+              </FormField>
+            ) : null}
+          </div>
 
           {/* % Complete — edit mode only */}
           {task ? (

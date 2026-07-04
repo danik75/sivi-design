@@ -55,4 +55,16 @@ export class ReportsController {
   getProjectStatus(@Query() q: Record<string, string>) {
     return this.service.getProjectStatus(ReportQueryDto.from({ period: 'monthly', year: String(new Date().getFullYear()), month: String(new Date().getMonth() + 1), ...q }));
   }
+
+  @Get('customer-tasks')
+  getCustomerTaskHours(@Query() q: Record<string, string>) {
+    return this.service.getCustomerTaskHours(
+      ReportQueryDto.from({
+        period: 'monthly',
+        year: String(new Date().getFullYear()),
+        month: String(new Date().getMonth() + 1),
+        ...q,
+      }),
+    );
+  }
 }

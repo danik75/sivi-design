@@ -47,4 +47,9 @@ export class ReportsService {
   getProjectStatus(dto: ReportQueryDto) {
     return this.repo.getProjectStatus(dto.customerId, undefined);
   }
+
+  getCustomerTaskHours(dto: ReportQueryDto) {
+    const { startDate, endDate } = dto.getBounds();
+    return this.repo.getCustomerTaskHours(startDate, endDate, dto.customerId);
+  }
 }

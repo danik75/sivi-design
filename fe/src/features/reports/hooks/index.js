@@ -17,3 +17,5 @@ export const useCustomerProfitability = (p) =>
 export const useForecast = () => q(['report-forecast'], () => api.getForecast());
 export const useProjectStatus = (p) =>
   q(['report-project-status', p], () => api.getProjectStatus(p));
+export const useCustomerTaskHours = (p) =>
+  q(['report-customer-tasks', p], () => api.getCustomerTaskHours(p));
