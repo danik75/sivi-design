@@ -130,6 +130,45 @@ function useDrag(totalDays, onEnd) {
   return { delta, active, start };
 }
 
+// Drag hook for the hourly view — reports the delta in hours, snapped to 30 min.
+function useHourDrag(winLen, onEnd) {
+  const [delta, setDelta] = useState(0);
+  const [active, setActive] = useState(false);
+
+  function start(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    let container = e.currentTarget;
+    while (container && !container.dataset.ganttTimeline) {
+      container = container.parentElement;
+    }
+    if (!container) return;
+
+    const { width } = container.getBoundingClientRect();
+    const pxPerHour = width / winLen;
+    const startX = e.clientX;
+    const snap = (px) => Math.round((px / pxPerHour) * 2) / 2; // 0.5h steps
+
+    const onMove = (mv) => {
+      mv.preventDefault();
+      setActive(true);
+      setDelta(snap(mv.clientX - startX));
+    };
+    const onUp = (up) => {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+      const finalHours = snap(up.clientX - startX);
+      setDelta(0);
+      setActive(false);
+      onEnd(finalHours, Math.abs(up.clientX - startX) < 4);
+    };
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  }
+
+  return { delta, active, start };
+}
+
 function GanttBar({ task, rangeStart, totalDays, rangeEnd, onEdit, onDragEnd }) {
   const config = STATUS_CONFIG[task.status] ?? STATUS_CONFIG.pending;
   const taskStart = parseDate(task.startDate);
@@ -242,7 +281,7 @@ GanttBar.propTypes = {
 // Hourly (intra-day) view
 // ---------------------------------------------------------------------------
 
-function HourlyBar({ task, day, onEdit }) {
+function HourlyBar({ task, day, onEdit, onTimeChange }) {
   const config = STATUS_CONFIG[task.status] ?? STATUS_CONFIG.pending;
   const { startHour: winStart, endHour: winEnd } = HOUR_VIEW;
   const winLen = winEnd - winStart;
@@ -274,8 +313,29 @@ function HourlyBar({ task, day, onEdit }) {
   barStart = Math.max(winStart, Math.min(barStart, winEnd));
   barEnd = Math.max(barStart, Math.min(barEnd, winEnd));
 
-  const leftPct = ((barStart - winStart) / winLen) * 100;
-  let widthPct = Math.max(((barEnd - barStart) / winLen) * 100, 4);
+  // Only single-day tasks can be dragged/resized within the day.
+  const draggable = startsToday && endsToday && Boolean(onTimeChange);
+
+  const moveDrag = useHourDrag(winLen, (h, wasClick) => {
+    if (wasClick) onEdit(task);
+    else if (h !== 0) onTimeChange(task, { type: 'move', hours: h });
+  });
+  const leftDrag = useHourDrag(winLen, (h) => {
+    if (h !== 0) onTimeChange(task, { type: 'resize-start', hours: h });
+  });
+  const rightDrag = useHourDrag(winLen, (h) => {
+    if (h !== 0) onTimeChange(task, { type: 'resize-end', hours: h });
+  });
+  const dragging = moveDrag.active || leftDrag.active || rightDrag.active;
+
+  // Live preview while dragging
+  let previewStart = barStart + moveDrag.delta + leftDrag.delta;
+  let previewEnd = barEnd + moveDrag.delta + rightDrag.delta;
+  previewStart = Math.max(winStart, Math.min(previewStart, winEnd - 0.5));
+  previewEnd = Math.max(previewStart + 0.5, Math.min(previewEnd, winEnd));
+
+  const leftPct = ((previewStart - winStart) / winLen) * 100;
+  let widthPct = Math.max(((previewEnd - previewStart) / winLen) * 100, 4);
   if (leftPct + widthPct > 100) widthPct = 100 - leftPct;
 
   const fillPct = Math.min(100, Math.max(0, task.percentComplete ?? 0));
@@ -290,16 +350,19 @@ function HourlyBar({ task, day, onEdit }) {
 
   return (
     <div
-      className={`absolute top-1.5 bottom-1.5 rounded overflow-hidden shadow-sm cursor-pointer${
+      className={`absolute top-1.5 bottom-1.5 rounded overflow-hidden shadow-sm select-none${
         barBg === null ? ` ${config.barClass}` : ''
-      }${estimated ? ' opacity-80' : ''}${untimed ? ' opacity-50' : ''}`}
+      }${estimated ? ' opacity-80' : ''}${untimed ? ' opacity-50' : ''}${dragging ? ' opacity-75 shadow-lg' : ''}`}
       style={{
         left: `${leftPct}%`,
         width: `${widthPct}%`,
         backgroundColor: barBg ?? undefined,
         border: estimated ? '1px dashed rgba(255,255,255,0.8)' : undefined,
+        cursor: draggable ? (dragging ? 'grabbing' : 'grab') : 'pointer',
+        touchAction: 'none',
       }}
-      onClick={() => onEdit(task)}
+      onMouseDown={draggable ? moveDrag.start : undefined}
+      onClick={draggable ? undefined : () => onEdit(task)}
       title={tooltip}
     >
       {barBg !== null ? (
@@ -320,6 +383,26 @@ function HourlyBar({ task, day, onEdit }) {
       {!endsToday ? (
         <span className="absolute inset-y-0 right-0.5 z-10 flex items-center text-[11px] text-white/80">›</span>
       ) : null}
+      {draggable ? (
+        <>
+          <div
+            className="absolute inset-y-0 left-0 z-20 w-2 cursor-ew-resize hover:bg-black/10"
+            style={{ touchAction: 'none' }}
+            onMouseDown={(e) => {
+              e.stopPropagation();
+              leftDrag.start(e);
+            }}
+          />
+          <div
+            className="absolute inset-y-0 right-0 z-20 w-2 cursor-ew-resize hover:bg-black/10"
+            style={{ touchAction: 'none' }}
+            onMouseDown={(e) => {
+              e.stopPropagation();
+              rightDrag.start(e);
+            }}
+          />
+        </>
+      ) : null}
     </div>
   );
 }
@@ -328,9 +411,10 @@ HourlyBar.propTypes = {
   task: PropTypes.object.isRequired,
   day: PropTypes.instanceOf(Date).isRequired,
   onEdit: PropTypes.func.isRequired,
+  onTimeChange: PropTypes.func,
 };
 
-function HourlyBody({ tasks, day, onEdit, onComplete }) {
+function HourlyBody({ tasks, day, onEdit, onComplete, onTimeChange }) {
   const { startHour, endHour } = HOUR_VIEW;
   const hours = Array.from({ length: endHour - startHour }, (_, i) => startHour + i);
   const dayMs = day.getTime();
@@ -398,7 +482,7 @@ function HourlyBody({ tasks, day, onEdit, onComplete }) {
                 ) : null}
               </div>
 
-              <div className="relative flex-1" style={{ height: '48px' }}>
+              <div className="relative flex-1" data-gantt-timeline="1" style={{ height: '48px' }}>
                 {hours.map((h, i) => (
                   <div
                     key={h}
@@ -406,7 +490,7 @@ function HourlyBody({ tasks, day, onEdit, onComplete }) {
                     style={{ left: `${((i + 1) / hours.length) * 100}%` }}
                   />
                 ))}
-                <HourlyBar task={task} day={day} onEdit={onEdit} />
+                <HourlyBar task={task} day={day} onEdit={onEdit} onTimeChange={onTimeChange} />
               </div>
             </div>
           );
@@ -421,6 +505,7 @@ HourlyBody.propTypes = {
   day: PropTypes.instanceOf(Date).isRequired,
   onEdit: PropTypes.func.isRequired,
   onComplete: PropTypes.func.isRequired,
+  onTimeChange: PropTypes.func,
 };
 
 // ---------------------------------------------------------------------------
@@ -464,6 +549,33 @@ export default function TasksGantt({ onCreate, onEdit, onComplete, visibleStatus
     if (Object.keys(updates).length) {
       updateMutation.mutate({ id: task.id, data: updates });
     }
+  };
+
+  // Hourly view: move/resize a task by adjusting its start/end time.
+  const handleHourChange = (task, action) => {
+    const { startHour, endHour } = HOUR_VIEW;
+    const dur = task.estimatedHours ? Number(task.estimatedHours) : 1;
+    let s = parseTimeToHour(task.startTime);
+    let e = parseTimeToHour(task.endTime);
+    if (s == null) s = startHour;
+    if (e == null) e = Math.min(endHour, s + dur);
+
+    if (action.type === 'move') {
+      const span = Math.max(0.5, e - s);
+      s = Math.max(0, Math.min(s + action.hours, 24 - span));
+      e = s + span;
+    } else if (action.type === 'resize-start') {
+      s = Math.max(0, Math.min(s + action.hours, e - 0.5));
+    } else if (action.type === 'resize-end') {
+      e = Math.min(24, Math.max(e + action.hours, s + 0.5));
+    }
+
+    const fmt = (h) => {
+      const hh = Math.floor(h);
+      const mm = Math.round((h - hh) * 60);
+      return `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
+    };
+    updateMutation.mutate({ id: task.id, data: { startTime: fmt(s), endTime: fmt(e) } });
   };
 
   // Build day columns
@@ -550,7 +662,13 @@ export default function TasksGantt({ onCreate, onEdit, onComplete, visibleStatus
             {TASK_TEXT.gantt.noTasks}
           </div>
         ) : isHourly ? (
-          <HourlyBody tasks={tasks} day={rangeStart} onEdit={onEdit} onComplete={onComplete} />
+          <HourlyBody
+            tasks={tasks}
+            day={rangeStart}
+            onEdit={onEdit}
+            onComplete={onComplete}
+            onTimeChange={handleHourChange}
+          />
         ) : (
           <div className="overflow-auto" style={{ maxHeight: '560px' }}>
             <div style={{ minWidth: `${Math.max(600, totalDays * 32)}px` }}>

@@ -114,8 +114,9 @@ export default function TaskModal({ isOpen, onClose, task, onSuccess, onComplete
         const s = field === 'startDate' ? value : prev.startDate;
         const e = field === 'endDate' ? value : prev.endDate;
         if (s && e && s === e) {
-          next.startTime = '00:00';
-          next.endTime = '23:59';
+          // Same-day task defaults to a working day (08:00–21:00).
+          next.startTime = '08:00';
+          next.endTime = '21:00';
         }
       }
       // Auto-set status from percentComplete (skip if cancelled)
