@@ -116,6 +116,7 @@ function buildEmailHtml(invoice) {
       <div>
         <div style="font-size:11px;font-weight:600;color:#aaa;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;">Customer</div>
         <div style="font-size:14px;color:#222;">${invoice.customerName ?? '—'}</div>
+        ${invoice.customerCompanyNumber ? `<div style="font-size:12px;color:#666;margin-top:2px;">Company No. ${invoice.customerCompanyNumber}</div>` : ''}
       </div>
       <div>
         <div style="font-size:11px;font-weight:600;color:#aaa;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;">Contract type</div>
@@ -287,6 +288,9 @@ export default function InvoiceOverview({ isOpen, invoiceId, onClose }) {
             {/* Meta grid */}
             <div className="grid grid-cols-2 gap-x-8 gap-y-4 px-6 py-5 sm:grid-cols-3 lg:grid-cols-4">
               <Field label="Customer" value={invoice.customerName} />
+              {invoice.customerCompanyNumber ? (
+                <Field label="Company No." value={invoice.customerCompanyNumber} />
+              ) : null}
               <Field label="Contract" value={invoice.contractTypeLabel} />
               <Field label="Issue Date" value={formatDate(invoice.issueDate)} />
               <Field label="Due Date" value={formatDate(invoice.dueDate)} />

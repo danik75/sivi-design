@@ -103,6 +103,7 @@ export default function CustomerGrid({
             <TableHead>
               <TableRow>
                 <TableHeader>{CUSTOMER_TEXT.headers.name}</TableHeader>
+                <TableHeader>{CUSTOMER_TEXT.headers.companyNumber}</TableHeader>
                 <TableHeader>{CUSTOMER_TEXT.headers.email}</TableHeader>
                 <TableHeader>{CUSTOMER_TEXT.headers.phone}</TableHeader>
                 <TableHeader />

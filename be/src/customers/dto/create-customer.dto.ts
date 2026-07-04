@@ -1,5 +1,6 @@
 import { Type } from 'class-transformer';
 import {
+  ArrayMinSize,
   IsArray,
   IsBoolean,
   IsEmail,
@@ -35,8 +36,13 @@ export class CreateCustomerDto {
   name!: string;
 
   @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  companyNumber?: string;
+
   @IsArray()
+  @ArrayMinSize(1, { message: 'At least one contact is required' })
   @ValidateNested({ each: true })
   @Type(() => CreateContactDto)
-  contacts?: CreateContactDto[];
+  contacts!: CreateContactDto[];
 }

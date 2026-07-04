@@ -13,6 +13,7 @@ export const CUSTOMER_TEXT = {
   clearSearch: 'Clear search',
   headers: {
     name: 'Name',
+    companyNumber: 'Company No.',
     email: 'Email',
     phone: 'Phone',
     contacts: 'Contacts',
@@ -39,8 +40,11 @@ export const CUSTOMER_TEXT = {
     editTitle: 'Edit Customer',
     nameLabel: 'Name',
     namePlaceholder: 'Enter customer name',
+    companyNumberLabel: 'Company Number',
+    companyNumberPlaceholder: 'Optional (e.g. registration / tax ID)',
     contactsLabel: 'Contacts',
     contactsHint: 'Keep the primary contact first in the list.',
+    contactsRequired: 'At least one contact is required.',
     addContact: 'Add Contact',
     cancel: 'Cancel',
     createSubmit: 'Save Customer',
@@ -85,7 +89,7 @@ export function getPrimaryContact(customer) {
   );
 }
 
-export function normalizeCustomerPayload({ name, contacts }) {
+export function normalizeCustomerPayload({ name, companyNumber, contacts }) {
   const filtered = contacts
     .map((contact) => ({
       email: contact.email?.trim() ?? '',
@@ -102,7 +106,7 @@ export function normalizeCustomerPayload({ name, contacts }) {
     isPrimary: hasPrimary ? c.isPrimary : i === 0,
   }));
 
-  return { name: name.trim(), contacts: normalizedContacts };
+  return { name: name.trim(), companyNumber: companyNumber?.trim() || null, contacts: normalizedContacts };
 }
 
 export function getApiErrorMessage(error, fallbackMessage) {
