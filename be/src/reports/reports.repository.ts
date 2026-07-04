@@ -654,7 +654,8 @@ export class ReportsRepository {
   // Tasks overlapping [startDate, endDate] with estimated vs actual hours.
   // When a task has no actual_hours it falls back to the estimate (flagged).
   async getCustomerTaskHours(startDate: string, endDate: string, customerId?: string) {
-    const conditions: string[] = ['t.start_date <= $1', 't.end_date >= $2'];
+    // Only completed tasks — hours & cost are only meaningful once a task is done.
+    const conditions: string[] = ["t.status = 'done'", 't.start_date <= $1', 't.end_date >= $2'];
     const values: unknown[] = [endDate, startDate];
     if (customerId) {
       values.push(customerId);

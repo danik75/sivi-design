@@ -198,6 +198,10 @@ export default function TasksFeature() {
         onClose={() => setEditTask(null)}
         task={editTask}
         onSuccess={handleSuccess}
+        onComplete={(completedTask) => {
+          setEditTask(null);
+          setCompleteTask(completedTask);
+        }}
       />
 
       <TaskCompleteDialog
