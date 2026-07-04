@@ -74,7 +74,8 @@ function TotalCards({ customers }) {
 }
 
 export default function BillingFeature() {
-  const [period, setPeriod] = useState('monthly');
+  // Default to the full tax year (Jan 1 – Dec 31 of the current year).
+  const [period, setPeriod] = useState('yearly');
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth() + 1);
   const [selectedCustomerId, setSelectedCustomerId] = useState(null);
