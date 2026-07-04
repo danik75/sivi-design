@@ -650,4 +650,69 @@ export class ReportsRepository {
       byCustomer,
     };
   }
+
+  // Tasks overlapping [startDate, endDate] with estimated vs actual hours.
+  // When a task has no actual_hours it falls back to the estimate (flagged).
+  async getCustomerTaskHours(startDate: string, endDate: string, customerId?: string) {
+    const conditions: string[] = ['t.start_date <= $1', 't.end_date >= $2'];
+    const values: unknown[] = [endDate, startDate];
+    if (customerId) {
+      values.push(customerId);
+      conditions.push(`t.customer_id = $${values.length}`);
+    }
+
+    const res = await pool.query(
+      `
+        SELECT t.id AS "taskId", t.name, t.status,
+               t.customer_id AS "customerId", c.name AS "customerName",
+               t.start_date AS "startDate", t.end_date AS "endDate",
+               t.start_time AS "startTime", t.end_time AS "endTime",
+               t.estimated_hours AS "estimatedHours", t.actual_hours AS "actualHours"
+        FROM tasks t
+        LEFT JOIN customers c ON c.id = t.customer_id
+        WHERE ${conditions.join(' AND ')}
+        ORDER BY c.name NULLS LAST, t.start_date, t.name
+      `,
+      values,
+    );
+
+    const toISO = (d: unknown) =>
+      d instanceof Date ? d.toISOString().split('T')[0] : (d as string | null);
+    const hhmm = (t: unknown) => (typeof t === 'string' ? t.slice(0, 5) : null);
+
+    let totalEstimated = 0;
+    let totalActual = 0;
+
+    const rows = res.rows.map((r) => {
+      const estimated = r.estimatedHours != null ? Number(r.estimatedHours) : null;
+      const hasActual = r.actualHours != null;
+      const actual = hasActual ? Number(r.actualHours) : estimated;
+      totalEstimated += estimated ?? 0;
+      totalActual += actual ?? 0;
+      return {
+        taskId: r.taskId,
+        name: r.name,
+        status: r.status,
+        customerId: r.customerId,
+        customerName: r.customerName,
+        startDate: toISO(r.startDate),
+        endDate: toISO(r.endDate),
+        startTime: hhmm(r.startTime),
+        endTime: hhmm(r.endTime),
+        estimatedHours: estimated,
+        actualHours: actual,
+        actualIsEstimate: !hasActual,
+      };
+    });
+
+    return {
+      startDate,
+      endDate,
+      rows,
+      totals: {
+        estimatedHours: Number(totalEstimated.toFixed(2)),
+        actualHours: Number(totalActual.toFixed(2)),
+      },
+    };
+  }
 }

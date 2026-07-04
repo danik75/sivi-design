@@ -56,6 +56,7 @@ CREATE TABLE IF NOT EXISTS tasks (
   start_time       TIME,
   end_time         TIME,
   estimated_hours  NUMERIC(6,2),
+  actual_hours     NUMERIC(6,2) CHECK (actual_hours IS NULL OR actual_hours >= 0),
   percent_complete INTEGER     NOT NULL DEFAULT 0 CHECK (percent_complete BETWEEN 0 AND 100),
   color            TEXT,
   created_at       TIMESTAMPTZ NOT NULL DEFAULT now(),

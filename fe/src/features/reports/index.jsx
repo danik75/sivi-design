@@ -5,6 +5,7 @@ import { REPORT_GROUPS } from './constants';
 import ARAgingReport from './components/ARAgingReport';
 import CustomerProfitabilityReport from './components/CustomerProfitabilityReport';
 import CustomerStatementReport from './components/CustomerStatementReport';
+import CustomerTaskHoursReport from './components/CustomerTaskHoursReport';
 import ExpenseAnalysisReport from './components/ExpenseAnalysisReport';
 import ForecastReport from './components/ForecastReport';
 import PLReport from './components/PLReport';
@@ -25,6 +26,7 @@ const REPORT_META = {
   },
   forecast: { label: 'Revenue Forecast', component: ForecastReport },
   'project-status': { label: 'Project Status', component: ProjectStatusReport },
+  'customer-tasks': { label: 'Task Hours & Cost', component: CustomerTaskHoursReport },
 };
 
 export default function ReportsFeature() {
@@ -37,7 +39,7 @@ export default function ReportsFeature() {
 
   const meta = REPORT_META[active];
   const Component = meta?.component;
-  const needsCustomers = ['customer-statement', 'project-status'].includes(active);
+  const needsCustomers = ['customer-statement', 'project-status', 'customer-tasks'].includes(active);
 
   return (
     <div className="flex h-full min-h-0">

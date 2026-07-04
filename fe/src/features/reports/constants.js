@@ -4,6 +4,7 @@ export const REPORT_GROUPS = [
     reports: [
       { id: 'customer-statement', label: 'Customer Statement' },
       { id: 'project-status', label: 'Project Status' },
+      { id: 'customer-tasks', label: 'Task Hours & Cost' },
     ],
   },
   {
