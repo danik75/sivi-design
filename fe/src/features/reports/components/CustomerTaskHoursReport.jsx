@@ -12,13 +12,6 @@ const now = new Date();
 const DEFAULT_FILTER = { period: 'monthly', year: now.getFullYear(), month: now.getMonth() + 1 };
 const DEFAULT_RATE = 250; // Sivi-Design standard hourly rate (NIS)
 
-const STATUS_LABELS = {
-  pending: 'Pending',
-  in_progress: 'In Progress',
-  done: 'Done',
-  cancelled: 'Cancelled',
-};
-
 const num = (v) => (v == null ? 0 : Number(v));
 const fmtHours = (v) => (v == null ? '—' : String(v));
 
@@ -46,25 +39,20 @@ export default function CustomerTaskHoursReport({ customers = [] }) {
   const tableRows = rows.map((row) => ({
     Task: row.name,
     ...(singleCustomer ? {} : { Customer: row.customerName ?? '—' }),
-    Status: STATUS_LABELS[row.status] ?? row.status,
-    Start: fmtDate(row.startDate) + (row.startTime ? ` ${row.startTime}` : ''),
-    End: fmtDate(row.endDate) + (row.endTime ? ` ${row.endTime}` : ''),
-    'Est. (h)': fmtHours(row.estimatedHours),
-    'Actual (h)': `${fmtHours(row.actualHours)}${row.actualIsEstimate ? ' *' : ''}`,
+    Start: fmtDate(row.startDate),
+    End: fmtDate(row.endDate),
+    'Actual (h)': fmtHours(row.actualHours),
     Cost: fmt(costOf(row)),
   }));
 
   const totalActual = rows.reduce((s, r) => s + num(r.actualHours), 0);
-  const totalEstimated = data?.totals?.estimatedHours ?? rows.reduce((s, r) => s + num(r.estimatedHours), 0);
   const totalCost = totalActual * rate;
 
   const tableHeaders = [
     'Task',
     ...(singleCustomer ? [] : ['Customer']),
-    'Status',
     'Start',
     'End',
-    'Est. (h)',
     'Actual (h)',
     'Cost',
   ];
@@ -99,9 +87,8 @@ export default function CustomerTaskHoursReport({ customers = [] }) {
   );
 
   const summary = (
-    <div className="grid grid-cols-3 gap-4">
+    <div className="grid grid-cols-2 gap-4">
       {[
-        { label: 'Estimated hours', value: `${totalEstimated}h` },
         { label: 'Actual hours', value: `${Number(totalActual.toFixed(2))}h` },
         { label: 'Total cost', value: fmt(totalCost) },
       ].map((card) => (
@@ -122,13 +109,12 @@ export default function CustomerTaskHoursReport({ customers = [] }) {
       onRetry={refetch}
       tableHeaders={tableHeaders}
       tableRows={tableRows}
-      emptyMessage="No tasks in this period."
+      emptyMessage="No completed tasks in this period."
       chartContent={
         <div className="space-y-6">
           {summary}
           <p className="text-xs text-slate-400">
-            Cost = actual hours × hourly fee. Rows marked <span className="font-semibold">*</span>{' '}
-            have no logged actual hours yet, so the estimate is used.
+            Completed tasks only. Cost = actual hours × hourly fee.
           </p>
         </div>
       }

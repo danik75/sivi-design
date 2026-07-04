@@ -9,21 +9,22 @@ import useUpdateTask from '@/features/tasks/hooks/useUpdateTask';
 
 const T = TASK_TEXT.complete;
 
-// The estimate to prefill/show — prefer an edit in flight (extraData) over the
-// saved task value.
-function effectiveEstimate(task, extraData) {
-  if (extraData && extraData.estimatedHours != null) return extraData.estimatedHours;
-  return task?.estimatedHours ?? null;
+// Values come back from the DB as strings ("6.00"); normalise for display.
+function numOrNull(v) {
+  if (v == null || v === '') return null;
+  const n = Number(v);
+  return Number.isNaN(n) ? null : n;
 }
 
 // Pre-fill actual hours with any existing value, otherwise the estimate.
-function initialHours(task, extraData) {
-  if (task?.actualHours != null) return String(task.actualHours);
-  const est = effectiveEstimate(task, extraData);
+function initialHours(task) {
+  const actual = numOrNull(task?.actualHours);
+  if (actual != null) return String(actual);
+  const est = numOrNull(task?.estimatedHours);
   return est != null ? String(est) : '';
 }
 
-export default function TaskCompleteDialog({ isOpen, onClose, task, extraData, onSuccess }) {
+export default function TaskCompleteDialog({ isOpen, onClose, task, onSuccess }) {
   const updateMutation = useUpdateTask();
   const [actualHours, setActualHours] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
@@ -31,13 +32,13 @@ export default function TaskCompleteDialog({ isOpen, onClose, task, extraData, o
 
   useEffect(() => {
     if (isOpen) {
-      setActualHours(initialHours(task, extraData));
+      setActualHours(initialHours(task));
       setErrorMessage('');
       updateMutation.reset();
     }
   }, [isOpen, task?.id]);
 
-  const estimate = effectiveEstimate(task, extraData);
+  const estimate = numOrNull(task?.estimatedHours);
   const hoursNum = Number(actualHours);
   const isValid = actualHours !== '' && !Number.isNaN(hoursNum) && hoursNum >= 0;
 
@@ -48,15 +49,10 @@ export default function TaskCompleteDialog({ isOpen, onClose, task, extraData, o
       return;
     }
     setErrorMessage('');
+    // Only touch status + actual hours — never estimated or other fields, so
+    // completion can't accidentally clear existing data.
     updateMutation.mutate(
-      {
-        id: task.id,
-        data: {
-          ...(extraData ?? {}),
-          status: 'done',
-          actualHours: hoursNum,
-        },
-      },
+      { id: task.id, data: { status: 'done', actualHours: hoursNum } },
       {
         onSuccess: () => {
           onSuccess(T.success(task.name));
@@ -114,10 +110,8 @@ TaskCompleteDialog.propTypes = {
   task: PropTypes.shape({
     id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     name: PropTypes.string,
-    estimatedHours: PropTypes.number,
-    actualHours: PropTypes.number,
+    estimatedHours: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+    actualHours: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
   }),
-  // Optional edits carried over from the edit modal to save alongside completion.
-  extraData: PropTypes.object,
   onSuccess: PropTypes.func.isRequired,
 };

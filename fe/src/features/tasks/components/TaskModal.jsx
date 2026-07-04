@@ -202,14 +202,23 @@ export default function TaskModal({ isOpen, onClose, task, onSuccess, onComplete
     };
 
     if (task) {
-      // Moving to "done" hands off to the completion prompt to capture actual
-      // hours; any edits made here are carried along. Any other status zeroes
-      // actual hours (a non-done task has no actual time logged).
+      // Moving to "done": persist the edits (incl. estimated hours) with status
+      // done — the payload has no actualHours key, so actual time is untouched —
+      // then open the completion popup to capture actual hours.
       if (fields.status === 'done' && onComplete) {
-        onComplete(task, payload);
-        onClose();
+        updateMutation.mutate(
+          { id: task.id, data: payload },
+          {
+            onSuccess: (saved) => {
+              onComplete(saved ?? { ...task, ...payload });
+              onClose();
+            },
+            onError,
+          },
+        );
         return;
       }
+      // Any non-done status zeroes actual hours (no actual time logged).
       payload.actualHours = null;
       updateMutation.mutate({ id: task.id, data: payload }, mutationOptions);
       return;
