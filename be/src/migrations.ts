@@ -23,6 +23,10 @@ const MIGRATIONS: Array<{ name: string; sql: string }> = [
     name: 'tasks.actual_hours',
     sql: `ALTER TABLE tasks ADD COLUMN IF NOT EXISTS actual_hours NUMERIC(6,2)`,
   },
+  {
+    name: 'customers.company_number',
+    sql: `ALTER TABLE customers ADD COLUMN IF NOT EXISTS company_number TEXT`,
+  },
 ];
 
 export async function runMigrations(): Promise<void> {

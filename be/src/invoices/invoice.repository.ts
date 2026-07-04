@@ -34,6 +34,7 @@ type InvoiceListRow = {
   invoiceNumber: string;
   customerId: string;
   customerName: string | null;
+  customerCompanyNumber: string | null;
   contractId: string;
   contractType: string;
   status: InvoiceStatus;
@@ -143,6 +144,7 @@ export class InvoiceRepository {
           inv.invoice_number AS "invoiceNumber",
           inv.customer_id AS "customerId",
           c.name AS "customerName",
+          c.company_number AS "customerCompanyNumber",
           inv.contract_id AS "contractId",
           con.type AS "contractType",
           inv.status,
@@ -181,6 +183,7 @@ export class InvoiceRepository {
           inv.invoice_number AS "invoiceNumber",
           inv.customer_id AS "customerId",
           c.name AS "customerName",
+          c.company_number AS "customerCompanyNumber",
           inv.contract_id AS "contractId",
           con.type AS "contractType",
           inv.status,

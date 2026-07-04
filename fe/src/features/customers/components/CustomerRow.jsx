@@ -17,6 +17,9 @@ export default function CustomerRow({ customer, onEdit, onDelete, onSelect, isSe
         {customer.name}
       </TableCell>
       <TableCell className={isSelected ? 'bg-indigo-50' : ''}>
+        {customer.companyNumber || CUSTOMER_TEXT.placeholder}
+      </TableCell>
+      <TableCell className={isSelected ? 'bg-indigo-50' : ''}>
         {primaryContact.email || CUSTOMER_TEXT.placeholder}
       </TableCell>
       <TableCell className={isSelected ? 'bg-indigo-50' : ''}>
@@ -52,6 +55,7 @@ CustomerRow.propTypes = {
   customer: PropTypes.shape({
     id: PropTypes.string.isRequired,
     name: PropTypes.string.isRequired,
+    companyNumber: PropTypes.string,
     contacts: PropTypes.arrayOf(
       PropTypes.shape({
         email: PropTypes.string,

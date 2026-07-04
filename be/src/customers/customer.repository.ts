@@ -15,7 +15,7 @@ export class CustomerRepository {
     const offsetIdx = search ? 3 : 2;
 
     const q = `
-      SELECT c.id, c.name, c.created_at, c.updated_at,
+      SELECT c.id, c.name, c.company_number AS "companyNumber", c.created_at, c.updated_at,
         json_agg(json_build_object('id', ct.id, 'email', ct.email, 'phone', ct.phone, 'address', ct.address, 'isPrimary', ct.is_primary) ORDER BY ct.is_primary DESC, ct.created_at) FILTER (WHERE ct.id IS NOT NULL) AS contacts
       FROM customers c
       LEFT JOIN contacts ct ON ct.customer_id = c.id
@@ -35,7 +35,7 @@ export class CustomerRepository {
 
   async findOne(id: string) {
     const res = await pool.query(
-      `SELECT c.id, c.name, c.created_at, c.updated_at,
+      `SELECT c.id, c.name, c.company_number AS "companyNumber", c.created_at, c.updated_at,
         json_agg(json_build_object('id', ct.id, 'email', ct.email, 'phone', ct.phone, 'address', ct.address, 'isPrimary', ct.is_primary) ORDER BY ct.is_primary DESC, ct.created_at) FILTER (WHERE ct.id IS NOT NULL) AS contacts
        FROM customers c LEFT JOIN contacts ct ON ct.customer_id = c.id
        WHERE c.id = $1 GROUP BY c.id`,
@@ -58,8 +58,8 @@ export class CustomerRepository {
         throw new ConflictException('Customer name already exists');
       }
       const res = await client.query(
-        'INSERT INTO customers (name) VALUES ($1) RETURNING id, name, created_at, updated_at',
-        [dto.name.trim()],
+        'INSERT INTO customers (name, company_number) VALUES ($1, $2) RETURNING id',
+        [dto.name.trim(), dto.companyNumber?.trim() || null],
       );
       const customer = res.rows[0];
       if (dto.contacts?.length) {
@@ -99,6 +99,12 @@ export class CustomerRepository {
           throw new ConflictException('Customer name already exists');
         }
         await client.query('UPDATE customers SET name = $1, updated_at = now() WHERE id = $2', [dto.name.trim(), id]);
+      }
+      if (dto.companyNumber !== undefined) {
+        await client.query('UPDATE customers SET company_number = $1, updated_at = now() WHERE id = $2', [
+          dto.companyNumber?.trim() || null,
+          id,
+        ]);
       }
       if (dto.contacts !== undefined) {
         await client.query('DELETE FROM contacts WHERE customer_id = $1', [id]);

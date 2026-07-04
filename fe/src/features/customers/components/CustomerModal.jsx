@@ -35,14 +35,17 @@ export default function CustomerModal({ isOpen, onClose, customer, onSuccess }) 
   const activeMutation = customer ? updateMutation : createMutation;
 
   const [name, setName] = useState('');
+  const [companyNumber, setCompanyNumber] = useState('');
   const [contacts, setContacts] = useState([createEmptyContact(true)]);
   const [nameError, setNameError] = useState('');
+  const [contactsError, setContactsError] = useState('');
   const [submitError, setSubmitError] = useState('');
   const [contactModal, setContactModal] = useState(null); // { index: number | null }
 
   useEffect(() => {
     if (!isOpen) return;
     setName(customer?.name ?? '');
+    setCompanyNumber(customer?.companyNumber ?? '');
     setContacts(
       customer?.contacts?.length
         ? customer.contacts.map((c, i) => ({
@@ -54,6 +57,7 @@ export default function CustomerModal({ isOpen, onClose, customer, onSuccess }) 
         : [createEmptyContact(true)]
     );
     setNameError('');
+    setContactsError('');
     setSubmitError('');
     setContactModal(null);
     createMutation.reset();
@@ -118,7 +122,13 @@ export default function CustomerModal({ isOpen, onClose, customer, onSuccess }) 
     }
     setNameError('');
     setSubmitError('');
-    const payload = normalizeCustomerPayload({ name: trimmedName, contacts });
+    const payload = normalizeCustomerPayload({ name: trimmedName, companyNumber, contacts });
+    // A customer must have at least one contact with details.
+    if (!payload.contacts.length) {
+      setContactsError(CUSTOMER_TEXT.modal.contactsRequired);
+      return;
+    }
+    setContactsError('');
     const onError = (error) => {
       const message = getApiErrorMessage(error, CUSTOMER_TEXT.modal.saveError);
       if (error?.response?.status === 409) { setNameError(message); return; }
@@ -156,6 +166,14 @@ export default function CustomerModal({ isOpen, onClose, customer, onSuccess }) 
             />
           </FormField>
           {nameError && <p className="-mt-3 text-xs font-medium text-rose-600">{nameError}</p>}
+
+          <FormField label={CUSTOMER_TEXT.modal.companyNumberLabel}>
+            <Input
+              value={companyNumber}
+              onChange={(e) => setCompanyNumber(e.target.value)}
+              placeholder={CUSTOMER_TEXT.modal.companyNumberPlaceholder}
+            />
+          </FormField>
 
           {/* Contacts grid */}
           <div className="space-y-2">
@@ -225,6 +243,7 @@ export default function CustomerModal({ isOpen, onClose, customer, onSuccess }) 
                 </table>
               )}
             </div>
+            {contactsError && <p className="text-xs font-medium text-rose-600">{contactsError}</p>}
           </div>
 
           {submitError && (

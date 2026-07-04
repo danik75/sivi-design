@@ -23,10 +23,11 @@ CREATE TABLE IF NOT EXISTS users (
 -- Customers & contacts
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS customers (
-  id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-  name       TEXT        NOT NULL UNIQUE CHECK (char_length(trim(name)) > 0),
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  id             UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  name           TEXT        NOT NULL UNIQUE CHECK (char_length(trim(name)) > 0),
+  company_number TEXT,
+  created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at     TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE TABLE IF NOT EXISTS contacts (
