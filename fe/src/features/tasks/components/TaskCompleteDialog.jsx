@@ -30,15 +30,22 @@ export default function TaskCompleteDialog({ isOpen, onClose, task, onSuccess })
     }
   }, [isOpen, task?.id]);
 
+  const hoursNum = Number(actualHours);
+  const isValid = actualHours !== '' && !Number.isNaN(hoursNum) && hoursNum >= 0;
+
   const handleConfirm = () => {
     if (!task?.id) return;
+    if (!isValid) {
+      setErrorMessage(T.required);
+      return;
+    }
     setErrorMessage('');
     updateMutation.mutate(
       {
         id: task.id,
         data: {
           status: 'done',
-          actualHours: actualHours !== '' ? Number(actualHours) : null,
+          actualHours: hoursNum,
         },
       },
       {
@@ -66,19 +73,22 @@ export default function TaskCompleteDialog({ isOpen, onClose, task, onSuccess })
     <Dialog isOpen={isOpen} onClose={onClose} title={T.title} footer={footer}>
       <div className="space-y-3">
         <p className="text-sm text-slate-600">{T.body(task?.name ?? '')}</p>
-        <FormField label={T.actualHoursLabel}>
+        <FormField label={`${T.actualHoursLabel} *`}>
           <Input
             type="number"
             min="0"
             step="0.25"
             value={actualHours}
-            onChange={(e) => setActualHours(e.target.value)}
+            onChange={(e) => {
+              setActualHours(e.target.value);
+              if (errorMessage) setErrorMessage('');
+            }}
             autoFocus
           />
         </FormField>
-        {task?.estimatedHours != null ? (
-          <p className="text-xs text-slate-400">{T.estimateHint(task.estimatedHours)}</p>
-        ) : null}
+        <p className="text-xs text-slate-400">
+          {task?.estimatedHours != null ? T.estimateHint(task.estimatedHours) : T.noEstimate}
+        </p>
         {errorMessage ? (
           <p className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-600">
             {errorMessage}

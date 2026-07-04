@@ -44,9 +44,6 @@ const PRESET_COLORS = [
   '#dc2626',
 ];
 
-const selectClass =
-  'block w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 shadow-sm transition-all duration-150 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200';
-
 const textareaClass =
   'block w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 shadow-sm transition-all duration-150 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 resize-none';
 
@@ -133,6 +130,11 @@ export default function TaskModal({ isOpen, onClose, task, onSuccess }) {
       if (field === 'status' && value === 'done') {
         next.percentComplete = 100;
       }
+      // Entering "done" prefills actual hours with the estimate so the user
+      // only has to confirm/adjust (actual hours is required to complete).
+      if (next.status === 'done' && prev.status !== 'done' && next.actualHours === '') {
+        next.actualHours = prev.estimatedHours ?? '';
+      }
       return next;
     });
     if (errors[field]) {
@@ -157,6 +159,13 @@ export default function TaskModal({ isOpen, onClose, task, onSuccess }) {
     }
     if (fields.startDate && fields.endDate && fields.endDate < fields.startDate) {
       next.endDate = TASK_TEXT.modal.endDateBeforeStart;
+    }
+    // Completing a task requires actual hours (edit mode only)
+    if (task && fields.status === 'done') {
+      const h = Number(fields.actualHours);
+      if (fields.actualHours === '' || Number.isNaN(h) || h < 0) {
+        next.actualHours = TASK_TEXT.modal.actualHoursRequired;
+      }
     }
     return next;
   };
@@ -362,9 +371,11 @@ export default function TaskModal({ isOpen, onClose, task, onSuccess }) {
               />
             </FormField>
 
-            {/* Actual hours — edit mode only */}
+            {/* Actual hours — edit mode only; required when marking done */}
             {task ? (
-              <FormField label={TASK_TEXT.modal.actualHoursLabel}>
+              <FormField
+                label={`${TASK_TEXT.modal.actualHoursLabel}${fields.status === 'done' ? ' *' : ''}`}
+              >
                 <Input
                   type="number"
                   min="0"
@@ -372,7 +383,11 @@ export default function TaskModal({ isOpen, onClose, task, onSuccess }) {
                   value={fields.actualHours}
                   onChange={set('actualHours')}
                   placeholder={TASK_TEXT.modal.actualHoursPlaceholder}
+                  aria-invalid={Boolean(errors.actualHours)}
                 />
+                {errors.actualHours ? (
+                  <p className="text-xs font-medium text-rose-600">{errors.actualHours}</p>
+                ) : null}
               </FormField>
             ) : null}
           </div>
