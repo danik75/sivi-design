@@ -2,11 +2,15 @@ import * as dns from 'node:dns';
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
+import { runMigrations } from './migrations';
 
 // Prefer IPv4 so Railway containers can reach Supabase (no IPv6 routing)
 dns.setDefaultResultOrder('ipv4first');
 
 async function bootstrap() {
+  // Apply idempotent additive migrations so hosted DBs stay in sync on deploy.
+  await runMigrations();
+
   const app = await NestFactory.create(AppModule);
   app.enableCors();
   app.use(require('express').json({ limit: '20mb' }));
