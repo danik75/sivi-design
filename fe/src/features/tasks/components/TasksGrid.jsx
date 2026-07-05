@@ -66,6 +66,11 @@ function TaskRow({ task, onEdit, onAbort, onComplete, onDoubleClick }) {
     <TableRow onDoubleClick={onDoubleClick}>
       <TableCell>
         <span className="font-medium text-slate-900">{task.name}</span>
+        {task.invoiceNumber ? (
+          <span className="ml-2 inline-flex rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500">
+            {task.invoiceNumber}
+          </span>
+        ) : null}
         {task.description ? (
           <p className="mt-0.5 max-w-xs truncate text-xs text-slate-400">{task.description}</p>
         ) : null}
@@ -114,7 +119,13 @@ function TaskRow({ task, onEdit, onAbort, onComplete, onDoubleClick }) {
               variant="danger"
               className="h-8 w-8 !p-0 shrink-0"
               onClick={() => onAbort(task)}
+              disabled={Boolean(task.invoiceNumber)}
               aria-label="Abort task"
+              title={
+                task.invoiceNumber
+                  ? `On invoice ${task.invoiceNumber} — unrelate it first`
+                  : 'Abort task'
+              }
             >
               <XIcon />
             </Button>

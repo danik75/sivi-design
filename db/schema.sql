@@ -193,6 +193,7 @@ CREATE TABLE IF NOT EXISTS invoice_line_items (
   amount      NUMERIC(14,2) NOT NULL,
   source_type TEXT          CHECK (source_type IN ('task','expense','contract','manual')),
   source_id   UUID,
+  source_date DATE,
   created_at  TIMESTAMPTZ   NOT NULL DEFAULT now()
 );
 

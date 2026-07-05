@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import pool from '../db';
 import { CreateExpenseDto, ExpenseCategory } from './dto/create-expense.dto';
 
@@ -23,9 +23,18 @@ const SELECT_FIELDS = `
     e.customer_id   AS "customerId",
     c.name          AS "customerName",
     e.status,
+    il.invoice_id    AS "invoiceId",
+    il.invoice_number AS "invoiceNumber",
     e.created_at    AS "createdAt"
   FROM expenses e
   LEFT JOIN customers c ON c.id = e.customer_id
+  LEFT JOIN LATERAL (
+    SELECT inv.id AS invoice_id, inv.invoice_number
+    FROM invoice_line_items li
+    JOIN invoices inv ON inv.id = li.invoice_id
+    WHERE li.source_type = 'expense' AND li.source_id = e.id AND inv.status <> 'cancelled'
+    LIMIT 1
+  ) il ON TRUE
 `;
 
 type ExpenseStatusFilter = 'active' | 'inactive' | 'all';
@@ -41,6 +50,8 @@ type ExpenseRow = {
   customerId: string | null;
   customerName: string | null;
   status: 'active' | 'inactive';
+  invoiceId: string | null;
+  invoiceNumber: string | null;
   createdAt: string;
 };
 
@@ -151,6 +162,23 @@ export class ExpenseRepository {
   async deactivate(id: string) {
     if (!this.isUuid(id)) {
       throw new BadRequestException('Invalid expense id');
+    }
+
+    // An expense on an active invoice can't be cancelled — unrelate it first.
+    const linked = await pool.query(
+      `
+        SELECT inv.invoice_number AS "invoiceNumber"
+        FROM invoice_line_items li
+        JOIN invoices inv ON inv.id = li.invoice_id
+        WHERE li.source_type = 'expense' AND li.source_id = $1 AND inv.status <> 'cancelled'
+        LIMIT 1
+      `,
+      [id],
+    );
+    if (linked.rows[0]) {
+      throw new ConflictException(
+        `This expense is on invoice ${linked.rows[0].invoiceNumber}. Unrelate it from the invoice before it can be cancelled.`,
+      );
     }
 
     const res = await pool.query(

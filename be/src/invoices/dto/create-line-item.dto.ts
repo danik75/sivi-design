@@ -1,5 +1,14 @@
 import { Type } from 'class-transformer';
-import { IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID, Min } from 'class-validator';
+import {
+  IsDateString,
+  IsEnum,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  IsUUID,
+  Min,
+} from 'class-validator';
 
 export type LineItemSourceType = 'task' | 'expense' | 'contract' | 'manual';
 
@@ -25,4 +34,8 @@ export class CreateLineItemDto {
   @IsOptional()
   @IsUUID()
   sourceId?: string;
+
+  @IsOptional()
+  @IsDateString()
+  sourceDate?: string;
 }

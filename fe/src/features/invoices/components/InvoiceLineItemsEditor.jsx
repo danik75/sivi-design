@@ -18,6 +18,7 @@ const createLineItem = () => ({
   amount: 0,
   sourceType: 'manual',
   sourceId: null,
+  sourceDate: null,
 });
 
 const computeAmount = (qty, price) => (parseFloat(qty || 0) * parseFloat(price || 0)).toFixed(2);
@@ -53,6 +54,7 @@ export default function InvoiceLineItemsEditor({ lineItems, onChange, readOnly =
             <TableHeader>{INVOICE_TEXT.modal.lineItem.quantity}</TableHeader>
             <TableHeader>{INVOICE_TEXT.modal.lineItem.unitPrice}</TableHeader>
             <TableHeader>{INVOICE_TEXT.modal.lineItem.amount}</TableHeader>
+            <TableHeader>Date</TableHeader>
             {!readOnly ? <TableHeader>{INVOICE_TEXT.modal.lineItem.remove}</TableHeader> : null}
           </TableRow>
         </TableHead>
@@ -102,6 +104,9 @@ export default function InvoiceLineItemsEditor({ lineItems, onChange, readOnly =
               <TableCell className="whitespace-nowrap font-medium text-slate-900">
                 {computeAmount(item.quantity, item.unitPrice)}
               </TableCell>
+              <TableCell className="whitespace-nowrap text-sm text-slate-500">
+                {item.sourceDate || '—'}
+              </TableCell>
               {!readOnly ? (
                 <TableCell>
                   <Button
@@ -136,6 +141,7 @@ const lineItemShape = PropTypes.shape({
   amount: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   sourceType: PropTypes.string,
   sourceId: PropTypes.string,
+  sourceDate: PropTypes.string,
 });
 
 InvoiceLineItemsEditor.propTypes = {

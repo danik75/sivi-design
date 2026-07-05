@@ -246,6 +246,14 @@ export default function TaskModal({ isOpen, onClose, task, onSuccess, onComplete
     <Dialog isOpen={isOpen} onClose={onClose} title={dialogTitle} footer={footer}>
       <div className="max-h-[70vh] overflow-y-auto pr-1">
         <Form id={FORM_ID} onSubmit={handleSubmit} className="space-y-4">
+          {/* Linked invoice (read-only) */}
+          {task?.invoiceNumber ? (
+            <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">
+              On invoice <span className="font-semibold text-slate-800">{task.invoiceNumber}</span>.
+              Unrelate it from the invoice to abort this task.
+            </div>
+          ) : null}
+
           {/* Name */}
           <FormField label={TASK_TEXT.modal.nameLabel}>
             <Input
