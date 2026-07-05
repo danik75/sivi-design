@@ -86,7 +86,7 @@ export const INVOICE_TEXT = {
     step1Title: 'Invoice Details',
     step2Title: 'Line Items',
     step3Title: 'Review',
-    progressLabel: (label, step) => `${label} · Step ${step} of 3`,
+    progressLabel: (label, step) => `${label} · Step ${step} of 2`,
     closeLabel: 'Close invoice modal',
     back: 'Back',
     next: 'Next',
