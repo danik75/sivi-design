@@ -603,11 +603,9 @@ export default function InvoiceModal({ isOpen, onClose, invoice, onSuccess, onVi
     <>
     <div
       className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-900/50 p-4 pt-12 backdrop-blur-sm"
-      onClick={onClose}
     >
       <div
         className="w-full max-w-3xl rounded-2xl bg-white shadow-2xl"
-        onClick={(event) => event.stopPropagation()}
         role="dialog"
         aria-modal="true"
       >

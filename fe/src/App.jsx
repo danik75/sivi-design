@@ -6,7 +6,13 @@ import { ToastContainer } from '@/components/chadcn/Toast';
 import { ToastProvider } from '@/components/chadcn/useToast';
 import MainPanel from '@/pages/MainPanel';
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    // Avoid background refetches on window/tab focus re-rendering open modals
+    // mid-interaction (caused wizard steps to reset / clicks to be dropped).
+    queries: { refetchOnWindowFocus: false },
+  },
+});
 
 function getInitialAuth() {
   return !!localStorage.getItem('sivi_token');
