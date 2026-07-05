@@ -13,6 +13,7 @@ export default function InvoicesFeature() {
   const [editInvoice, setEditInvoice] = useState(null);
   const [deleteInvoice, setDeleteInvoice] = useState(null);
   const [receiptInvoice, setReceiptInvoice] = useState(null);
+  const [viewInvoiceId, setViewInvoiceId] = useState(null);
   const transitionMutation = useTransitionStatus();
 
   const handleSuccess = (message) => {
@@ -48,6 +49,8 @@ export default function InvoicesFeature() {
         onEdit={(invoice) => setEditInvoice(invoice)}
         onDelete={(invoice) => setDeleteInvoice(invoice)}
         onStatusTransition={handleStatusTransition}
+        selectedInvoiceId={viewInvoiceId}
+        onSelectInvoice={setViewInvoiceId}
       />
       <InvoiceModal
         isOpen={showCreate || Boolean(editInvoice)}
@@ -57,6 +60,7 @@ export default function InvoicesFeature() {
         }}
         invoice={editInvoice}
         onSuccess={handleSuccess}
+        onView={(saved) => setViewInvoiceId(saved.id)}
       />
       <InvoiceDeleteDialog
         isOpen={Boolean(deleteInvoice)}

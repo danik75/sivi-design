@@ -13,14 +13,20 @@ import useInvoices from '@/features/invoices/hooks/useInvoices';
 
 const PAGE_SIZE = 10;
 
-export default function InvoiceGrid({ onCreate, onEdit, onDelete, onStatusTransition }) {
+export default function InvoiceGrid({
+  onCreate,
+  onEdit,
+  onDelete,
+  onStatusTransition,
+  selectedInvoiceId,
+  onSelectInvoice,
+}) {
   const [selectedCustomerId, setSelectedCustomerId] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
   const [page, setPage] = useState(1);
-  const [selectedInvoiceId, setSelectedInvoiceId] = useState(null);
 
   const handleView = (invoice) => {
-    setSelectedInvoiceId((prev) => (prev === invoice.id ? null : invoice.id));
+    onSelectInvoice(selectedInvoiceId === invoice.id ? null : invoice.id);
   };
 
   const { data, error, isError, isLoading, refetch } = useInvoices({
@@ -184,7 +190,7 @@ export default function InvoiceGrid({ onCreate, onEdit, onDelete, onStatusTransi
         <InvoiceOverview
           isOpen={Boolean(selectedInvoiceId)}
           invoiceId={selectedInvoiceId}
-          onClose={() => setSelectedInvoiceId(null)}
+          onClose={() => onSelectInvoice(null)}
         />
       ) : null}
     </section>
@@ -196,4 +202,10 @@ InvoiceGrid.propTypes = {
   onEdit: PropTypes.func.isRequired,
   onDelete: PropTypes.func.isRequired,
   onStatusTransition: PropTypes.func.isRequired,
+  selectedInvoiceId: PropTypes.string,
+  onSelectInvoice: PropTypes.func.isRequired,
+};
+
+InvoiceGrid.defaultProps = {
+  selectedInvoiceId: null,
 };

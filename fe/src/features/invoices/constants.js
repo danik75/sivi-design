@@ -91,6 +91,8 @@ export const INVOICE_TEXT = {
     back: 'Back',
     next: 'Next',
     submit: 'Save Invoice',
+    saveAndClose: 'Save & Close',
+    saveAndView: 'Save & View',
     cancel: 'Cancel',
     customerLabel: 'Customer',
     customerPlaceholder: 'Select customer…',

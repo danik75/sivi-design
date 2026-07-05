@@ -57,7 +57,7 @@ function hasValidLineItems(items) {
   return items.some((item) => item.description?.trim());
 }
 
-export default function InvoiceModal({ isOpen, onClose, invoice, onSuccess }) {
+export default function InvoiceModal({ isOpen, onClose, invoice, onSuccess, onView }) {
   const [step, setStep] = useState(1);
   const [formState, setFormState] = useState(createInitialState());
   const [lineItems, setLineItems] = useState([]);
@@ -66,6 +66,7 @@ export default function InvoiceModal({ isOpen, onClose, invoice, onSuccess }) {
   const [picker, setPicker] = useState(null); // 'tasks' | 'expenses' | null
   const skipAutoPrefillRef = useRef(false);
   const lineItemsInitializedRef = useRef(false);
+  const saveActionRef = useRef('close'); // 'close' | 'view' — which save button was used
 
   const createMutation = useCreateInvoice();
   const updateMutation = useUpdateInvoice();
@@ -374,12 +375,15 @@ export default function InvoiceModal({ isOpen, onClose, invoice, onSuccess }) {
       })),
     };
 
+    const wantsView = saveActionRef.current === 'view';
+
     if (invoice) {
       updateMutation.mutate(
         { id: invoice.id, ...payload },
         {
           onSuccess: (saved) => {
             onSuccess(INVOICE_TEXT.success.updated(saved.invoiceNumber));
+            if (wantsView && onView) onView(saved);
             onClose();
           },
           onError: (error) =>
@@ -392,6 +396,7 @@ export default function InvoiceModal({ isOpen, onClose, invoice, onSuccess }) {
     createMutation.mutate(payload, {
       onSuccess: (saved) => {
         onSuccess(INVOICE_TEXT.success.created(saved.invoiceNumber));
+        if (wantsView && onView) onView(saved);
         onClose();
       },
       onError: (error) => setSubmitError(getApiErrorMessage(error, INVOICE_TEXT.modal.saveError)),
@@ -649,8 +654,26 @@ export default function InvoiceModal({ isOpen, onClose, invoice, onSuccess }) {
         <Button type="button" variant="ghost" onClick={() => setStep(2)}>
           {INVOICE_TEXT.modal.back}
         </Button>
-        <Button type="submit" form={FORM_ID} disabled={isSaving}>
-          {INVOICE_TEXT.modal.submit}
+        <Button
+          type="submit"
+          form={FORM_ID}
+          variant="ghost"
+          disabled={isSaving}
+          onClick={() => {
+            saveActionRef.current = 'close';
+          }}
+        >
+          {INVOICE_TEXT.modal.saveAndClose}
+        </Button>
+        <Button
+          type="submit"
+          form={FORM_ID}
+          disabled={isSaving}
+          onClick={() => {
+            saveActionRef.current = 'view';
+          }}
+        >
+          {INVOICE_TEXT.modal.saveAndView}
         </Button>
       </>
     );
@@ -751,8 +774,10 @@ InvoiceModal.propTypes = {
     lineItems: PropTypes.arrayOf(lineItemShape),
   }),
   onSuccess: PropTypes.func.isRequired,
+  onView: PropTypes.func,
 };
 
 InvoiceModal.defaultProps = {
   invoice: null,
+  onView: undefined,
 };
