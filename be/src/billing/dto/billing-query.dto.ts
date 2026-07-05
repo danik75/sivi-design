@@ -31,10 +31,12 @@ export class BillingQueryDto {
 
   getBounds(): { startDate: string; endDate: string } {
     if (this.period === 'monthly') {
+      // Year-to-date: from Jan 1 of the tax year through the end of the
+      // selected month (cumulative from the start of the year).
       const mm = String(this.month).padStart(2, '0');
       const lastDay = new Date(this.year, this.month!, 0).getDate();
       return {
-        startDate: `${this.year}-${mm}-01`,
+        startDate: `${this.year}-01-01`,
         endDate: `${this.year}-${mm}-${String(lastDay).padStart(2, '0')}`,
       };
     }
