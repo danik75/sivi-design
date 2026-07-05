@@ -27,6 +27,10 @@ const MIGRATIONS: Array<{ name: string; sql: string }> = [
     name: 'customers.company_number',
     sql: `ALTER TABLE customers ADD COLUMN IF NOT EXISTS company_number TEXT`,
   },
+  {
+    name: 'invoice_line_items.source_date',
+    sql: `ALTER TABLE invoice_line_items ADD COLUMN IF NOT EXISTS source_date DATE`,
+  },
 ];
 
 export async function runMigrations(): Promise<void> {

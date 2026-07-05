@@ -65,7 +65,7 @@ function buildEmailHtml(invoice) {
       <div style="display:flex;justify-content:space-between;align-items:flex-start;padding:0.75rem 0;border-bottom:1px solid #f0f0f0;">
         <div>
           <div style="font-size:14px;color:#222;margin-bottom:4px;">${item.description}</div>
-          ${tagHtml}
+          ${tagHtml}${item.sourceDate ? `<span style="font-size:12px;color:#888;margin-left:6px;">${item.sourceDate}</span>` : ''}
         </div>
         <div style="text-align:right;">
           <div style="font-size:14px;color:#222;">${formatAmount(item.amount, invoice.currency)}</div>
@@ -318,6 +318,7 @@ export default function InvoiceOverview({ isOpen, invoiceId, onClose }) {
                     <TableRow>
                       <TableHeader>Description</TableHeader>
                       <TableHeader>Source</TableHeader>
+                      <TableHeader>Date</TableHeader>
                       <TableHeader>Qty</TableHeader>
                       <TableHeader>Unit Price</TableHeader>
                       <TableHeader>Amount</TableHeader>
@@ -333,6 +334,9 @@ export default function InvoiceOverview({ isOpen, invoiceId, onClose }) {
                               {item.sourceType}
                             </span>
                           ) : null}
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap text-sm text-slate-500">
+                          {item.sourceDate || '—'}
                         </TableCell>
                         <TableCell className="tabular-nums">
                           {parseFloat(item.quantity).toFixed(2)}

@@ -35,4 +35,12 @@ export class InvoicesService {
   prefill(contractId: string) {
     return this.repo.prefill(contractId);
   }
+
+  availableTasks(customerId: string, excludeInvoiceId?: string) {
+    return this.repo.getAvailableTasks(customerId, excludeInvoiceId);
+  }
+
+  availableExpenses(customerId: string, excludeInvoiceId?: string, search?: string) {
+    return this.repo.getAvailableExpenses(customerId, excludeInvoiceId, search);
+  }
 }

@@ -10,6 +10,8 @@ import XIcon from '@/components/chadcn/icons/XIcon';
 import useContracts from '@/features/contracts/hooks/useContracts';
 import useCustomers from '@/features/customers/hooks/useCustomers';
 import InvoiceLineItemsEditor from '@/features/invoices/components/InvoiceLineItemsEditor';
+import TaskPickerDialog from '@/features/invoices/components/TaskPickerDialog';
+import ExpensePickerDialog from '@/features/invoices/components/ExpensePickerDialog';
 import {
   CURRENCIES,
   formatAmount,
@@ -61,6 +63,7 @@ export default function InvoiceModal({ isOpen, onClose, invoice, onSuccess }) {
   const [lineItems, setLineItems] = useState([]);
   const [errors, setErrors] = useState({});
   const [submitError, setSubmitError] = useState('');
+  const [picker, setPicker] = useState(null); // 'tasks' | 'expenses' | null
   const skipAutoPrefillRef = useRef(false);
   const lineItemsInitializedRef = useRef(false);
 
@@ -155,6 +158,7 @@ export default function InvoiceModal({ isOpen, onClose, invoice, onSuccess }) {
           amount: lineItem.amount,
           sourceType: lineItem.sourceType,
           sourceId: lineItem.sourceId,
+          sourceDate: lineItem.sourceDate,
         }))
       );
       return;
@@ -177,6 +181,7 @@ export default function InvoiceModal({ isOpen, onClose, invoice, onSuccess }) {
         amount: String(li.amount),
         sourceType: li.sourceType,
         sourceId: li.sourceId,
+        sourceDate: li.sourceDate,
       }))
     );
   }, [fullInvoice]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -201,6 +206,7 @@ export default function InvoiceModal({ isOpen, onClose, invoice, onSuccess }) {
         amount: String(lineItem.amount),
         sourceType: lineItem.sourceType,
         sourceId: lineItem.sourceId,
+        sourceDate: lineItem.sourceDate ?? null,
       }))
     );
     if (prefillData.currency && !formState.currency) {
@@ -270,6 +276,49 @@ export default function InvoiceModal({ isOpen, onClose, invoice, onSuccess }) {
     });
   };
 
+  // Ids already on the invoice, so the pickers can show them checked/disabled.
+  const linkedTaskIds = lineItems.filter((li) => li.sourceType === 'task').map((li) => li.sourceId);
+  const linkedExpenseIds = lineItems
+    .filter((li) => li.sourceType === 'expense')
+    .map((li) => li.sourceId);
+
+  const handleAddTasks = (tasks) => {
+    const contract = contractMap[formState.contractId];
+    const isTM = contract?.type === 'time_and_materials';
+    const rate = Number(contract?.hourlyRate) || 0;
+    const additions = tasks.map((t) => {
+      const hours = t.actualHours != null ? Number(t.actualHours) : Number(t.estimatedHours) || 1;
+      const quantity = isTM ? hours || 1 : 1;
+      const unitPrice = isTM ? rate : 0;
+      return {
+        description: t.name,
+        quantity: String(quantity),
+        unitPrice: String(unitPrice),
+        amount: (quantity * unitPrice).toFixed(2),
+        sourceType: 'task',
+        sourceId: t.id,
+        sourceDate: t.endDate,
+      };
+    });
+    handleLineItemsChange([...lineItems, ...additions]);
+  };
+
+  const handleAddExpenses = (expenses) => {
+    const additions = expenses.map((e) => {
+      const amount = Number(e.amount) || 0;
+      return {
+        description: e.description ? `${e.vendor} — ${e.description}` : e.vendor,
+        quantity: '1',
+        unitPrice: String(amount),
+        amount: amount.toFixed(2),
+        sourceType: 'expense',
+        sourceId: e.id,
+        sourceDate: e.date,
+      };
+    });
+    handleLineItemsChange([...lineItems, ...additions]);
+  };
+
   const handleNext = () => {
     if (step === 1) {
       const nextErrors = validateStep1(formState);
@@ -324,6 +373,7 @@ export default function InvoiceModal({ isOpen, onClose, invoice, onSuccess }) {
         unitPrice: parseFloat(lineItem.unitPrice) || 0,
         sourceType: lineItem.sourceType || 'manual',
         sourceId: lineItem.sourceId || undefined,
+        sourceDate: lineItem.sourceDate || undefined,
       })),
     };
 
@@ -481,6 +531,22 @@ export default function InvoiceModal({ isOpen, onClose, invoice, onSuccess }) {
             {isPrefillLoading ? (
               <p className="text-sm text-slate-500">{INVOICE_TEXT.modal.prefillLoading}</p>
             ) : null}
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setPicker('tasks')}
+              disabled={!formState.customerId}
+            >
+              Add from tasks
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setPicker('expenses')}
+              disabled={!formState.customerId}
+            >
+              Add from expenses
+            </Button>
           </div>
           {prefillError ? (
             <p className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-600">
@@ -612,6 +678,7 @@ export default function InvoiceModal({ isOpen, onClose, invoice, onSuccess }) {
   if (!isOpen) return null;
 
   return (
+    <>
     <div
       className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-900/50 p-4 pt-12 backdrop-blur-sm"
       onClick={onClose}
@@ -655,6 +722,23 @@ export default function InvoiceModal({ isOpen, onClose, invoice, onSuccess }) {
         </Form>
       </div>
     </div>
+      <TaskPickerDialog
+        isOpen={picker === 'tasks'}
+        onClose={() => setPicker(null)}
+        customerId={formState.customerId || undefined}
+        excludeInvoiceId={invoice?.id}
+        existingSourceIds={linkedTaskIds}
+        onConfirm={handleAddTasks}
+      />
+      <ExpensePickerDialog
+        isOpen={picker === 'expenses'}
+        onClose={() => setPicker(null)}
+        customerId={formState.customerId || undefined}
+        excludeInvoiceId={invoice?.id}
+        existingSourceIds={linkedExpenseIds}
+        onConfirm={handleAddExpenses}
+      />
+    </>
   );
 }
 

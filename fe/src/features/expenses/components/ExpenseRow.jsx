@@ -23,7 +23,14 @@ export default function ExpenseRow({ expense, onDeactivate }) {
 
   return (
     <TableRow>
-      <TableCell className="font-semibold text-slate-900">{expense.vendor}</TableCell>
+      <TableCell className="font-semibold text-slate-900">
+        {expense.vendor}
+        {expense.invoiceNumber ? (
+          <span className="ml-2 inline-flex rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500">
+            {expense.invoiceNumber}
+          </span>
+        ) : null}
+      </TableCell>
       <TableCell>{categoryLabel}</TableCell>
       <TableCell>{formatAmount(expense.amount, expense.currency)}</TableCell>
       <TableCell>{expense.customerName || EXPENSE_TEXT.placeholder}</TableCell>
@@ -39,7 +46,13 @@ export default function ExpenseRow({ expense, onDeactivate }) {
               variant="danger"
               className="h-8 w-8 !p-0 shrink-0"
               onClick={() => onDeactivate(expense)}
+              disabled={Boolean(expense.invoiceNumber)}
               aria-label={EXPENSE_TEXT.rowActions.deactivateLabel}
+              title={
+                expense.invoiceNumber
+                  ? `On invoice ${expense.invoiceNumber} — unrelate it first`
+                  : EXPENSE_TEXT.rowActions.deactivateLabel
+              }
             >
               <XIcon />
             </Button>

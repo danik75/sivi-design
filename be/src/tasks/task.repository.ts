@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import pool from '../db';
 import { CreateTaskDto, TaskStatus } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
@@ -18,9 +18,17 @@ export class TaskRepository {
              t.estimated_hours AS "estimatedHours", t.actual_hours AS "actualHours",
              t.percent_complete AS "percentComplete",
              t.color,
+             il.invoice_id AS "invoiceId", il.invoice_number AS "invoiceNumber",
              t.created_at AS "createdAt", t.updated_at AS "updatedAt"
       FROM tasks t
       LEFT JOIN customers c ON c.id = t.customer_id
+      LEFT JOIN LATERAL (
+        SELECT inv.id AS invoice_id, inv.invoice_number
+        FROM invoice_line_items li
+        JOIN invoices inv ON inv.id = li.invoice_id
+        WHERE li.source_type = 'task' AND li.source_id = t.id AND inv.status <> 'cancelled'
+        LIMIT 1
+      ) il ON TRUE
       WHERE ($1::text IS NULL OR t.name ILIKE $1 OR t.description ILIKE $1 OR c.name ILIKE $1)
       AND ($2::text IS NULL OR t.status = $2)
       AND ($3::uuid IS NULL OR t.customer_id = $3)
@@ -59,9 +67,17 @@ export class TaskRepository {
                t.estimated_hours AS "estimatedHours", t.actual_hours AS "actualHours",
                t.percent_complete AS "percentComplete",
                t.color,
+               il.invoice_id AS "invoiceId", il.invoice_number AS "invoiceNumber",
                t.created_at AS "createdAt", t.updated_at AS "updatedAt"
         FROM tasks t
         LEFT JOIN customers c ON c.id = t.customer_id
+        LEFT JOIN LATERAL (
+          SELECT inv.id AS invoice_id, inv.invoice_number
+          FROM invoice_line_items li
+          JOIN invoices inv ON inv.id = li.invoice_id
+          WHERE li.source_type = 'task' AND li.source_id = t.id AND inv.status <> 'cancelled'
+          LIMIT 1
+        ) il ON TRUE
         WHERE t.id = $1
       `,
       [id],
@@ -112,6 +128,11 @@ export class TaskRepository {
     const nextStartDate = dto.startDate ?? existing.start_date;
     const nextEndDate = dto.endDate ?? existing.end_date;
     this.validateDateRange(nextStartDate, nextEndDate);
+
+    // A task on an active invoice can't be cancelled — unrelate it first.
+    if (dto.status === 'cancelled') {
+      await this.assertNotInvoiced(id, 'cancelled');
+    }
 
     const setClauses: string[] = [];
     const values: Array<string | number | null> = [];
@@ -180,6 +201,7 @@ export class TaskRepository {
   }
 
   async remove(id: string) {
+    await this.assertNotInvoiced(id, 'deleted');
     const res = await pool.query('DELETE FROM tasks WHERE id = $1 RETURNING id', [id]);
 
     if (!res.rows[0]) {
@@ -187,6 +209,25 @@ export class TaskRepository {
     }
 
     return { deleted: true };
+  }
+
+  // Rejects the action if the task is on a non-cancelled invoice.
+  private async assertNotInvoiced(id: string, action: 'cancelled' | 'deleted') {
+    const res = await pool.query(
+      `
+        SELECT inv.invoice_number AS "invoiceNumber"
+        FROM invoice_line_items li
+        JOIN invoices inv ON inv.id = li.invoice_id
+        WHERE li.source_type = 'task' AND li.source_id = $1 AND inv.status <> 'cancelled'
+        LIMIT 1
+      `,
+      [id],
+    );
+    if (res.rows[0]) {
+      throw new ConflictException(
+        `This task is on invoice ${res.rows[0].invoiceNumber}. Unrelate it from the invoice before it can be ${action}.`,
+      );
+    }
   }
 
   private validateDateRange(startDate: string, endDate: string) {

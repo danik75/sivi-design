@@ -59,6 +59,7 @@ type InvoiceLineItemRow = {
   amount: string;
   sourceType: string | null;
   sourceId: string | null;
+  sourceDate: string | null;
   createdAt: string;
 };
 
@@ -80,20 +81,6 @@ type ContractRow = {
   currency: string;
 };
 
-type TaskPrefillRow = {
-  id: string;
-  name: string;
-  estimatedHours: string;
-};
-
-type ExpensePrefillRow = {
-  id: string;
-  vendor: string;
-  amount: string;
-  currency: string;
-  date: string;
-};
-
 type PreparedLineItem = {
   description: string;
   quantity: number;
@@ -101,6 +88,7 @@ type PreparedLineItem = {
   amount: number;
   sourceType: string | null;
   sourceId: string | null;
+  sourceDate: string | null;
 };
 
 @Injectable()
@@ -225,6 +213,7 @@ export class InvoiceRepository {
           amount,
           source_type AS "sourceType",
           source_id AS "sourceId",
+          source_date AS "sourceDate",
           created_at AS "createdAt"
         FROM invoice_line_items
         WHERE invoice_id = $1
@@ -417,6 +406,19 @@ export class InvoiceRepository {
       [targetStatus, id],
     );
 
+    // Cancelling an invoice unrelates it from all its tasks and expenses so they
+    // become available to link again.
+    if (targetStatus === 'cancelled') {
+      await pool.query(
+        `
+          UPDATE invoice_line_items
+          SET source_type = NULL, source_id = NULL, source_date = NULL
+          WHERE invoice_id = $1 AND source_type IN ('task', 'expense')
+        `,
+        [id],
+      );
+    }
+
     return this.findOne(id);
   }
 
@@ -489,49 +491,9 @@ export class InvoiceRepository {
         break;
     }
 
-    const tasksRes = await pool.query(
-      `
-        SELECT id, name, estimated_hours AS "estimatedHours"
-        FROM tasks
-        WHERE customer_id = $1
-          AND status != 'cancelled'
-          AND estimated_hours > 0
-        ORDER BY name
-      `,
-      [contract.customerId],
-    );
-
-    for (const task of tasksRes.rows as TaskPrefillRow[]) {
-      suggestedLineItems.push({
-        description: task.name,
-        quantity: contract.type === 'time_and_materials' ? this.toNumber(task.estimatedHours) : 1,
-        unitPrice: contract.type === 'time_and_materials' ? this.toNumber(contract.hourlyRate) : 0,
-        sourceType: 'task',
-        sourceId: task.id,
-      });
-    }
-
-    const expensesRes = await pool.query(
-      `
-        SELECT id, vendor, amount, currency, date
-        FROM expenses
-        WHERE customer_id = $1
-          AND status = 'active'
-          AND currency = $2
-        ORDER BY date DESC, created_at DESC
-      `,
-      [contract.customerId, contract.currency],
-    );
-
-    for (const expense of expensesRes.rows as ExpensePrefillRow[]) {
-      suggestedLineItems.push({
-        description: `${expense.vendor} — ${expense.date}`,
-        quantity: 1,
-        unitPrice: this.toNumber(expense.amount),
-        sourceType: 'expense',
-        sourceId: expense.id,
-      });
-    }
+    // Tasks and expenses are no longer auto-dumped here — they are added
+    // explicitly via the task/expense pickers (see getAvailableTasks /
+    // getAvailableExpenses). Prefill only seeds the contract fee.
 
     return {
       currency: contract.currency,
@@ -545,6 +507,66 @@ export class InvoiceRepository {
         sourceId: item.sourceId,
       })),
     };
+  }
+
+  // Done tasks for a customer that are not on any other (non-cancelled) invoice.
+  async getAvailableTasks(customerId: string, excludeInvoiceId?: string) {
+    this.assertValidUuid(customerId, 'customerId');
+    if (excludeInvoiceId) this.assertValidUuid(excludeInvoiceId, 'excludeInvoiceId');
+
+    const res = await pool.query(
+      `
+        SELECT t.id, t.name, t.end_date AS "endDate",
+               t.estimated_hours AS "estimatedHours",
+               t.actual_hours AS "actualHours"
+        FROM tasks t
+        WHERE t.customer_id = $1
+          AND t.status = 'done'
+          AND NOT EXISTS (
+            SELECT 1 FROM invoice_line_items li
+            JOIN invoices inv ON inv.id = li.invoice_id
+            WHERE li.source_type = 'task' AND li.source_id = t.id
+              AND inv.status <> 'cancelled'
+              AND ($2::uuid IS NULL OR li.invoice_id <> $2)
+          )
+        ORDER BY t.end_date DESC, t.name
+      `,
+      [customerId, excludeInvoiceId ?? null],
+    );
+    return res.rows;
+  }
+
+  // Active expenses for a customer that are not on any other (non-cancelled) invoice.
+  async getAvailableExpenses(customerId: string, excludeInvoiceId?: string, search?: string) {
+    this.assertValidUuid(customerId, 'customerId');
+    if (excludeInvoiceId) this.assertValidUuid(excludeInvoiceId, 'excludeInvoiceId');
+
+    const values: Array<string | null> = [customerId, excludeInvoiceId ?? null];
+    let searchClause = '';
+    if (search && search.trim()) {
+      values.push(`%${search.trim()}%`);
+      searchClause = `AND (e.vendor ILIKE $${values.length} OR e.description ILIKE $${values.length})`;
+    }
+
+    const res = await pool.query(
+      `
+        SELECT e.id, e.vendor, e.amount, e.currency, e.date, e.description
+        FROM expenses e
+        WHERE e.customer_id = $1
+          AND e.status = 'active'
+          ${searchClause}
+          AND NOT EXISTS (
+            SELECT 1 FROM invoice_line_items li
+            JOIN invoices inv ON inv.id = li.invoice_id
+            WHERE li.source_type = 'expense' AND li.source_id = e.id
+              AND inv.status <> 'cancelled'
+              AND ($2::uuid IS NULL OR li.invoice_id <> $2)
+          )
+        ORDER BY e.date DESC, e.created_at DESC
+      `,
+      values,
+    );
+    return res.rows;
   }
 
   private mapInvoiceRow(row: InvoiceListRow) {
@@ -606,6 +628,7 @@ export class InvoiceRepository {
         amount: this.roundMoney(quantity * unitPrice),
         sourceType: item.sourceType ?? null,
         sourceId: item.sourceId ?? null,
+        sourceDate: item.sourceDate ?? null,
       };
     });
   }
@@ -634,7 +657,7 @@ export class InvoiceRepository {
 
     const values: Array<string | number | null> = [];
     const rowsSql = lineItems.map((item, index) => {
-      const offset = index * 8;
+      const offset = index * 9;
       values.push(
         invoiceId,
         index,
@@ -644,9 +667,10 @@ export class InvoiceRepository {
         item.amount,
         item.sourceType,
         item.sourceId,
+        item.sourceDate,
       );
 
-      return `($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5}, $${offset + 6}, $${offset + 7}, $${offset + 8})`;
+      return `($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5}, $${offset + 6}, $${offset + 7}, $${offset + 8}, $${offset + 9})`;
     });
 
     await client.query(
@@ -659,7 +683,8 @@ export class InvoiceRepository {
           unit_price,
           amount,
           source_type,
-          source_id
+          source_id,
+          source_date
         )
         VALUES ${rowsSql.join(', ')}
       `,

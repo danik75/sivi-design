@@ -25,6 +25,23 @@ export class InvoicesController {
     return this.service.prefill(contractId);
   }
 
+  @Get('available-tasks')
+  availableTasks(
+    @Query('customerId') customerId: string,
+    @Query('excludeInvoiceId') excludeInvoiceId?: string,
+  ) {
+    return this.service.availableTasks(customerId, excludeInvoiceId);
+  }
+
+  @Get('available-expenses')
+  availableExpenses(
+    @Query('customerId') customerId: string,
+    @Query('excludeInvoiceId') excludeInvoiceId?: string,
+    @Query('search') search?: string,
+  ) {
+    return this.service.availableExpenses(customerId, excludeInvoiceId, search);
+  }
+
   @Get()
   findAll(
     @Query('customerId') customerId?: string,
