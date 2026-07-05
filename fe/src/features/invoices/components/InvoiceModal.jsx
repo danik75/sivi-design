@@ -66,7 +66,6 @@ export default function InvoiceModal({ isOpen, onClose, invoice, onSuccess, onVi
   const [picker, setPicker] = useState(null); // 'tasks' | 'expenses' | null
   const skipAutoPrefillRef = useRef(false);
   const lineItemsInitializedRef = useRef(false);
-  const saveActionRef = useRef('close'); // 'close' | 'view' — which save button was used
 
   const createMutation = useCreateInvoice();
   const updateMutation = useUpdateInvoice();
@@ -311,8 +310,10 @@ export default function InvoiceModal({ isOpen, onClose, invoice, onSuccess, onVi
     setStep(2);
   };
 
-  const handleSubmit = (event) => {
-    event.preventDefault();
+  // Explicit save — only ever called from the Save & Close / Save & View
+  // buttons' onClick. No form submission is involved, so nothing implicit
+  // (Enter key, focus, button-type quirks) can ever save/close the wizard.
+  const submitInvoice = (action) => {
     setSubmitError('');
 
     const step1Errors = validateStep1(formState);
@@ -351,7 +352,7 @@ export default function InvoiceModal({ isOpen, onClose, invoice, onSuccess, onVi
       })),
     };
 
-    const wantsView = saveActionRef.current === 'view';
+    const wantsView = action === 'view';
 
     if (invoice) {
       updateMutation.mutate(
@@ -573,24 +574,14 @@ export default function InvoiceModal({ isOpen, onClose, invoice, onSuccess, onVi
           {INVOICE_TEXT.modal.back}
         </Button>
         <Button
-          type="submit"
-          form={FORM_ID}
+          type="button"
           variant="ghost"
           disabled={isSaving}
-          onClick={() => {
-            saveActionRef.current = 'close';
-          }}
+          onClick={() => submitInvoice('close')}
         >
           {INVOICE_TEXT.modal.saveAndClose}
         </Button>
-        <Button
-          type="submit"
-          form={FORM_ID}
-          disabled={isSaving}
-          onClick={() => {
-            saveActionRef.current = 'view';
-          }}
-        >
+        <Button type="button" disabled={isSaving} onClick={() => submitInvoice('view')}>
           {INVOICE_TEXT.modal.saveAndView}
         </Button>
       </>
@@ -627,7 +618,7 @@ export default function InvoiceModal({ isOpen, onClose, invoice, onSuccess, onVi
             <XIcon />
           </button>
         </div>
-        <Form id={FORM_ID} onSubmit={handleSubmit} className="space-y-0">
+        <Form id={FORM_ID} onSubmit={(e) => e.preventDefault()} className="space-y-0">
           <div className="space-y-5 px-6 py-5">{renderStep()}</div>
           {submitError ? (
             <div className="px-6">
