@@ -66,7 +66,6 @@ export default function InvoiceModal({ isOpen, onClose, invoice, onSuccess, onVi
   const [picker, setPicker] = useState(null); // 'tasks' | 'expenses' | null
   const skipAutoPrefillRef = useRef(false);
   const lineItemsInitializedRef = useRef(false);
-  const saveActionRef = useRef('close'); // 'close' | 'view' — which save button was used
 
   const createMutation = useCreateInvoice();
   const updateMutation = useUpdateInvoice();
@@ -93,14 +92,6 @@ export default function InvoiceModal({ isOpen, onClose, invoice, onSuccess, onVi
     updateMutation.isPending;
   const customers = customersData?.data ?? [];
   const contracts = contractsData?.data ?? contractsData ?? [];
-  const customerMap = useMemo(
-    () =>
-      customers.reduce((acc, customer) => {
-        acc[customer.id] = customer.name;
-        return acc;
-      }, {}),
-    [customers]
-  );
   const contractMap = useMemo(
     () =>
       contracts.reduce((acc, contract) => {
@@ -223,12 +214,7 @@ export default function InvoiceModal({ isOpen, onClose, invoice, onSuccess, onVi
   const discountedSubtotal = subtotal - discountAmount;
   const taxAmount = discountedSubtotal * ((parseFloat(formState.taxRate) || 0) / 100);
   const total = discountedSubtotal + taxAmount;
-  const stepLabel =
-    step === 1
-      ? INVOICE_TEXT.modal.step1Title
-      : step === 2
-        ? INVOICE_TEXT.modal.step2Title
-        : INVOICE_TEXT.modal.step3Title;
+  const stepLabel = step === 1 ? INVOICE_TEXT.modal.step1Title : INVOICE_TEXT.modal.step2Title;
 
   const handleFormChange = (field, value) => {
     setFormState((current) => {
@@ -318,25 +304,16 @@ export default function InvoiceModal({ isOpen, onClose, invoice, onSuccess, onVi
   };
 
   const handleNext = () => {
-    if (step === 1) {
-      const nextErrors = validateStep1(formState);
-      setErrors(nextErrors);
-      if (Object.keys(nextErrors).length) return;
-      setStep(2);
-      return;
-    }
-
-    if (!hasValidLineItems(lineItems)) {
-      setErrors({ lineItems: INVOICE_TEXT.modal.lineItemsEmpty });
-      return;
-    }
-
-    setErrors({});
-    setStep(3);
+    const nextErrors = validateStep1(formState);
+    setErrors(nextErrors);
+    if (Object.keys(nextErrors).length) return;
+    setStep(2);
   };
 
-  const handleSubmit = (event) => {
-    event.preventDefault();
+  // Explicit save — only ever called from the Save & Close / Save & View
+  // buttons' onClick. No form submission is involved, so nothing implicit
+  // (Enter key, focus, button-type quirks) can ever save/close the wizard.
+  const submitInvoice = (action) => {
     setSubmitError('');
 
     const step1Errors = validateStep1(formState);
@@ -375,7 +352,7 @@ export default function InvoiceModal({ isOpen, onClose, invoice, onSuccess, onVi
       })),
     };
 
-    const wantsView = saveActionRef.current === 'view';
+    const wantsView = action === 'view';
 
     if (invoice) {
       updateMutation.mutate(
@@ -518,77 +495,31 @@ export default function InvoiceModal({ isOpen, onClose, invoice, onSuccess, onVi
       );
     }
 
-    if (step === 2) {
-      return (
-        <div className="space-y-4">
-          <div className="flex flex-wrap items-center gap-3">
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => setPicker('tasks')}
-              disabled={!formState.customerId}
-            >
-              Add from tasks
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => setPicker('expenses')}
-              disabled={!formState.customerId}
-            >
-              Add from expenses
-            </Button>
-          </div>
-          <InvoiceLineItemsEditor lineItems={lineItems} onChange={handleLineItemsChange} />
-          {errors.lineItems ? (
-            <p className="text-xs font-medium text-rose-600">{errors.lineItems}</p>
-          ) : null}
-        </div>
-      );
-    }
-
+    // Step 2 (final): line items + totals; saved from here.
     return (
-      <div className="space-y-5">
-        <div className="grid gap-4 rounded-2xl border border-slate-100 bg-slate-50 p-4 md:grid-cols-2 xl:grid-cols-3">
-          <FormField label={INVOICE_TEXT.modal.customerLabel}>
-            <p className="text-sm text-slate-700">
-              {customerMap[formState.customerId] ||
-                invoice?.customerName ||
-                INVOICE_TEXT.placeholder}
-            </p>
-          </FormField>
-          <FormField label={INVOICE_TEXT.modal.contractLabel}>
-            <p className="text-sm text-slate-700">
-              {contractMap[formState.contractId]?.name ||
-                contractMap[formState.contractId]?.typeLabel ||
-                invoice?.contractTypeLabel ||
-                INVOICE_TEXT.placeholder}
-            </p>
-          </FormField>
-          <FormField label={INVOICE_TEXT.modal.currencyLabel}>
-            <p className="text-sm text-slate-700">
-              {formState.currency || INVOICE_TEXT.placeholder}
-            </p>
-          </FormField>
-          <FormField label={INVOICE_TEXT.modal.issueDateLabel}>
-            <p className="text-sm text-slate-700">
-              {formState.issueDate || INVOICE_TEXT.placeholder}
-            </p>
-          </FormField>
-          <FormField label={INVOICE_TEXT.modal.dueDateLabel}>
-            <p className="text-sm text-slate-700">
-              {formState.dueDate || INVOICE_TEXT.placeholder}
-            </p>
-          </FormField>
-          <FormField label={INVOICE_TEXT.modal.taxRateLabel}>
-            <p className="text-sm text-slate-700">{`${parseFloat(formState.taxRate || 0)}%`}</p>
-          </FormField>
-          <FormField label={INVOICE_TEXT.modal.notesLabel} className="md:col-span-2 xl:col-span-3">
-            <p className="text-sm text-slate-700">{formState.notes || INVOICE_TEXT.placeholder}</p>
-          </FormField>
+      <div className="space-y-4">
+        <div className="flex flex-wrap items-center gap-3">
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() => setPicker('tasks')}
+            disabled={!formState.customerId}
+          >
+            Add from tasks
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() => setPicker('expenses')}
+            disabled={!formState.customerId}
+          >
+            Add from expenses
+          </Button>
         </div>
-
-        <InvoiceLineItemsEditor lineItems={lineItems} onChange={handleLineItemsChange} readOnly />
+        <InvoiceLineItemsEditor lineItems={lineItems} onChange={handleLineItemsChange} />
+        {errors.lineItems ? (
+          <p className="text-xs font-medium text-rose-600">{errors.lineItems}</p>
+        ) : null}
 
         <div className="flex justify-end">
           <div className="w-full max-w-sm rounded-2xl border border-slate-100 bg-slate-50 p-4 shadow-sm">
@@ -636,43 +567,21 @@ export default function InvoiceModal({ isOpen, onClose, invoice, onSuccess, onVi
       );
     }
 
-    if (step === 2) {
-      return (
-        <>
-          <Button type="button" variant="ghost" onClick={() => setStep(1)}>
-            {INVOICE_TEXT.modal.back}
-          </Button>
-          <Button type="button" onClick={handleNext}>
-            {INVOICE_TEXT.modal.next}
-          </Button>
-        </>
-      );
-    }
-
+    // Step 2 is the final step — save from here.
     return (
       <>
-        <Button type="button" variant="ghost" onClick={() => setStep(2)}>
+        <Button type="button" variant="ghost" onClick={() => setStep(1)}>
           {INVOICE_TEXT.modal.back}
         </Button>
         <Button
-          type="submit"
-          form={FORM_ID}
+          type="button"
           variant="ghost"
           disabled={isSaving}
-          onClick={() => {
-            saveActionRef.current = 'close';
-          }}
+          onClick={() => submitInvoice('close')}
         >
           {INVOICE_TEXT.modal.saveAndClose}
         </Button>
-        <Button
-          type="submit"
-          form={FORM_ID}
-          disabled={isSaving}
-          onClick={() => {
-            saveActionRef.current = 'view';
-          }}
-        >
+        <Button type="button" disabled={isSaving} onClick={() => submitInvoice('view')}>
           {INVOICE_TEXT.modal.saveAndView}
         </Button>
       </>
@@ -685,11 +594,9 @@ export default function InvoiceModal({ isOpen, onClose, invoice, onSuccess, onVi
     <>
     <div
       className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-900/50 p-4 pt-12 backdrop-blur-sm"
-      onClick={onClose}
     >
       <div
         className="w-full max-w-3xl rounded-2xl bg-white shadow-2xl"
-        onClick={(event) => event.stopPropagation()}
         role="dialog"
         aria-modal="true"
       >
@@ -711,7 +618,7 @@ export default function InvoiceModal({ isOpen, onClose, invoice, onSuccess, onVi
             <XIcon />
           </button>
         </div>
-        <Form id={FORM_ID} onSubmit={handleSubmit} className="space-y-0">
+        <Form id={FORM_ID} onSubmit={(e) => e.preventDefault()} className="space-y-0">
           <div className="space-y-5 px-6 py-5">{renderStep()}</div>
           {submitError ? (
             <div className="px-6">
