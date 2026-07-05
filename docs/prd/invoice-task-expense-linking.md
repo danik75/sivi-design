@@ -55,6 +55,10 @@ is introduced.
    invoice details.
 6. **Cancelling an invoice unrelates it from all its tasks and expenses**, so
    those items become available to pick again.
+7. A task/expense that is on an invoice **shows that invoice's number**
+   (read-only — it cannot be edited from the task/expense).
+8. A task/expense linked to an invoice **cannot be cancelled or deleted**; the
+   user must open the invoice and unrelate it first.
 
 ## Non-goals
 
@@ -106,6 +110,43 @@ source_date = NULL WHERE invoice_id = $1 AND source_type IN ('task','expense')`.
 Defence-in-depth: the availability lookups also add `AND inv.status <>
 'cancelled'` (join `invoices`) so a cancelled invoice can never block re-picking
 even if a link lingers.
+
+### Reverse link (invoice number on task/expense)
+
+Tasks and expenses expose the invoice they belong to so the UI can show it
+**read-only**. Derived by a correlated lookup (a task/expense is on at most one
+non-cancelled invoice, since the picker hides already-linked items):
+
+```sql
+-- added to the task / expense read queries
+(SELECT inv.invoice_number
+   FROM invoice_line_items li
+   JOIN invoices inv ON inv.id = li.invoice_id
+  WHERE li.source_type = 'task'      -- or 'expense'
+    AND li.source_id = t.id          -- or e.id
+    AND inv.status <> 'cancelled'
+  LIMIT 1) AS "invoiceNumber",
+```
+
+Also return the `invoiceId` (for a link/navigation from the task/expense to the
+invoice). These fields are **never** writable from the task/expense edit forms.
+
+### Cancel / delete guard
+
+A task or expense that is linked to a non-cancelled invoice **cannot be
+cancelled or deleted**. The relevant BE mutations (task delete, task → status
+`cancelled`; expense delete, expense → status `cancelled`) first check for an
+active link and, if found, reject with `409 Conflict`:
+
+> "This <task|expense> is on invoice <number>. Unrelate it from the invoice
+> before cancelling/deleting."
+
+Guard query (reused): `EXISTS (SELECT 1 FROM invoice_line_items li JOIN invoices
+inv ON inv.id = li.invoice_id WHERE li.source_type = 'task' AND li.source_id =
+$1 AND inv.status <> 'cancelled')`.
+
+The only way to free it is to open that invoice and remove the line (or cancel
+the invoice, per the Cancellation lifecycle).
 
 ## API
 
@@ -197,6 +238,18 @@ Rules:
 - Changing the customer clears source-linked rows (or warns), since the pickers
   are customer-scoped.
 
+### Task & expense screens
+
+- The task edit modal / expense modal show a **read-only "Invoice"** field with
+  the linked invoice number (a link to the invoice) when `invoiceNumber` is set;
+  hidden/blank otherwise. It is display-only — no input.
+- Grids may show an invoice-number chip on linked rows.
+- When a task/expense is linked, its **Cancel** and **Delete** actions are
+  disabled (with a tooltip: "On invoice <number> — unrelate it first"). If the
+  guard is somehow reached, the `409` message is surfaced as a toast/inline
+  error. The user unrelates by opening the invoice and removing the line (or
+  cancelling the invoice).
+
 ## DB Migration
 
 1. `db/schema.sql`: add `source_date DATE` to `invoice_line_items`.
@@ -231,6 +284,14 @@ No backfill required (existing rows keep `NULL`).
 - A cancelled invoice never blocks a task/expense from being picked, even if a
   stale link remained.
 
+### Reverse link & guard
+- A task/expense on a non-cancelled invoice shows that invoice's number
+  (read-only) on its edit screen; it cannot be changed there.
+- Attempting to cancel or delete a linked task/expense is blocked with a `409`
+  naming the invoice; the FE disables those actions for linked items.
+- After the invoice unrelates the item (line removed or invoice cancelled), the
+  task/expense can be cancelled/deleted again.
+
 ### Dates in details
 - Invoice details (screen + printable) show the task end date / expense date on
   each sourced line.
@@ -247,6 +308,12 @@ No backfill required (existing rows keep `NULL`).
 - **BE-5**: On invoice → `cancelled`, unlink its task/expense line items
   (`source_type`/`source_id`/`source_date` → `NULL`); add `inv.status <>
   'cancelled'` guard to both availability lookups.
+- **BE-6**: Return `invoiceNumber`/`invoiceId` on task and expense reads
+  (correlated lookup, non-cancelled invoices only).
+- **BE-7**: Guard task/expense **delete** and **→ cancelled** transitions with a
+  `409` when linked to a non-cancelled invoice.
+- **FE-5**: Read-only "Invoice" field + disabled Cancel/Delete (with tooltip) on
+  task and expense screens when linked; surface the `409` message.
 - **FE-1**: `TaskPickerDialog` (checkbox multiselect + search, checked/disabled
   for already-linked).
 - **FE-2**: `ExpensePickerDialog` (searchable checkbox multiselect).
