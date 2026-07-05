@@ -81,12 +81,9 @@ export default function InvoiceModal({ isOpen, onClose, invoice, onSuccess }) {
     customerId: formState.customerId || undefined,
     status: invoice ? undefined : 'active', // edit mode: show all contracts so the existing one appears
   });
-  const {
-    data: prefillData,
-    error: prefillError,
-    isFetching: isPrefillLoading,
-    refetch: refetchPrefill,
-  } = useInvoicePrefill(formState.contractId);
+  const { data: prefillData, refetch: refetchPrefill } = useInvoicePrefill(
+    formState.contractId,
+  );
 
   const isSaving =
     createMutation.isLoading ||
@@ -523,17 +520,6 @@ export default function InvoiceModal({ isOpen, onClose, invoice, onSuccess }) {
             <Button
               type="button"
               variant="ghost"
-              onClick={() => refetchPrefill()}
-              disabled={!formState.contractId || isPrefillLoading}
-            >
-              {INVOICE_TEXT.modal.prefillButton}
-            </Button>
-            {isPrefillLoading ? (
-              <p className="text-sm text-slate-500">{INVOICE_TEXT.modal.prefillLoading}</p>
-            ) : null}
-            <Button
-              type="button"
-              variant="ghost"
               onClick={() => setPicker('tasks')}
               disabled={!formState.customerId}
             >
@@ -548,11 +534,6 @@ export default function InvoiceModal({ isOpen, onClose, invoice, onSuccess }) {
               Add from expenses
             </Button>
           </div>
-          {prefillError ? (
-            <p className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-600">
-              {getApiErrorMessage(prefillError, INVOICE_TEXT.modal.prefillError)}
-            </p>
-          ) : null}
           <InvoiceLineItemsEditor lineItems={lineItems} onChange={handleLineItemsChange} />
           {errors.lineItems ? (
             <p className="text-xs font-medium text-rose-600">{errors.lineItems}</p>
