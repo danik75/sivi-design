@@ -45,11 +45,18 @@ export default function InvoicesFeature() {
   return (
     <>
       <InvoiceGrid
-        onCreate={() => setShowCreate(true)}
-        onEdit={(invoice) => setEditInvoice(invoice)}
+        onCreate={() => {
+          setViewInvoiceId(null);
+          setShowCreate(true);
+        }}
+        onEdit={(invoice) => {
+          setViewInvoiceId(null);
+          setEditInvoice(invoice);
+        }}
         onDelete={(invoice) => setDeleteInvoice(invoice)}
         onStatusTransition={handleStatusTransition}
-        selectedInvoiceId={viewInvoiceId}
+        // Never show the read-only overview while the create/edit modal is open.
+        selectedInvoiceId={showCreate || editInvoice ? null : viewInvoiceId}
         onSelectInvoice={setViewInvoiceId}
       />
       <InvoiceModal
