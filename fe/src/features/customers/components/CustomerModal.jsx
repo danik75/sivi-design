@@ -35,7 +35,9 @@ export default function CustomerModal({ isOpen, onClose, customer, onSuccess }) 
   const activeMutation = customer ? updateMutation : createMutation;
 
   const [name, setName] = useState('');
+  const [companyName, setCompanyName] = useState('');
   const [companyNumber, setCompanyNumber] = useState('');
+  const [address, setAddress] = useState('');
   const [contacts, setContacts] = useState([createEmptyContact(true)]);
   const [nameError, setNameError] = useState('');
   const [contactsError, setContactsError] = useState('');
@@ -45,10 +47,14 @@ export default function CustomerModal({ isOpen, onClose, customer, onSuccess }) 
   useEffect(() => {
     if (!isOpen) return;
     setName(customer?.name ?? '');
+    setCompanyName(customer?.companyName ?? '');
     setCompanyNumber(customer?.companyNumber ?? '');
+    setAddress(customer?.address ?? '');
     setContacts(
       customer?.contacts?.length
         ? customer.contacts.map((c, i) => ({
+            firstName: c.firstName ?? '',
+            lastName: c.lastName ?? '',
             email: c.email ?? '',
             phone: c.phone ?? '',
             address: c.address ?? '',
@@ -122,7 +128,13 @@ export default function CustomerModal({ isOpen, onClose, customer, onSuccess }) 
     }
     setNameError('');
     setSubmitError('');
-    const payload = normalizeCustomerPayload({ name: trimmedName, companyNumber, contacts });
+    const payload = normalizeCustomerPayload({
+      name: trimmedName,
+      companyName,
+      companyNumber,
+      address,
+      contacts,
+    });
     // A customer must have at least one contact with details.
     if (!payload.contacts.length) {
       setContactsError(CUSTOMER_TEXT.modal.contactsRequired);
@@ -167,11 +179,28 @@ export default function CustomerModal({ isOpen, onClose, customer, onSuccess }) 
           </FormField>
           {nameError && <p className="-mt-3 text-xs font-medium text-rose-600">{nameError}</p>}
 
-          <FormField label={CUSTOMER_TEXT.modal.companyNumberLabel}>
+          <div className="grid grid-cols-2 gap-3">
+            <FormField label={CUSTOMER_TEXT.modal.companyNameLabel}>
+              <Input
+                value={companyName}
+                onChange={(e) => setCompanyName(e.target.value)}
+                placeholder={CUSTOMER_TEXT.modal.companyNamePlaceholder}
+              />
+            </FormField>
+            <FormField label={CUSTOMER_TEXT.modal.companyNumberLabel}>
+              <Input
+                value={companyNumber}
+                onChange={(e) => setCompanyNumber(e.target.value)}
+                placeholder={CUSTOMER_TEXT.modal.companyNumberPlaceholder}
+              />
+            </FormField>
+          </div>
+
+          <FormField label={CUSTOMER_TEXT.modal.addressLabel}>
             <Input
-              value={companyNumber}
-              onChange={(e) => setCompanyNumber(e.target.value)}
-              placeholder={CUSTOMER_TEXT.modal.companyNumberPlaceholder}
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              placeholder={CUSTOMER_TEXT.modal.addressPlaceholder}
             />
           </FormField>
 
@@ -192,6 +221,7 @@ export default function CustomerModal({ isOpen, onClose, customer, onSuccess }) 
                   <thead className="bg-slate-50 text-slate-400 uppercase tracking-wide">
                     <tr>
                       <th className="w-8 px-3 py-2 text-center">Primary</th>
+                      <th className="px-3 py-2 text-left">Name</th>
                       <th className="px-3 py-2 text-left">Email</th>
                       <th className="px-3 py-2 text-left">Phone</th>
                       <th className="w-16 px-2 py-2" />
@@ -210,6 +240,11 @@ export default function CustomerModal({ isOpen, onClose, customer, onSuccess }) 
                           >
                             <StarIcon filled={c.isPrimary} />
                           </button>
+                        </td>
+                        <td className="max-w-[140px] truncate px-3 py-2 text-slate-700">
+                          {[c.firstName, c.lastName].filter(Boolean).join(' ') || (
+                            <span className="text-slate-300">—</span>
+                          )}
                         </td>
                         <td className="max-w-[140px] truncate px-3 py-2 text-slate-700">
                           {c.email || <span className="text-slate-300">—</span>}

@@ -5,7 +5,7 @@ import FormField from '@/components/chadcn/FormField';
 import Input from '@/components/chadcn/Input';
 import XIcon from '@/components/chadcn/icons/XIcon';
 
-const EMPTY = { email: '', phone: '', address: '' };
+const EMPTY = { firstName: '', lastName: '', email: '', phone: '', address: '' };
 
 export default function ContactModal({ isOpen, onClose, contact, onSave }) {
   const [fields, setFields] = useState(EMPTY);
@@ -13,7 +13,13 @@ export default function ContactModal({ isOpen, onClose, contact, onSave }) {
 
   useEffect(() => {
     if (!isOpen) return;
-    setFields({ email: contact?.email ?? '', phone: contact?.phone ?? '', address: contact?.address ?? '' });
+    setFields({
+      firstName: contact?.firstName ?? '',
+      lastName: contact?.lastName ?? '',
+      email: contact?.email ?? '',
+      phone: contact?.phone ?? '',
+      address: contact?.address ?? '',
+    });
     setError('');
   }, [isOpen, contact]);
 
@@ -33,7 +39,13 @@ export default function ContactModal({ isOpen, onClose, contact, onSave }) {
       setError('Email or phone is required.');
       return;
     }
-    onSave({ email: fields.email.trim(), phone: fields.phone.trim(), address: fields.address.trim() });
+    onSave({
+      firstName: fields.firstName.trim(),
+      lastName: fields.lastName.trim(),
+      email: fields.email.trim(),
+      phone: fields.phone.trim(),
+      address: fields.address.trim(),
+    });
   }
 
   return (
@@ -63,13 +75,25 @@ export default function ContactModal({ isOpen, onClose, contact, onSave }) {
         </div>
 
         <div className="space-y-4 px-5 py-5">
+          <div className="grid grid-cols-2 gap-3">
+            <FormField label="First name">
+              <Input
+                value={fields.firstName}
+                onChange={set('firstName')}
+                placeholder="First name"
+                autoFocus
+              />
+            </FormField>
+            <FormField label="Last name">
+              <Input value={fields.lastName} onChange={set('lastName')} placeholder="Last name" />
+            </FormField>
+          </div>
           <FormField label="Email">
             <Input
               type="email"
               value={fields.email}
               onChange={set('email')}
               placeholder="name@company.com"
-              autoFocus
             />
           </FormField>
           <FormField label="Phone">
@@ -104,6 +128,8 @@ ContactModal.propTypes = {
   isOpen: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
   contact: PropTypes.shape({
+    firstName: PropTypes.string,
+    lastName: PropTypes.string,
     email: PropTypes.string,
     phone: PropTypes.string,
     address: PropTypes.string,
