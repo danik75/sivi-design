@@ -390,7 +390,10 @@ export default function InvoiceModal({ isOpen, onClose, invoice, onSuccess, onVi
               onChange={(val) => handleFormChange('customerId', val)}
               options={[
                 { value: '', label: isCustomersLoading ? INVOICE_TEXT.filters.customerLoading : isCustomersError ? INVOICE_TEXT.filters.customerError : INVOICE_TEXT.modal.customerPlaceholder },
-                ...customers.map((c) => ({ value: c.id, label: c.name })),
+                ...customers.map((c) => ({
+                  value: c.id,
+                  label: c.companyName ? `${c.name} — ${c.companyName}` : c.name,
+                })),
               ]}
             />
             {errors.customerId ? (

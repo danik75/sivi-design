@@ -40,8 +40,12 @@ export const CUSTOMER_TEXT = {
     editTitle: 'Edit Customer',
     nameLabel: 'Name',
     namePlaceholder: 'Enter customer name',
+    companyNameLabel: 'Company Name',
+    companyNamePlaceholder: 'Optional',
     companyNumberLabel: 'Company Number',
     companyNumberPlaceholder: 'Optional (e.g. registration / tax ID)',
+    addressLabel: 'Address',
+    addressPlaceholder: 'Optional (street, city, country)',
     contactsLabel: 'Contacts',
     contactsHint: 'Keep the primary contact first in the list.',
     contactsRequired: 'At least one contact is required.',
@@ -74,6 +78,8 @@ export const CUSTOMER_TEXT = {
 
 export function createEmptyContact(isPrimary = false) {
   return {
+    firstName: '',
+    lastName: '',
     email: '',
     phone: '',
     address: '',
@@ -89,15 +95,20 @@ export function getPrimaryContact(customer) {
   );
 }
 
-export function normalizeCustomerPayload({ name, companyNumber, contacts }) {
+export function normalizeCustomerPayload({ name, companyName, companyNumber, address, contacts }) {
   const filtered = contacts
     .map((contact) => ({
+      firstName: contact.firstName?.trim() ?? '',
+      lastName: contact.lastName?.trim() ?? '',
       email: contact.email?.trim() ?? '',
       phone: contact.phone?.trim() ?? '',
       address: contact.address?.trim() ?? '',
       isPrimary: Boolean(contact.isPrimary),
     }))
-    .filter((contact) => contact.email || contact.phone || contact.address);
+    .filter(
+      (contact) =>
+        contact.firstName || contact.lastName || contact.email || contact.phone || contact.address
+    );
 
   // ensure exactly one primary — keep user's choice, fall back to first
   const hasPrimary = filtered.some((c) => c.isPrimary);
@@ -106,7 +117,13 @@ export function normalizeCustomerPayload({ name, companyNumber, contacts }) {
     isPrimary: hasPrimary ? c.isPrimary : i === 0,
   }));
 
-  return { name: name.trim(), companyNumber: companyNumber?.trim() || null, contacts: normalizedContacts };
+  return {
+    name: name.trim(),
+    companyName: companyName?.trim() || null,
+    companyNumber: companyNumber?.trim() || null,
+    address: address?.trim() || null,
+    contacts: normalizedContacts,
+  };
 }
 
 export function getApiErrorMessage(error, fallbackMessage) {
