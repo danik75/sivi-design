@@ -732,6 +732,7 @@ export class ReportsRepository {
         SELECT con.id AS "contractId", con.customer_id AS "customerId", c.name AS "customerName",
                con.type AS "contractType", con.status AS "contractStatus",
                con.hours_purchased AS "hoursPurchased",
+               con.hours_per_month AS "hoursPerMonth",
                COUNT(t.id) AS "taskCount",
                COALESCE(SUM(t.estimated_hours), 0) AS "estimatedHours",
                COALESCE(SUM(t.actual_hours), 0) AS "actualHours",
@@ -741,7 +742,7 @@ export class ReportsRepository {
         LEFT JOIN tasks t ON t.contract_id = con.id AND t.start_date <= $2 AND t.end_date >= $1
         WHERE ($3::uuid IS NULL OR con.customer_id = $3)
         GROUP BY con.id, c.name
-        HAVING COUNT(t.id) > 0 OR con.type = 'prepaid_hours'
+        HAVING COUNT(t.id) > 0 OR con.type IN ('prepaid_hours', 'monthly_retainer')
         ORDER BY c.name, con.type
       `,
       values,
@@ -770,6 +771,7 @@ export class ReportsRepository {
         hoursUsed: hoursUsed != null ? Number(hoursUsed.toFixed(2)) : null,
         hoursRemaining: hoursRemaining != null ? Number(hoursRemaining.toFixed(2)) : null,
         percentUsed,
+        hoursPerMonth: r.hoursPerMonth != null ? Number(r.hoursPerMonth) : null,
       };
     });
 

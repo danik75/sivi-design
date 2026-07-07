@@ -18,29 +18,66 @@ const STATUS_LABELS = {
   cancelled: 'Cancelled',
 };
 
+const NO_CONTRACT = '__none__';
+
 export default function TaskHistoryByContractReport({ customers = [] }) {
   const [filter, setFilter] = useState(DEFAULT_FILTER);
   const [customerId, setCustomerId] = useState('');
+  const [contractId, setContractId] = useState('');
 
-  const params =
-    filter.period === 'range'
+  const params = {
+    ...(filter.period === 'range'
       ? { period: 'range', from: filter.from, to: filter.to }
       : filter.period === 'yearly'
         ? { period: 'yearly', year: filter.year }
-        : filter;
-  if (customerId) params.customerId = customerId;
+        : { period: 'monthly', year: filter.year, month: filter.month }),
+    ...(customerId ? { customerId } : {}),
+  };
 
   const { data, isLoading, isError, refetch } = useTaskHistory(params);
   const groups = data?.customers ?? [];
+  const singleCustomer = Boolean(customerId);
 
-  // Flatten to rows: Customer → each contract's tasks, then the No-contract bucket.
+  // Contract options built from the fetched data (+ "All" and "No contract").
+  const contractOptions = [
+    { value: '', label: 'All contracts' },
+    { value: NO_CONTRACT, label: 'No contract' },
+    ...groups.flatMap((cust) =>
+      (cust.contracts ?? []).map((c) => ({
+        value: c.contractId,
+        label: singleCustomer ? c.contractLabel : `${cust.customerName} — ${c.contractLabel}`,
+      }))
+    ),
+  ];
+
+  // Flatten to rows: Customer → each contract's tasks, then the No-contract bucket,
+  // respecting the contract filter.
   const tableRows = [];
+  const showContract = contractId !== NO_CONTRACT; // hide contract tasks when "No contract" selected
+  const showUnassigned = contractId === '' || contractId === NO_CONTRACT;
   for (const cust of groups) {
-    for (const contract of cust.contracts ?? []) {
-      for (const t of contract.tasks ?? []) {
+    if (showContract) {
+      for (const contract of cust.contracts ?? []) {
+        if (contractId && contractId !== NO_CONTRACT && contract.contractId !== contractId) continue;
+        for (const t of contract.tasks ?? []) {
+          tableRows.push({
+            Customer: cust.customerName,
+            Contract: contract.contractLabel,
+            Task: t.name,
+            Start: fmtDate(t.startDate),
+            End: fmtDate(t.endDate),
+            Status: STATUS_LABELS[t.status] ?? t.status,
+            'Est. (h)': h(t.estimatedHours),
+            'Actual (h)': h(t.actualHours),
+          });
+        }
+      }
+    }
+    if (showUnassigned) {
+      for (const t of cust.unassignedTasks ?? []) {
         tableRows.push({
           Customer: cust.customerName,
-          Contract: contract.contractLabel,
+          Contract: '— No contract —',
           Task: t.name,
           Start: fmtDate(t.startDate),
           End: fmtDate(t.endDate),
@@ -49,18 +86,6 @@ export default function TaskHistoryByContractReport({ customers = [] }) {
           'Actual (h)': h(t.actualHours),
         });
       }
-    }
-    for (const t of cust.unassignedTasks ?? []) {
-      tableRows.push({
-        Customer: cust.customerName,
-        Contract: '— No contract —',
-        Task: t.name,
-        Start: fmtDate(t.startDate),
-        End: fmtDate(t.endDate),
-        Status: STATUS_LABELS[t.status] ?? t.status,
-        'Est. (h)': h(t.estimatedHours),
-        'Actual (h)': h(t.actualHours),
-      });
     }
   }
 
@@ -78,15 +103,26 @@ export default function TaskHistoryByContractReport({ customers = [] }) {
   const controls = (
     <div className="flex flex-wrap items-center gap-3">
       <PeriodFilter value={filter} onChange={setFilter} />
-      <div className="w-52">
+      <div className="w-44">
         <Dropdown
           value={customerId}
-          onChange={setCustomerId}
+          onChange={(v) => {
+            setCustomerId(v);
+            setContractId('');
+          }}
           placeholder="All customers"
           options={[
             { value: '', label: 'All customers' },
             ...customers.map((c) => ({ value: c.id, label: c.name })),
           ]}
+        />
+      </div>
+      <div className="w-44">
+        <Dropdown
+          value={contractId}
+          onChange={setContractId}
+          placeholder="All contracts"
+          options={contractOptions}
         />
       </div>
     </div>

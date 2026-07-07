@@ -20,13 +20,14 @@ export default function CustomerTaskHoursReport({ customers = [] }) {
   const [customerId, setCustomerId] = useState('');
   const [hourlyRate, setHourlyRate] = useState(String(DEFAULT_RATE));
 
-  const params =
-    filter.period === 'range'
+  const params = {
+    ...(filter.period === 'range'
       ? { period: 'range', from: filter.from, to: filter.to }
       : filter.period === 'yearly'
         ? { period: 'yearly', year: filter.year }
-        : filter;
-  if (customerId) params.customerId = customerId;
+        : { period: 'monthly', year: filter.year, month: filter.month }),
+    ...(customerId ? { customerId } : {}),
+  };
 
   const { data, isLoading, isError, refetch } = useCustomerTaskHours(params);
 

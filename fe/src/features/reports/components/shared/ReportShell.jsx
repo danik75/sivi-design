@@ -30,6 +30,13 @@ export default function ReportShell({
   emptyMessage,
 }) {
   const [tab, setTab] = useState('chart');
+  const [page, setPage] = useState(1);
+
+  const PAGE_SIZE = 15;
+  const total = tableRows?.length ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const pagedRows = tableRows?.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE) ?? [];
 
   function handleExport() {
     const date = new Date().toISOString().split('T')[0];
@@ -116,7 +123,7 @@ export default function ReportShell({
                       </tr>
                     </thead>
                     <tbody className="bg-white">
-                      {tableRows?.map((row, i) => (
+                      {pagedRows.map((row, i) => (
                         <tr key={i} className="border-b border-slate-50 bg-white hover:bg-slate-50/60">
                           {tableHeaders?.map((h) => (
                             <td key={h} className="py-2.5 pr-4 text-slate-700">
@@ -128,6 +135,31 @@ export default function ReportShell({
                     </tbody>
                   </table>
                 )}
+                {total > PAGE_SIZE ? (
+                  <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-3 text-sm text-slate-500">
+                    <span>
+                      Page {safePage} of {totalPages} · {total} rows
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setPage((p) => Math.max(1, p - 1))}
+                        disabled={safePage === 1}
+                        className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        Previous
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                        disabled={safePage >= totalPages}
+                        className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        Next
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
               </div>
             ))}
         </div>
