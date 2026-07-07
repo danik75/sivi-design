@@ -335,7 +335,7 @@ export default function TaskModal({ isOpen, onClose, task, onSuccess, onComplete
 
   return (
     <>
-    <Dialog isOpen={isOpen} onClose={onClose} title={dialogTitle} footer={footer}>
+    <Dialog isOpen={isOpen} onClose={onClose} title={dialogTitle} footer={footer} size="2xl">
       <div className="max-h-[70vh] overflow-y-auto pr-1">
         <Form id={FORM_ID} onSubmit={handleSubmit} className="space-y-4">
           {/* Linked invoice (read-only) */}
@@ -370,14 +370,27 @@ export default function TaskModal({ isOpen, onClose, task, onSuccess, onComplete
             />
           </FormField>
 
-          {/* Start date + time */}
-          <div className="grid grid-cols-2 gap-3">
+          {/* Dates + status */}
+          <div className="grid grid-cols-3 gap-3">
             <FormField label={TASK_TEXT.modal.startDateLabel}>
               <DatePicker value={fields.startDate} onChange={(v) => set('startDate')(v)} />
               {errors.startDate ? (
                 <p className="text-xs font-medium text-rose-600">{errors.startDate}</p>
               ) : null}
             </FormField>
+            <FormField label={TASK_TEXT.modal.endDateLabel}>
+              <DatePicker value={fields.endDate} onChange={(v) => set('endDate')(v)} />
+              {errors.endDate ? (
+                <p className="text-xs font-medium text-rose-600">{errors.endDate}</p>
+              ) : null}
+            </FormField>
+            <FormField label={TASK_TEXT.modal.statusLabel}>
+              <Dropdown value={fields.status} onChange={set('status')} options={STATUS_OPTIONS} />
+            </FormField>
+          </div>
+
+          {/* Times + customer */}
+          <div className="grid grid-cols-3 gap-3">
             <FormField label={TASK_TEXT.modal.startTimeLabel}>
               <Input
                 type="time"
@@ -386,16 +399,6 @@ export default function TaskModal({ isOpen, onClose, task, onSuccess, onComplete
                 placeholder={TASK_TEXT.modal.startTimePlaceholder}
               />
             </FormField>
-          </div>
-
-          {/* End date + time */}
-          <div className="grid grid-cols-2 gap-3">
-            <FormField label={TASK_TEXT.modal.endDateLabel}>
-              <DatePicker value={fields.endDate} onChange={(v) => set('endDate')(v)} />
-              {errors.endDate ? (
-                <p className="text-xs font-medium text-rose-600">{errors.endDate}</p>
-              ) : null}
-            </FormField>
             <FormField label={TASK_TEXT.modal.endTimeLabel}>
               <Input
                 type="time"
@@ -403,13 +406,6 @@ export default function TaskModal({ isOpen, onClose, task, onSuccess, onComplete
                 onChange={set('endTime')}
                 placeholder={TASK_TEXT.modal.endTimePlaceholder}
               />
-            </FormField>
-          </div>
-
-          {/* Status + Customer */}
-          <div className="grid grid-cols-2 gap-3">
-            <FormField label={TASK_TEXT.modal.statusLabel}>
-              <Dropdown value={fields.status} onChange={set('status')} options={STATUS_OPTIONS} />
             </FormField>
             <FormField label={TASK_TEXT.modal.customerLabel}>
               <Dropdown
@@ -423,9 +419,9 @@ export default function TaskModal({ isOpen, onClose, task, onSuccess, onComplete
             </FormField>
           </div>
 
-          {/* Contract + Estimated hours */}
-          <div className="grid grid-cols-2 gap-3">
-            <FormField label="Contract">
+          {/* Contract + estimated hours */}
+          <div className="grid grid-cols-3 gap-3">
+            <FormField label="Contract" className="col-span-2">
               <Dropdown
                 value={fields.contractId}
                 onChange={set('contractId')}

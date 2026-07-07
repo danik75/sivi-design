@@ -7,7 +7,15 @@ const DIALOG_TEXT = {
   close: 'Close dialog',
 };
 
-export default function Dialog({ isOpen, onClose, title, children, footer }) {
+const SIZE_CLASS = {
+  md: 'max-w-md',
+  lg: 'max-w-lg',
+  xl: 'max-w-2xl',
+  '2xl': 'max-w-3xl',
+  '3xl': 'max-w-4xl',
+};
+
+export default function Dialog({ isOpen, onClose, title, children, footer, size = 'md' }) {
   useEffect(() => {
     if (!isOpen) {
       return undefined;
@@ -33,7 +41,7 @@ export default function Dialog({ isOpen, onClose, title, children, footer }) {
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md rounded-2xl bg-white shadow-2xl"
+        className={`w-full ${SIZE_CLASS[size] ?? SIZE_CLASS.md} rounded-2xl bg-white shadow-2xl`}
         onClick={(event) => event.stopPropagation()}
         role="dialog"
         aria-modal="true"
@@ -68,4 +76,5 @@ Dialog.propTypes = {
   title: PropTypes.string.isRequired,
   children: PropTypes.node,
   footer: PropTypes.node,
+  size: PropTypes.oneOf(['md', 'lg', 'xl', '2xl', '3xl']),
 };
