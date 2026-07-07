@@ -49,6 +49,52 @@ const STATUS_LABELS = {
 
 const NO_CONTRACT = '__none__';
 
+function PieBlock({ title, data, unit = '', emptyText, labels = true }) {
+  if (!data.length) {
+    return (
+      <div className="space-y-2">
+        <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">{title}</p>
+        <p className="py-10 text-center text-xs text-slate-400">{emptyText}</p>
+      </div>
+    );
+  }
+  return (
+    <div className="space-y-2">
+      <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">{title}</p>
+      <div className="h-80 w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie
+              data={data}
+              dataKey="value"
+              nameKey="name"
+              cx="50%"
+              cy="50%"
+              outerRadius={95}
+              label={labels ? (e) => `${e.name}: ${e.value}${unit}` : false}
+              labelLine={labels}
+            >
+              {data.map((d, i) => (
+                <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
+              ))}
+            </Pie>
+            <Tooltip formatter={(v, n) => [`${Number(v)}${unit}`, n]} />
+            <Legend wrapperStyle={{ fontSize: 11, maxHeight: 90, overflowY: 'auto' }} />
+          </PieChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+}
+
+PieBlock.propTypes = {
+  title: PropTypes.string,
+  data: PropTypes.array,
+  unit: PropTypes.string,
+  emptyText: PropTypes.string,
+  labels: PropTypes.bool,
+};
+
 export default function TaskHistoryByContractReport({ customers = [] }) {
   const [filter, setFilter] = useState(DEFAULT_FILTER);
   const [customerId, setCustomerId] = useState('');
@@ -187,6 +233,25 @@ export default function TaskHistoryByContractReport({ customers = [] }) {
   const pieData = [...pieMap.values()].sort((a, b) => b.value - a.value);
   const totalTasks = pieData.reduce((s, d) => s + d.value, 0);
 
+  // Pie where each slice is a single task, sized by its actual hours (filtered).
+  const taskTimeData = [];
+  for (const cust of groups) {
+    if (showContract) {
+      for (const contract of cust.contracts ?? []) {
+        if (contractId && contractId !== NO_CONTRACT && contract.contractId !== contractId) continue;
+        for (const t of contract.tasks ?? []) {
+          if (num(t.actualHours) > 0) taskTimeData.push({ name: t.name, value: num(t.actualHours) });
+        }
+      }
+    }
+    if (showUnassigned) {
+      for (const t of cust.unassignedTasks ?? []) {
+        if (num(t.actualHours) > 0) taskTimeData.push({ name: t.name, value: num(t.actualHours) });
+      }
+    }
+  }
+  taskTimeData.sort((a, b) => b.value - a.value);
+
   const controls = (
     <div className="flex flex-wrap items-center gap-3">
       <PeriodFilter value={filter} onChange={setFilter} />
@@ -248,33 +313,25 @@ export default function TaskHistoryByContractReport({ customers = [] }) {
             </div>
 
             <div className="space-y-3">
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-                Tasks by contract · {totalTasks} tasks
-              </p>
-              <div className="h-80 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={pieData}
-                      dataKey="value"
-                      nameKey="name"
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={110}
-                      label={(e) => `${e.name}: ${e.value}`}
-                    >
-                      {pieData.map((d, i) => (
-                        <Cell key={d.name} fill={PIE_COLORS[i % PIE_COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip formatter={(v, n) => [`${Number(v)} tasks`, n]} />
-                    <Legend />
-                  </PieChart>
-                </ResponsiveContainer>
+              <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                <PieBlock
+                  title={`Tasks by contract · ${totalTasks} tasks`}
+                  data={pieData}
+                  unit=" tasks"
+                  emptyText="No tasks."
+                />
+                <PieBlock
+                  title="Tasks by actual time (each slice = a task)"
+                  data={taskTimeData}
+                  unit="h"
+                  emptyText="No tasks with logged hours."
+                  labels={false}
+                />
               </div>
               <p className="text-xs text-slate-400">
-                Distribution of all tasks matching the filters, by contract. Tasks not tied to a
-                contract appear as &ldquo;No contract&rdquo;.
+                Left: distribution of all tasks matching the filters, by contract (tasks with no
+                contract appear as &ldquo;No contract&rdquo;). Right: each slice is a task, sized by
+                its actual hours.
               </p>
             </div>
           </div>
