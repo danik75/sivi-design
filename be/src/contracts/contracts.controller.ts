@@ -11,6 +11,11 @@ export class ContractsController {
     return this.service.findAll(customerId, status);
   }
 
+  @Get(':id/usage')
+  getUsage(@Param('id') id: string, @Query('excludeTaskId') excludeTaskId?: string) {
+    return this.service.getUsage(id, excludeTaskId);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.service.findOne(id);

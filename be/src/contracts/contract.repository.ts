@@ -109,6 +109,43 @@ export class ContractRepository {
     return this.mapRow(res.rows[0]);
   }
 
+  // Prepaid-hours burndown: how much of the purchased block has been consumed
+  // by the actual hours logged on the contract's tasks. `excludeTaskId` omits the
+  // task currently being edited so re-saving it doesn't double-count its hours.
+  async getUsage(id: string, excludeTaskId?: string) {
+    const contractRes = await pool.query(
+      'SELECT id, type, hours_purchased FROM contracts WHERE id = $1',
+      [id],
+    );
+    if (!contractRes.rows[0]) {
+      throw new NotFoundException('Contract not found');
+    }
+    const row = contractRes.rows[0];
+    const hoursPurchased = row.hours_purchased != null ? Number(row.hours_purchased) : null;
+
+    const usedRes = await pool.query(
+      `SELECT COALESCE(SUM(actual_hours), 0) AS used
+       FROM tasks
+       WHERE contract_id = $1 AND ($2::uuid IS NULL OR id <> $2)`,
+      [id, excludeTaskId ?? null],
+    );
+    const hoursUsed = Number(usedRes.rows[0].used);
+    const hoursRemaining = hoursPurchased != null ? hoursPurchased - hoursUsed : null;
+    const percentUsed =
+      hoursPurchased != null && hoursPurchased > 0
+        ? Math.min(1, hoursUsed / hoursPurchased)
+        : null;
+
+    return {
+      contractId: id,
+      type: row.type as string,
+      hoursPurchased,
+      hoursUsed,
+      hoursRemaining,
+      percentUsed,
+    };
+  }
+
   async create(dto: CreateContractDto) {
     this.validateCreateDto(dto);
 

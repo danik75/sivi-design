@@ -52,4 +52,14 @@ export class ReportsService {
     const { startDate, endDate } = dto.getBounds();
     return this.repo.getCustomerTaskHours(startDate, endDate, dto.customerId);
   }
+
+  getTasksPerContract(dto: ReportQueryDto) {
+    const { startDate, endDate } = dto.getBounds();
+    return this.repo.getTasksPerContract(startDate, endDate, dto.customerId);
+  }
+
+  getTaskHistory(dto: ReportQueryDto) {
+    const { startDate, endDate } = dto.getBounds();
+    return this.repo.getTaskHistory(startDate, endDate, dto.customerId);
+  }
 }

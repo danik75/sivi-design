@@ -18,10 +18,12 @@ export class TaskRepository {
              t.estimated_hours AS "estimatedHours", t.actual_hours AS "actualHours",
              t.percent_complete AS "percentComplete",
              t.color,
+             t.contract_id AS "contractId", con.type AS "contractType",
              il.invoice_id AS "invoiceId", il.invoice_number AS "invoiceNumber",
              t.created_at AS "createdAt", t.updated_at AS "updatedAt"
       FROM tasks t
       LEFT JOIN customers c ON c.id = t.customer_id
+      LEFT JOIN contracts con ON con.id = t.contract_id
       LEFT JOIN LATERAL (
         SELECT inv.id AS invoice_id, inv.invoice_number
         FROM invoice_line_items li
@@ -67,10 +69,12 @@ export class TaskRepository {
                t.estimated_hours AS "estimatedHours", t.actual_hours AS "actualHours",
                t.percent_complete AS "percentComplete",
                t.color,
+               t.contract_id AS "contractId", con.type AS "contractType",
                il.invoice_id AS "invoiceId", il.invoice_number AS "invoiceNumber",
                t.created_at AS "createdAt", t.updated_at AS "updatedAt"
         FROM tasks t
         LEFT JOIN customers c ON c.id = t.customer_id
+        LEFT JOIN contracts con ON con.id = t.contract_id
         LEFT JOIN LATERAL (
           SELECT inv.id AS invoice_id, inv.invoice_number
           FROM invoice_line_items li
@@ -92,12 +96,15 @@ export class TaskRepository {
 
   async create(dto: CreateTaskDto) {
     this.validateDateRange(dto.startDate, dto.endDate);
+    if (dto.contractId) {
+      await this.assertContractForCustomer(dto.contractId, dto.customerId);
+    }
 
     const res = await pool.query(
       `
-        INSERT INTO tasks (name, description, start_date, end_date, status, customer_id,
+        INSERT INTO tasks (name, description, start_date, end_date, status, customer_id, contract_id,
                            start_time, end_time, estimated_hours, color)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
         RETURNING id
       `,
       [
@@ -107,6 +114,7 @@ export class TaskRepository {
         dto.endDate,
         dto.status ?? 'pending',
         dto.customerId ?? null,
+        dto.contractId ?? null,
         dto.startTime ?? null,
         dto.endTime ?? null,
         dto.estimatedHours ?? null,
@@ -118,7 +126,10 @@ export class TaskRepository {
   }
 
   async update(id: string, dto: UpdateTaskDto) {
-    const existingRes = await pool.query('SELECT id, start_date, end_date FROM tasks WHERE id = $1', [id]);
+    const existingRes = await pool.query(
+      'SELECT id, start_date, end_date, customer_id FROM tasks WHERE id = $1',
+      [id],
+    );
     const existing = existingRes.rows[0];
 
     if (!existing) {
@@ -128,6 +139,10 @@ export class TaskRepository {
     const nextStartDate = dto.startDate ?? existing.start_date;
     const nextEndDate = dto.endDate ?? existing.end_date;
     this.validateDateRange(nextStartDate, nextEndDate);
+
+    if (dto.contractId) {
+      await this.assertContractForCustomer(dto.contractId, dto.customerId ?? existing.customer_id);
+    }
 
     // A task on an active invoice can't be cancelled — unrelate it first.
     if (dto.status === 'cancelled') {
@@ -160,6 +175,10 @@ export class TaskRepository {
     if (dto.customerId !== undefined) {
       values.push(dto.customerId ?? null);
       setClauses.push(`customer_id = $${values.length}`);
+    }
+    if (dto.contractId !== undefined) {
+      values.push(dto.contractId ?? null);
+      setClauses.push(`contract_id = $${values.length}`);
     }
     if (dto.startTime !== undefined) {
       values.push(dto.startTime ?? null);
@@ -227,6 +246,20 @@ export class TaskRepository {
       throw new ConflictException(
         `This task is on invoice ${res.rows[0].invoiceNumber}. Unrelate it from the invoice before it can be ${action}.`,
       );
+    }
+  }
+
+  // A task's contract must belong to the task's customer.
+  private async assertContractForCustomer(contractId: string, customerId?: string | null) {
+    if (!customerId) {
+      throw new BadRequestException('A task with a contract must have a customer.');
+    }
+    const res = await pool.query('SELECT customer_id FROM contracts WHERE id = $1', [contractId]);
+    if (!res.rows[0]) {
+      throw new BadRequestException('Contract not found.');
+    }
+    if (res.rows[0].customer_id !== customerId) {
+      throw new BadRequestException('Contract does not belong to the selected customer.');
     }
   }
 

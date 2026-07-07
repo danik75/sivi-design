@@ -10,6 +10,10 @@ export class ContractsService {
     return this.repo.findAll(customerId, status as 'active' | 'inactive' | 'all');
   }
 
+  getUsage(id: string, excludeTaskId?: string) {
+    return this.repo.getUsage(id, excludeTaskId);
+  }
+
   findOne(id: string) {
     return this.repo.findOne(id);
   }

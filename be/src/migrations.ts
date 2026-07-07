@@ -47,6 +47,10 @@ const MIGRATIONS: Array<{ name: string; sql: string }> = [
     name: 'contacts.last_name',
     sql: `ALTER TABLE contacts ADD COLUMN IF NOT EXISTS last_name TEXT`,
   },
+  {
+    name: 'tasks.contract_id',
+    sql: `ALTER TABLE tasks ADD COLUMN IF NOT EXISTS contract_id UUID REFERENCES contracts(id) ON DELETE SET NULL`,
+  },
 ];
 
 export async function runMigrations(): Promise<void> {

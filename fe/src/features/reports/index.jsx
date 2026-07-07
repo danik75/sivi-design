@@ -11,6 +11,8 @@ import ForecastReport from './components/ForecastReport';
 import PLReport from './components/PLReport';
 import ProjectStatusReport from './components/ProjectStatusReport';
 import RevenueBreakdownReport from './components/RevenueBreakdownReport';
+import TaskHistoryByContractReport from './components/TaskHistoryByContractReport';
+import TasksPerContractReport from './components/TasksPerContractReport';
 import TaxSummaryReport from './components/TaxSummaryReport';
 
 const REPORT_META = {
@@ -27,6 +29,8 @@ const REPORT_META = {
   forecast: { label: 'Revenue Forecast', component: ForecastReport },
   'project-status': { label: 'Project Status', component: ProjectStatusReport },
   'customer-tasks': { label: 'Task Hours & Cost', component: CustomerTaskHoursReport },
+  'tasks-per-contract': { label: 'Tasks per Contract', component: TasksPerContractReport },
+  'task-history': { label: 'Task History', component: TaskHistoryByContractReport },
 };
 
 export default function ReportsFeature() {
@@ -39,7 +43,13 @@ export default function ReportsFeature() {
 
   const meta = REPORT_META[active];
   const Component = meta?.component;
-  const needsCustomers = ['customer-statement', 'project-status', 'customer-tasks'].includes(active);
+  const needsCustomers = [
+    'customer-statement',
+    'project-status',
+    'customer-tasks',
+    'tasks-per-contract',
+    'task-history',
+  ].includes(active);
 
   return (
     <div className="flex h-full min-h-0">

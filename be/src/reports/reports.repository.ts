@@ -716,4 +716,145 @@ export class ReportsRepository {
       },
     };
   }
+
+  // Distribution of tasks across contracts for the period. Prepaid contracts also
+  // carry lifetime burndown (used vs purchased) for the pie chart.
+  async getTasksPerContract(startDate: string, endDate: string, customerId?: string) {
+    const labels: Record<string, string> = {
+      lump_sum: 'Lump Sum',
+      time_and_materials: 'Time & Materials',
+      prepaid_hours: 'Prepaid Hours',
+      monthly_retainer: 'Monthly Retainer',
+    };
+    const values: unknown[] = [startDate, endDate, customerId ?? null];
+    const res = await pool.query(
+      `
+        SELECT con.id AS "contractId", con.customer_id AS "customerId", c.name AS "customerName",
+               con.type AS "contractType", con.status AS "contractStatus",
+               con.hours_purchased AS "hoursPurchased",
+               COUNT(t.id) AS "taskCount",
+               COALESCE(SUM(t.estimated_hours), 0) AS "estimatedHours",
+               COALESCE(SUM(t.actual_hours), 0) AS "actualHours",
+               (SELECT COALESCE(SUM(actual_hours), 0) FROM tasks tt WHERE tt.contract_id = con.id) AS "hoursUsedLifetime"
+        FROM contracts con
+        JOIN customers c ON c.id = con.customer_id
+        LEFT JOIN tasks t ON t.contract_id = con.id AND t.start_date <= $2 AND t.end_date >= $1
+        WHERE ($3::uuid IS NULL OR con.customer_id = $3)
+        GROUP BY con.id, c.name
+        HAVING COUNT(t.id) > 0 OR con.type = 'prepaid_hours'
+        ORDER BY c.name, con.type
+      `,
+      values,
+    );
+
+    const rows = res.rows.map((r) => {
+      const isPrepaid = r.contractType === 'prepaid_hours';
+      const hoursPurchased = r.hoursPurchased != null ? Number(r.hoursPurchased) : null;
+      const hoursUsed = isPrepaid ? Number(r.hoursUsedLifetime) : null;
+      const hoursRemaining = hoursPurchased != null && hoursUsed != null ? hoursPurchased - hoursUsed : null;
+      const percentUsed =
+        hoursPurchased != null && hoursPurchased > 0 && hoursUsed != null
+          ? Math.min(1, hoursUsed / hoursPurchased)
+          : null;
+      return {
+        contractId: r.contractId,
+        customerId: r.customerId,
+        customerName: r.customerName,
+        contractType: r.contractType,
+        contractLabel: labels[r.contractType] ?? r.contractType,
+        contractStatus: r.contractStatus,
+        taskCount: Number(r.taskCount),
+        estimatedHours: Number(Number(r.estimatedHours).toFixed(2)),
+        actualHours: Number(Number(r.actualHours).toFixed(2)),
+        hoursPurchased,
+        hoursUsed: hoursUsed != null ? Number(hoursUsed.toFixed(2)) : null,
+        hoursRemaining: hoursRemaining != null ? Number(hoursRemaining.toFixed(2)) : null,
+        percentUsed,
+      };
+    });
+
+    return { startDate, endDate, rows };
+  }
+
+  // Historical tasks grouped by customer → contract, with a "No contract" bucket
+  // per customer (and a "No customer" bucket for orphaned tasks).
+  async getTaskHistory(startDate: string, endDate: string, customerId?: string) {
+    const labels: Record<string, string> = {
+      lump_sum: 'Lump Sum',
+      time_and_materials: 'Time & Materials',
+      prepaid_hours: 'Prepaid Hours',
+      monthly_retainer: 'Monthly Retainer',
+    };
+    const toISO = (d: unknown) =>
+      d instanceof Date ? d.toISOString().split('T')[0] : (d as string | null);
+    const res = await pool.query(
+      `
+        SELECT t.id AS "taskId", t.name, t.status,
+               t.start_date AS "startDate", t.end_date AS "endDate",
+               t.estimated_hours AS "estimatedHours", t.actual_hours AS "actualHours",
+               t.customer_id AS "customerId", c.name AS "customerName",
+               t.contract_id AS "contractId", con.type AS "contractType"
+        FROM tasks t
+        LEFT JOIN customers c ON c.id = t.customer_id
+        LEFT JOIN contracts con ON con.id = t.contract_id
+        WHERE t.start_date <= $2 AND t.end_date >= $1
+          AND ($3::uuid IS NULL OR t.customer_id = $3)
+        ORDER BY c.name NULLS LAST, con.type NULLS LAST, t.start_date, t.name
+      `,
+      [startDate, endDate, customerId ?? null],
+    );
+
+    const customers = new Map<
+      string,
+      {
+        customerId: string | null;
+        customerName: string;
+        contracts: Map<string, { contractId: string; contractLabel: string; tasks: unknown[] }>;
+        unassignedTasks: unknown[];
+      }
+    >();
+
+    for (const r of res.rows) {
+      const custKey = r.customerId ?? '__none__';
+      if (!customers.has(custKey)) {
+        customers.set(custKey, {
+          customerId: r.customerId,
+          customerName: r.customerName ?? 'No customer',
+          contracts: new Map(),
+          unassignedTasks: [],
+        });
+      }
+      const cust = customers.get(custKey)!;
+      const task = {
+        taskId: r.taskId,
+        name: r.name,
+        status: r.status,
+        startDate: toISO(r.startDate),
+        endDate: toISO(r.endDate),
+        estimatedHours: r.estimatedHours != null ? Number(r.estimatedHours) : null,
+        actualHours: r.actualHours != null ? Number(r.actualHours) : null,
+      };
+      if (r.contractId) {
+        if (!cust.contracts.has(r.contractId)) {
+          cust.contracts.set(r.contractId, {
+            contractId: r.contractId,
+            contractLabel: labels[r.contractType] ?? r.contractType,
+            tasks: [],
+          });
+        }
+        cust.contracts.get(r.contractId)!.tasks.push(task);
+      } else {
+        cust.unassignedTasks.push(task);
+      }
+    }
+
+    const rows = [...customers.values()].map((c) => ({
+      customerId: c.customerId,
+      customerName: c.customerName,
+      contracts: [...c.contracts.values()],
+      unassignedTasks: c.unassignedTasks,
+    }));
+
+    return { startDate, endDate, customers: rows };
+  }
 }
