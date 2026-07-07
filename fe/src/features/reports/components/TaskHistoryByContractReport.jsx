@@ -238,7 +238,7 @@ export default function TaskHistoryByContractReport({ customers = [] }) {
                     <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                     <XAxis dataKey="name" tick={{ fontSize: 12 }} interval={0} angle={-15} textAnchor="end" height={50} />
                     <YAxis tick={{ fontSize: 12 }} />
-                    <Tooltip formatter={(v, n) => [`${Number(v)}h`, n === 'actual' ? 'Actual' : 'Estimated']} />
+                    <Tooltip formatter={(v, n) => [`${Number(v)}h`, n]} />
                     <Legend />
                     <Bar dataKey="estimated" name="Estimated" fill="#c7d2fe" radius={[4, 4, 0, 0]} />
                     <Bar dataKey="actual" name="Actual" fill="#6366f1" radius={[4, 4, 0, 0]} />
