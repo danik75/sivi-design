@@ -19,3 +19,7 @@ export const useProjectStatus = (p) =>
   q(['report-project-status', p], () => api.getProjectStatus(p));
 export const useCustomerTaskHours = (p) =>
   q(['report-customer-tasks', p], () => api.getCustomerTaskHours(p));
+export const useTasksPerContract = (p) =>
+  q(['report-tasks-per-contract', p], () => api.getTasksPerContract(p));
+export const useTaskHistory = (p) =>
+  q(['report-task-history', p], () => api.getTaskHistory(p));

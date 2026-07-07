@@ -67,4 +67,27 @@ export class ReportsController {
       }),
     );
   }
+
+  @Get('tasks-per-contract')
+  getTasksPerContract(@Query() q: Record<string, string>) {
+    return this.service.getTasksPerContract(
+      ReportQueryDto.from({
+        period: 'monthly',
+        year: String(new Date().getFullYear()),
+        month: String(new Date().getMonth() + 1),
+        ...q,
+      }),
+    );
+  }
+
+  @Get('task-history')
+  getTaskHistory(@Query() q: Record<string, string>) {
+    return this.service.getTaskHistory(
+      ReportQueryDto.from({
+        period: 'yearly',
+        year: String(new Date().getFullYear()),
+        ...q,
+      }),
+    );
+  }
 }

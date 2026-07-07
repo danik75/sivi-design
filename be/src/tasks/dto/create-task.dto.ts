@@ -28,6 +28,10 @@ export class CreateTaskDto {
   customerId?: string;
 
   @IsOptional()
+  @IsUUID()
+  contractId?: string;
+
+  @IsOptional()
   @Matches(/^\d{2}:\d{2}$/)
   startTime?: string;
 

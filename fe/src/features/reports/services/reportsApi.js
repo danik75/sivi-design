@@ -12,3 +12,5 @@ export const getCustomerProfitability = (p) => r('customer-profitability', p);
 export const getForecast = () => r('forecast');
 export const getProjectStatus = (p) => r('project-status', p);
 export const getCustomerTaskHours = (p) => r('customer-tasks', p);
+export const getTasksPerContract = (p) => r('tasks-per-contract', p);
+export const getTaskHistory = (p) => r('task-history', p);

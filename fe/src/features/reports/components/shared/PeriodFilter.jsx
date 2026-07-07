@@ -41,25 +41,19 @@ export default function PeriodFilter({ value, onChange }) {
 
       {period === 'monthly' && (
         <>
-          <Dropdown
-            value={month}
-            onChange={(v) => set({ month: Number(v) })}
-            options={MONTH_OPTIONS}
-          />
-          <Dropdown
-            value={year}
-            onChange={(v) => set({ year: Number(v) })}
-            options={YEAR_OPTIONS}
-          />
+          <div className="w-28">
+            <Dropdown value={month} onChange={(v) => set({ month: Number(v) })} options={MONTH_OPTIONS} />
+          </div>
+          <div className="w-24">
+            <Dropdown value={year} onChange={(v) => set({ year: Number(v) })} options={YEAR_OPTIONS} />
+          </div>
         </>
       )}
 
       {period === 'yearly' && (
-        <Dropdown
-          value={year}
-          onChange={(v) => set({ year: Number(v) })}
-          options={YEAR_OPTIONS}
-        />
+        <div className="w-24">
+          <Dropdown value={year} onChange={(v) => set({ year: Number(v) })} options={YEAR_OPTIONS} />
+        </div>
       )}
 
       {period === 'range' && (

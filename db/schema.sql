@@ -58,6 +58,7 @@ CREATE TABLE IF NOT EXISTS tasks (
   status           TEXT        NOT NULL DEFAULT 'pending'
                                CHECK (status IN ('pending','in_progress','done','cancelled')),
   customer_id      UUID        REFERENCES customers(id) ON DELETE SET NULL,
+  contract_id      UUID        REFERENCES contracts(id) ON DELETE SET NULL,
   start_time       TIME,
   end_time         TIME,
   estimated_hours  NUMERIC(6,2),

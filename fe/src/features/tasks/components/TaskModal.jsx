@@ -1,4 +1,5 @@
 import PropTypes from 'prop-types';
+import { useQuery } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
 import Button from '@/components/chadcn/Button';
 import DatePicker from '@/components/chadcn/DatePicker';
@@ -7,6 +8,9 @@ import Dropdown from '@/components/chadcn/Dropdown';
 import Form from '@/components/chadcn/Form';
 import FormField from '@/components/chadcn/FormField';
 import Input from '@/components/chadcn/Input';
+import useContracts from '@/features/contracts/hooks/useContracts';
+import { getContractUsage } from '@/features/contracts/services/contractsApi';
+import { CONTRACT_TYPE_LABEL, contractOptionLabel } from '@/features/tasks/contractLabel';
 import {
   DEFAULT_STATUS,
   STATUS_OPTIONS,
@@ -71,11 +75,49 @@ function buildInitialState(task) {
     endTime: normTime(task?.endTime),
     status: task?.status ?? DEFAULT_STATUS,
     customerId: task?.customerId != null ? String(task.customerId) : '',
+    contractId: task?.contractId != null ? String(task.contractId) : '',
     estimatedHours: task?.estimatedHours != null ? String(task.estimatedHours) : '',
     percentComplete: task?.percentComplete ?? 0,
     color: task?.color ?? '',
   };
 }
+
+function PrepaidRemaining({ usage, estimate }) {
+  const purchased = Number(usage.hoursPurchased) || 0;
+  const used = Number(usage.hoursUsed) || 0;
+  const remaining = Number(usage.hoursRemaining);
+  const projected = remaining - (estimate || 0);
+  const pct = purchased > 0 ? Math.min(100, (used / purchased) * 100) : 0;
+  const over = projected < 0;
+  return (
+    <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs">
+      <div className="flex justify-between text-slate-600">
+        <span>Prepaid hours</span>
+        <span className={over ? 'font-semibold text-rose-600' : 'font-semibold text-slate-800'}>
+          {remaining}h of {purchased}h remaining
+        </span>
+      </div>
+      <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-slate-200">
+        <div
+          className={`h-full ${over ? 'bg-rose-500' : 'bg-indigo-500'}`}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+      {estimate > 0 ? (
+        <p className={`mt-1 ${over ? 'text-rose-600' : 'text-slate-400'}`}>
+          {over
+            ? `This estimate (${estimate}h) exceeds the remaining hours by ${Math.abs(projected)}h.`
+            : `After this estimate (${estimate}h): ${projected}h left.`}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+PrepaidRemaining.propTypes = {
+  usage: PropTypes.object.isRequired,
+  estimate: PropTypes.number,
+};
 
 export default function TaskModal({ isOpen, onClose, task, onSuccess, onComplete }) {
   const createMutation = useCreateTask();
@@ -88,6 +130,38 @@ export default function TaskModal({ isOpen, onClose, task, onSuccess, onComplete
   const [fields, setFields] = useState(() => buildInitialState(task));
   const [errors, setErrors] = useState({});
   const [submitError, setSubmitError] = useState('');
+  const [spillover, setSpillover] = useState(null); // { payload, remaining, purchased, estimate }
+
+  // Active contracts for the selected customer (+ keep the already-linked one).
+  const { data: contractsData } = useContracts({
+    customerId: fields.customerId || undefined,
+    status: 'active',
+  });
+  const activeContracts = contractsData?.data ?? contractsData ?? [];
+  const selectedContract = activeContracts.find((c) => String(c.id) === String(fields.contractId));
+  const isPrepaid = selectedContract?.type === 'prepaid_hours';
+
+  // Prepaid burndown for the selected contract (excluding this task's own hours).
+  const { data: usage } = useQuery(
+    ['contract-usage', fields.contractId, task?.id],
+    () => getContractUsage(fields.contractId, task?.id),
+    { enabled: isOpen && isPrepaid && Boolean(fields.contractId) }
+  );
+
+  const contractOptions = useMemo(() => {
+    const opts = [
+      { value: '', label: 'No contract' },
+      ...activeContracts.map((c) => ({ value: String(c.id), label: contractOptionLabel(c) })),
+    ];
+    // Keep the already-linked contract visible even if it's no longer active.
+    if (fields.contractId && !opts.some((o) => o.value === String(fields.contractId))) {
+      opts.push({
+        value: String(fields.contractId),
+        label: task?.contractType ? CONTRACT_TYPE_LABEL[task.contractType] ?? 'Contract' : 'Contract',
+      });
+    }
+    return opts;
+  }, [activeContracts, fields.contractId, task]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -109,6 +183,10 @@ export default function TaskModal({ isOpen, onClose, task, onSuccess, onComplete
         : eventOrValue;
     setFields((prev) => {
       const next = { ...prev, [field]: value };
+      // Changing the customer clears the contract (contracts are customer-scoped).
+      if (field === 'customerId' && value !== prev.customerId) {
+        next.contractId = '';
+      }
       // Auto-set times when start === end date
       if (field === 'startDate' || field === 'endDate') {
         const s = field === 'startDate' ? value : prev.startDate;
@@ -181,11 +259,24 @@ export default function TaskModal({ isOpen, onClose, task, onSuccess, onComplete
       endTime: fields.endTime || null,
       status: fields.status,
       customerId: fields.customerId || null,
+      contractId: fields.contractId || null,
       estimatedHours: fields.estimatedHours !== '' ? Number(fields.estimatedHours) : null,
       percentComplete: task ? Number(fields.percentComplete) : 0,
       color: fields.color || null,
     };
 
+    // Prepaid-hours spillover: if this task's estimate would exceed the hours the
+    // customer prepaid on the selected contract, warn before saving.
+    const est = payload.estimatedHours ?? 0;
+    if (isPrepaid && usage && usage.hoursRemaining != null && est > usage.hoursRemaining) {
+      setSpillover({ payload, remaining: usage.hoursRemaining, purchased: usage.hoursPurchased, estimate: est });
+      return;
+    }
+
+    proceed(payload);
+  };
+
+  const proceed = (payload) => {
     const onError = (error) => {
       setSubmitError(getApiErrorMessage(error, TASK_TEXT.modal.saveError));
     };
@@ -243,7 +334,8 @@ export default function TaskModal({ isOpen, onClose, task, onSuccess, onComplete
   );
 
   return (
-    <Dialog isOpen={isOpen} onClose={onClose} title={dialogTitle} footer={footer}>
+    <>
+    <Dialog isOpen={isOpen} onClose={onClose} title={dialogTitle} footer={footer} size="2xl">
       <div className="max-h-[70vh] overflow-y-auto pr-1">
         <Form id={FORM_ID} onSubmit={handleSubmit} className="space-y-4">
           {/* Linked invoice (read-only) */}
@@ -278,14 +370,27 @@ export default function TaskModal({ isOpen, onClose, task, onSuccess, onComplete
             />
           </FormField>
 
-          {/* Start date + time */}
-          <div className="grid grid-cols-2 gap-3">
+          {/* Dates + status */}
+          <div className="grid grid-cols-3 gap-3">
             <FormField label={TASK_TEXT.modal.startDateLabel}>
               <DatePicker value={fields.startDate} onChange={(v) => set('startDate')(v)} />
               {errors.startDate ? (
                 <p className="text-xs font-medium text-rose-600">{errors.startDate}</p>
               ) : null}
             </FormField>
+            <FormField label={TASK_TEXT.modal.endDateLabel}>
+              <DatePicker value={fields.endDate} onChange={(v) => set('endDate')(v)} />
+              {errors.endDate ? (
+                <p className="text-xs font-medium text-rose-600">{errors.endDate}</p>
+              ) : null}
+            </FormField>
+            <FormField label={TASK_TEXT.modal.statusLabel}>
+              <Dropdown value={fields.status} onChange={set('status')} options={STATUS_OPTIONS} />
+            </FormField>
+          </div>
+
+          {/* Times + customer */}
+          <div className="grid grid-cols-3 gap-3">
             <FormField label={TASK_TEXT.modal.startTimeLabel}>
               <Input
                 type="time"
@@ -293,16 +398,6 @@ export default function TaskModal({ isOpen, onClose, task, onSuccess, onComplete
                 onChange={set('startTime')}
                 placeholder={TASK_TEXT.modal.startTimePlaceholder}
               />
-            </FormField>
-          </div>
-
-          {/* End date + time */}
-          <div className="grid grid-cols-2 gap-3">
-            <FormField label={TASK_TEXT.modal.endDateLabel}>
-              <DatePicker value={fields.endDate} onChange={(v) => set('endDate')(v)} />
-              {errors.endDate ? (
-                <p className="text-xs font-medium text-rose-600">{errors.endDate}</p>
-              ) : null}
             </FormField>
             <FormField label={TASK_TEXT.modal.endTimeLabel}>
               <Input
@@ -312,28 +407,44 @@ export default function TaskModal({ isOpen, onClose, task, onSuccess, onComplete
                 placeholder={TASK_TEXT.modal.endTimePlaceholder}
               />
             </FormField>
+            <FormField label={TASK_TEXT.modal.customerLabel}>
+              <Dropdown
+                value={fields.customerId}
+                onChange={set('customerId')}
+                options={[
+                  { value: '', label: TASK_TEXT.modal.noCustomer },
+                  ...customers.map((c) => ({ value: String(c.id), label: c.name })),
+                ]}
+              />
+            </FormField>
           </div>
 
-          {/* Status */}
-          <FormField label={TASK_TEXT.modal.statusLabel}>
-            <Dropdown
-              value={fields.status}
-              onChange={set('status')}
-              options={STATUS_OPTIONS}
-            />
-          </FormField>
+          {/* Contract + estimated hours */}
+          <div className="grid grid-cols-3 gap-3">
+            <FormField label="Contract" className="col-span-2">
+              <Dropdown
+                value={fields.contractId}
+                onChange={set('contractId')}
+                options={contractOptions}
+                placeholder={fields.customerId ? 'No contract' : 'Select a customer first'}
+              />
+            </FormField>
+            <FormField label={TASK_TEXT.modal.estimatedHoursLabel}>
+              <Input
+                type="number"
+                min="0"
+                step="0.5"
+                value={fields.estimatedHours}
+                onChange={set('estimatedHours')}
+                placeholder={TASK_TEXT.modal.estimatedHoursPlaceholder}
+              />
+            </FormField>
+          </div>
 
-          {/* Customer */}
-          <FormField label={TASK_TEXT.modal.customerLabel}>
-            <Dropdown
-              value={fields.customerId}
-              onChange={set('customerId')}
-              options={[
-                { value: '', label: TASK_TEXT.modal.noCustomer },
-                ...customers.map((c) => ({ value: String(c.id), label: c.name })),
-              ]}
-            />
-          </FormField>
+          {/* Prepaid-hours remaining */}
+          {isPrepaid && usage && usage.hoursPurchased != null ? (
+            <PrepaidRemaining usage={usage} estimate={Number(fields.estimatedHours) || 0} />
+          ) : null}
 
           {/* Task color */}
           <FormField label="Task Color">
@@ -368,18 +479,6 @@ export default function TaskModal({ isOpen, onClose, task, onSuccess, onComplete
             )}
           </FormField>
 
-          {/* Estimated hours (actual hours is captured via the completion prompt) */}
-          <FormField label={TASK_TEXT.modal.estimatedHoursLabel}>
-            <Input
-              type="number"
-              min="0"
-              step="0.5"
-              value={fields.estimatedHours}
-              onChange={set('estimatedHours')}
-              placeholder={TASK_TEXT.modal.estimatedHoursPlaceholder}
-            />
-          </FormField>
-
           {/* % Complete — edit mode only */}
           {task ? (
             <FormField label={TASK_TEXT.modal.percentCompleteLabel}>
@@ -408,6 +507,36 @@ export default function TaskModal({ isOpen, onClose, task, onSuccess, onComplete
         </Form>
       </div>
     </Dialog>
+
+      <Dialog
+        isOpen={Boolean(spillover)}
+        onClose={() => setSpillover(null)}
+        title="Prepaid hours exhausted"
+        footer={
+          <>
+            <Button type="button" variant="ghost" onClick={() => setSpillover(null)}>
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={() => {
+                const pending = spillover;
+                setSpillover(null);
+                proceed(pending.payload);
+              }}
+            >
+              Save anyway
+            </Button>
+          </>
+        }
+      >
+        <p className="text-sm text-slate-600">
+          This task&apos;s estimate ({spillover?.estimate}h) exceeds the hours the customer prepaid on
+          this contract ({spillover?.purchased}h purchased, {spillover?.remaining}h remaining). The
+          prepaid block will be exhausted. Save anyway?
+        </p>
+      </Dialog>
+    </>
   );
 }
 
