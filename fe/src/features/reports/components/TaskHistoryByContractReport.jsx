@@ -1,22 +1,25 @@
 import PropTypes from 'prop-types';
 import { useState } from 'react';
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Legend,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts';
+import { Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
 import Dropdown from '@/components/chadcn/Dropdown';
 import { fmtDate } from '@/features/reports/constants';
 import { useTaskHistory } from '@/features/reports/hooks';
 import PeriodFilter from './shared/PeriodFilter';
 import ReportShell from './shared/ReportShell';
 
-const num = (v) => (v == null ? 0 : Number(v));
+const PIE_COLORS = [
+  '#6366f1',
+  '#22c55e',
+  '#f59e0b',
+  '#ef4444',
+  '#06b6d4',
+  '#a855f7',
+  '#ec4899',
+  '#84cc16',
+  '#f97316',
+  '#14b8a6',
+  '#64748b',
+];
 
 const now = new Date();
 // History defaults to the current year.
@@ -112,33 +115,35 @@ export default function TaskHistoryByContractReport({ customers = [] }) {
     'Actual (h)',
   ];
 
-  // Per-customer totals for the chart.
-  const chartData = groups
-    .map((cust) => {
-      let estimated = 0;
-      let actual = 0;
-      let tasks = 0;
+  // Pie of all tasks that match the filters, sliced by contract (+ "No contract").
+  const pieMap = new Map();
+  const addSlice = (key, label, n) => {
+    if (!n) return;
+    const cur = pieMap.get(key) ?? { name: label, value: 0 };
+    cur.value += n;
+    pieMap.set(key, cur);
+  };
+  for (const cust of groups) {
+    if (showContract) {
       for (const contract of cust.contracts ?? []) {
-        for (const t of contract.tasks ?? []) {
-          estimated += num(t.estimatedHours);
-          actual += num(t.actualHours);
-          tasks += 1;
-        }
+        if (contractId && contractId !== NO_CONTRACT && contract.contractId !== contractId) continue;
+        addSlice(
+          contract.contractId,
+          singleCustomer ? contract.contractLabel : `${cust.customerName} — ${contract.contractLabel}`,
+          (contract.tasks ?? []).length
+        );
       }
-      for (const t of cust.unassignedTasks ?? []) {
-        estimated += num(t.estimatedHours);
-        actual += num(t.actualHours);
-        tasks += 1;
-      }
-      return {
-        name: cust.customerName,
-        estimated: Number(estimated.toFixed(2)),
-        actual: Number(actual.toFixed(2)),
-        tasks,
-      };
-    })
-    .filter((d) => d.tasks > 0)
-    .sort((a, b) => b.actual + b.estimated - (a.actual + a.estimated));
+    }
+    if (showUnassigned) {
+      addSlice(
+        `none-${cust.customerId ?? 'x'}`,
+        singleCustomer ? 'No contract' : `${cust.customerName} — No contract`,
+        (cust.unassignedTasks ?? []).length
+      );
+    }
+  }
+  const pieData = [...pieMap.values()].sort((a, b) => b.value - a.value);
+  const totalTasks = pieData.reduce((s, d) => s + d.value, 0);
 
   const controls = (
     <div className="flex flex-wrap items-center gap-3">
@@ -179,27 +184,35 @@ export default function TaskHistoryByContractReport({ customers = [] }) {
       tableRows={tableRows}
       emptyMessage="No tasks in this period."
       chartContent={
-        chartData.length ? (
+        pieData.length ? (
           <div className="space-y-3">
             <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-              Estimated vs actual hours by customer
+              Tasks by contract · {totalTasks} tasks
             </p>
-            <div className="h-72 w-full">
+            <div className="h-80 w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData} margin={{ top: 8, right: 16, bottom: 8, left: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                  <XAxis dataKey="name" tick={{ fontSize: 12 }} interval={0} angle={-15} textAnchor="end" height={50} />
-                  <YAxis tick={{ fontSize: 12 }} />
-                  <Tooltip formatter={(v, n) => [`${Number(v)}h`, n === 'actual' ? 'Actual' : 'Estimated']} />
+                <PieChart>
+                  <Pie
+                    data={pieData}
+                    dataKey="value"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={110}
+                    label={(e) => `${e.name}: ${e.value}`}
+                  >
+                    {pieData.map((d, i) => (
+                      <Cell key={d.name} fill={PIE_COLORS[i % PIE_COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(v, n) => [`${Number(v)} tasks`, n]} />
                   <Legend />
-                  <Bar dataKey="estimated" name="Estimated" fill="#c7d2fe" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="actual" name="Actual" fill="#6366f1" radius={[4, 4, 0, 0]} />
-                </BarChart>
+                </PieChart>
               </ResponsiveContainer>
             </div>
             <p className="text-xs text-slate-400">
-              Tasks grouped by customer and contract in the table. Tasks not tied to a contract
-              appear under &ldquo;No contract&rdquo;.
+              Distribution of all tasks matching the filters, by contract. Tasks not tied to a
+              contract appear as &ldquo;No contract&rdquo;.
             </p>
           </div>
         ) : (
