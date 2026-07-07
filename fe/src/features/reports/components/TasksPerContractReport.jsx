@@ -111,7 +111,7 @@ export default function TasksPerContractReport({ customers = [] }) {
   const controls = (
     <div className="flex flex-wrap items-center gap-3">
       <PeriodFilter value={filter} onChange={setFilter} />
-      <div className="w-44">
+      <div className="w-40">
         <Dropdown
           value={customerId}
           onChange={setCustomerId}

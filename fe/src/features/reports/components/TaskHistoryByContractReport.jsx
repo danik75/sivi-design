@@ -1,10 +1,22 @@
 import PropTypes from 'prop-types';
 import { useState } from 'react';
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Legend,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
 import Dropdown from '@/components/chadcn/Dropdown';
 import { fmtDate } from '@/features/reports/constants';
 import { useTaskHistory } from '@/features/reports/hooks';
 import PeriodFilter from './shared/PeriodFilter';
 import ReportShell from './shared/ReportShell';
+
+const num = (v) => (v == null ? 0 : Number(v));
 
 const now = new Date();
 // History defaults to the current year.
@@ -100,10 +112,38 @@ export default function TaskHistoryByContractReport({ customers = [] }) {
     'Actual (h)',
   ];
 
+  // Per-customer totals for the chart.
+  const chartData = groups
+    .map((cust) => {
+      let estimated = 0;
+      let actual = 0;
+      let tasks = 0;
+      for (const contract of cust.contracts ?? []) {
+        for (const t of contract.tasks ?? []) {
+          estimated += num(t.estimatedHours);
+          actual += num(t.actualHours);
+          tasks += 1;
+        }
+      }
+      for (const t of cust.unassignedTasks ?? []) {
+        estimated += num(t.estimatedHours);
+        actual += num(t.actualHours);
+        tasks += 1;
+      }
+      return {
+        name: cust.customerName,
+        estimated: Number(estimated.toFixed(2)),
+        actual: Number(actual.toFixed(2)),
+        tasks,
+      };
+    })
+    .filter((d) => d.tasks > 0)
+    .sort((a, b) => b.actual + b.estimated - (a.actual + a.estimated));
+
   const controls = (
     <div className="flex flex-wrap items-center gap-3">
       <PeriodFilter value={filter} onChange={setFilter} />
-      <div className="w-44">
+      <div className="w-40">
         <Dropdown
           value={customerId}
           onChange={(v) => {
@@ -117,7 +157,7 @@ export default function TaskHistoryByContractReport({ customers = [] }) {
           ]}
         />
       </div>
-      <div className="w-44">
+      <div className="w-40">
         <Dropdown
           value={contractId}
           onChange={setContractId}
@@ -139,10 +179,32 @@ export default function TaskHistoryByContractReport({ customers = [] }) {
       tableRows={tableRows}
       emptyMessage="No tasks in this period."
       chartContent={
-        <p className="text-xs text-slate-400">
-          Tasks grouped by customer and contract. Tasks not tied to a contract appear under
-          &ldquo;No contract&rdquo;.
-        </p>
+        chartData.length ? (
+          <div className="space-y-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+              Estimated vs actual hours by customer
+            </p>
+            <div className="h-72 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData} margin={{ top: 8, right: 16, bottom: 8, left: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                  <XAxis dataKey="name" tick={{ fontSize: 12 }} interval={0} angle={-15} textAnchor="end" height={50} />
+                  <YAxis tick={{ fontSize: 12 }} />
+                  <Tooltip formatter={(v, n) => [`${Number(v)}h`, n === 'actual' ? 'Actual' : 'Estimated']} />
+                  <Legend />
+                  <Bar dataKey="estimated" name="Estimated" fill="#c7d2fe" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="actual" name="Actual" fill="#6366f1" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+            <p className="text-xs text-slate-400">
+              Tasks grouped by customer and contract in the table. Tasks not tied to a contract
+              appear under &ldquo;No contract&rdquo;.
+            </p>
+          </div>
+        ) : (
+          <p className="text-xs text-slate-400">No tasks in this period.</p>
+        )
       }
     />
   );
