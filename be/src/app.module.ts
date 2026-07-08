@@ -11,6 +11,7 @@ import { ExpensesModule } from './expenses/expenses.module';
 import { InvoicesModule } from './invoices/invoices.module';
 import { ReceiptsModule } from './receipts/receipts.module';
 import { ReportsModule } from './reports/reports.module';
+import { SubscriptionsModule } from './subscriptions/subscriptions.module';
 import { TasksModule } from './tasks/tasks.module';
 
 @Module({
@@ -25,6 +26,7 @@ import { TasksModule } from './tasks/tasks.module';
     InvoicesModule,
     ReceiptsModule,
     ReportsModule,
+    SubscriptionsModule,
     TasksModule,
   ],
   controllers: [AppController],

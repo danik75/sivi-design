@@ -51,6 +51,22 @@ const MIGRATIONS: Array<{ name: string; sql: string }> = [
     name: 'tasks.contract_id',
     sql: `ALTER TABLE tasks ADD COLUMN IF NOT EXISTS contract_id UUID REFERENCES contracts(id) ON DELETE SET NULL`,
   },
+  {
+    name: 'subscriptions.table',
+    sql: `CREATE TABLE IF NOT EXISTS subscriptions (
+      id             UUID          PRIMARY KEY DEFAULT gen_random_uuid(),
+      name           TEXT          NOT NULL CHECK (char_length(trim(name)) > 0),
+      start_date     DATE          NOT NULL,
+      monthly_amount NUMERIC(14,2) NOT NULL CHECK (monthly_amount > 0),
+      currency       CHAR(3)       NOT NULL DEFAULT 'NIS',
+      renewal_day    INTEGER       NOT NULL CHECK (renewal_day BETWEEN 1 AND 31),
+      category       expense_category,
+      description    TEXT,
+      customer_id    UUID          REFERENCES customers(id) ON DELETE SET NULL,
+      status         expense_status NOT NULL DEFAULT 'active',
+      created_at     TIMESTAMPTZ   NOT NULL DEFAULT now()
+    )`,
+  },
 ];
 
 export async function runMigrations(): Promise<void> {
