@@ -126,6 +126,7 @@ export default function SubscriptionModal({ isOpen, onClose, subscription, onSuc
       onClose={onClose}
       title={subscription ? 'Edit Subscription' : 'Add Subscription'}
       footer={footer}
+      size="lg"
     >
       <Form id={FORM_ID} onSubmit={handleSubmit} className="space-y-4">
         <FormField label="Name">
@@ -133,7 +134,7 @@ export default function SubscriptionModal({ isOpen, onClose, subscription, onSuc
           {errors.name ? <p className="text-xs font-medium text-rose-600">{errors.name}</p> : null}
         </FormField>
 
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2">
           <FormField label="Monthly payment">
             <Input
               type="number"
@@ -165,24 +166,22 @@ export default function SubscriptionModal({ isOpen, onClose, subscription, onSuc
               <p className="text-xs font-medium text-rose-600">{errors.renewalDay}</p>
             ) : null}
           </FormField>
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-2">
           <FormField label="Start date">
             <DatePicker value={fields.startDate} onChange={set('startDate')} placeholder="Select date" />
             {errors.startDate ? (
               <p className="text-xs font-medium text-rose-600">{errors.startDate}</p>
             ) : null}
           </FormField>
-          <FormField label="Category">
-            <Dropdown
-              value={fields.category}
-              onChange={set('category')}
-              placeholder="Optional"
-              options={[{ value: '', label: 'None' }, ...EXPENSE_CATEGORIES]}
-            />
-          </FormField>
         </div>
+
+        <FormField label="Category">
+          <Dropdown
+            value={fields.category}
+            onChange={set('category')}
+            placeholder="Optional"
+            options={[{ value: '', label: 'None' }, ...EXPENSE_CATEGORIES]}
+          />
+        </FormField>
 
         <FormField label="Customer">
           <Dropdown
