@@ -152,6 +152,21 @@ CREATE TABLE IF NOT EXISTS expenses (
 );
 
 CREATE INDEX IF NOT EXISTS expenses_customer_id_idx ON expenses(customer_id);
+
+-- Recurring monthly subscriptions (tracked in the Expenses area)
+CREATE TABLE IF NOT EXISTS subscriptions (
+  id             UUID             PRIMARY KEY DEFAULT gen_random_uuid(),
+  name           TEXT             NOT NULL CHECK (char_length(trim(name)) > 0),
+  start_date     DATE             NOT NULL,
+  monthly_amount NUMERIC(14,2)    NOT NULL CHECK (monthly_amount > 0),
+  currency       CHAR(3)          NOT NULL DEFAULT 'NIS',
+  renewal_day    INTEGER          NOT NULL CHECK (renewal_day BETWEEN 1 AND 31),
+  category       expense_category,
+  description    TEXT,
+  customer_id    UUID             REFERENCES customers(id) ON DELETE SET NULL,
+  status         expense_status   NOT NULL DEFAULT 'active',
+  created_at     TIMESTAMPTZ      NOT NULL DEFAULT now()
+);
 CREATE INDEX IF NOT EXISTS expenses_status_idx      ON expenses(status);
 CREATE INDEX IF NOT EXISTS expenses_date_idx        ON expenses(date DESC);
 CREATE INDEX IF NOT EXISTS expenses_category_idx    ON expenses(category);
