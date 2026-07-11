@@ -5,9 +5,7 @@ import Dialog from '@/components/chadcn/Dialog';
 import Form from '@/components/chadcn/Form';
 import FormField from '@/components/chadcn/FormField';
 import Input from '@/components/chadcn/Input';
-import PencilIcon from '@/components/chadcn/icons/PencilIcon';
 import XIcon from '@/components/chadcn/icons/XIcon';
-import ContactModal from '@/features/customers/components/ContactModal';
 import {
   CUSTOMER_TEXT,
   createEmptyContact,
@@ -18,6 +16,7 @@ import useCreateCustomer from '@/features/customers/hooks/useCreateCustomer';
 import useUpdateCustomer from '@/features/customers/hooks/useUpdateCustomer';
 
 const FORM_ID = 'customer-modal-form';
+const T = CUSTOMER_TEXT.modal;
 
 function StarIcon({ filled }) {
   return (
@@ -29,124 +28,126 @@ function StarIcon({ filled }) {
 
 StarIcon.propTypes = { filled: PropTypes.bool };
 
+function SectionTitle({ children, hint }) {
+  return (
+    <div className="flex items-center gap-2 border-b border-slate-100 pb-1">
+      <h3 className="text-sm font-semibold text-slate-800">{children}</h3>
+      {hint ? <span className="text-xs font-normal text-slate-400">{hint}</span> : null}
+    </div>
+  );
+}
+
+SectionTitle.propTypes = { children: PropTypes.node, hint: PropTypes.string };
+
+function mapContact(c, i) {
+  return {
+    name: c.name ?? '',
+    title: c.title ?? '',
+    phone: c.phone ?? '',
+    email: c.email ?? '',
+    isPrimary: Boolean(c.isPrimary) || i === 0,
+  };
+}
+
 export default function CustomerModal({ isOpen, onClose, customer, onSuccess }) {
   const createMutation = useCreateCustomer();
   const updateMutation = useUpdateCustomer();
   const activeMutation = customer ? updateMutation : createMutation;
 
-  const [name, setName] = useState('');
-  const [companyName, setCompanyName] = useState('');
-  const [companyNumber, setCompanyNumber] = useState('');
-  const [address, setAddress] = useState('');
+  const [fields, setFields] = useState({
+    name: '',
+    title: '',
+    companyName: '',
+    companyNumber: '',
+    companyPhone: '',
+    companyEmail: '',
+    address: '',
+  });
   const [contacts, setContacts] = useState([createEmptyContact(true)]);
   const [nameError, setNameError] = useState('');
   const [contactsError, setContactsError] = useState('');
   const [submitError, setSubmitError] = useState('');
-  const [contactModal, setContactModal] = useState(null); // { index: number | null }
 
   useEffect(() => {
     if (!isOpen) return;
-    setName(customer?.name ?? '');
-    setCompanyName(customer?.companyName ?? '');
-    setCompanyNumber(customer?.companyNumber ?? '');
-    setAddress(customer?.address ?? '');
+    setFields({
+      name: customer?.name ?? '',
+      title: customer?.title ?? '',
+      companyName: customer?.companyName ?? '',
+      companyNumber: customer?.companyNumber ?? '',
+      companyPhone: customer?.companyPhone ?? '',
+      companyEmail: customer?.companyEmail ?? '',
+      address: customer?.address ?? '',
+    });
     setContacts(
-      customer?.contacts?.length
-        ? customer.contacts.map((c, i) => ({
-            firstName: c.firstName ?? '',
-            lastName: c.lastName ?? '',
-            email: c.email ?? '',
-            phone: c.phone ?? '',
-            address: c.address ?? '',
-            isPrimary: Boolean(c.isPrimary) || i === 0,
-          }))
-        : [createEmptyContact(true)]
+      customer?.contacts?.length ? customer.contacts.map(mapContact) : [createEmptyContact(true)]
     );
     setNameError('');
     setContactsError('');
     setSubmitError('');
-    setContactModal(null);
     createMutation.reset();
     updateMutation.reset();
-  }, [customer, isOpen]);
+  }, [customer, isOpen]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const dialogTitle = customer ? CUSTOMER_TEXT.modal.editTitle : CUSTOMER_TEXT.modal.createTitle;
-  const submitLabel = customer ? CUSTOMER_TEXT.modal.editSubmit : CUSTOMER_TEXT.modal.createSubmit;
   const isSaving = activeMutation.isLoading || activeMutation.isPending;
+  const set = (field) => (e) => setFields((f) => ({ ...f, [field]: e.target.value }));
 
   const footer = useMemo(
     () => (
       <>
         <Button type="button" variant="ghost" onClick={onClose}>
-          {CUSTOMER_TEXT.modal.cancel}
+          {T.cancel}
         </Button>
         <Button type="submit" form={FORM_ID} disabled={isSaving}>
-          {submitLabel}
+          {customer ? T.editSubmit : T.createSubmit}
         </Button>
       </>
     ),
-    [isSaving, onClose, submitLabel]
+    [isSaving, onClose, customer]
   );
 
-  const setPrimary = (index) => {
-    setContacts((prev) => prev.map((c, i) => ({ ...c, isPrimary: i === index })));
+  const setContactField = (index, field, value) => {
+    setContacts((prev) => prev.map((c, i) => (i === index ? { ...c, [field]: value } : c)));
+    if (contactsError) setContactsError('');
   };
-
-  const removeContact = (index) => {
+  const setPrimary = (index) =>
+    setContacts((prev) => prev.map((c, i) => ({ ...c, isPrimary: i === index })));
+  const addContact = () => setContacts((prev) => [...prev, createEmptyContact(prev.length === 0)]);
+  const removeContact = (index) =>
     setContacts((prev) => {
       const next = prev.filter((_, i) => i !== index);
       if (!next.length) return [createEmptyContact(true)];
-      // if removed was primary, assign primary to first
       if (!next.some((c) => c.isPrimary)) next[0] = { ...next[0], isPrimary: true };
       return next;
     });
-  };
-
-  const openAddContact = () => setContactModal({ index: null });
-  const openEditContact = (index) => setContactModal({ index });
-  const closeContactModal = () => setContactModal(null);
-
-  const handleContactSave = (data) => {
-    if (contactModal.index === null) {
-      // add new — not primary unless it's the first
-      setContacts((prev) => [...prev, { ...data, isPrimary: prev.length === 0 }]);
-    } else {
-      setContacts((prev) =>
-        prev.map((c, i) => (i === contactModal.index ? { ...data, isPrimary: c.isPrimary } : c))
-      );
-    }
-    setContactModal(null);
-  };
 
   const handleSubmit = (event) => {
     event.preventDefault();
-    const trimmedName = name.trim();
+    const trimmedName = fields.name.trim();
     if (!trimmedName) {
-      setNameError(CUSTOMER_TEXT.modal.nameRequired);
+      setNameError(T.nameRequired);
       setSubmitError('');
       return;
     }
     setNameError('');
     setSubmitError('');
-    const payload = normalizeCustomerPayload({
-      name: trimmedName,
-      companyName,
-      companyNumber,
-      address,
-      contacts,
-    });
-    // A customer must have at least one contact with details.
+
+    const payload = normalizeCustomerPayload({ ...fields, name: trimmedName, contacts });
     if (!payload.contacts.length) {
-      setContactsError(CUSTOMER_TEXT.modal.contactsRequired);
+      setContactsError(T.contactsRequired);
       return;
     }
     setContactsError('');
+
     const onError = (error) => {
-      const message = getApiErrorMessage(error, CUSTOMER_TEXT.modal.saveError);
-      if (error?.response?.status === 409) { setNameError(message); return; }
+      const message = getApiErrorMessage(error, T.saveError);
+      if (error?.response?.status === 409) {
+        setNameError(message);
+        return;
+      }
       setSubmitError(message);
     };
-    const mutationOptions = {
+    const options = {
       onSuccess: (saved) => {
         onSuccess(
           customer
@@ -157,145 +158,146 @@ export default function CustomerModal({ isOpen, onClose, customer, onSuccess }) 
       },
       onError,
     };
-    if (customer) { updateMutation.mutate({ id: customer.id, data: payload }, mutationOptions); return; }
-    createMutation.mutate(payload, mutationOptions);
+    if (customer) updateMutation.mutate({ id: customer.id, data: payload }, options);
+    else createMutation.mutate(payload, options);
   };
 
-  const editingContact = contactModal?.index !== null && contactModal?.index !== undefined
-    ? contacts[contactModal.index]
-    : null;
-
   return (
-    <>
-      <Dialog isOpen={isOpen} onClose={onClose} title={dialogTitle} footer={footer}>
-        <Form id={FORM_ID} onSubmit={handleSubmit} className="space-y-5">
-          <FormField label={CUSTOMER_TEXT.modal.nameLabel}>
-            <Input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder={CUSTOMER_TEXT.modal.namePlaceholder}
-              aria-invalid={Boolean(nameError)}
-            />
-          </FormField>
-          {nameError && <p className="-mt-3 text-xs font-medium text-rose-600">{nameError}</p>}
+    <Dialog
+      isOpen={isOpen}
+      onClose={onClose}
+      title={customer ? T.editTitle : T.createTitle}
+      footer={footer}
+      size="xl"
+    >
+      <div className="max-h-[70vh] overflow-y-auto pr-1">
+        <Form id={FORM_ID} onSubmit={handleSubmit} className="space-y-6">
+          {/* Customer */}
+          <div className="space-y-3">
+            <SectionTitle>{T.customerSection}</SectionTitle>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <FormField label={T.nameLabel}>
+                <Input
+                  value={fields.name}
+                  onChange={set('name')}
+                  placeholder={T.namePlaceholder}
+                  aria-invalid={Boolean(nameError)}
+                />
+                {nameError ? <p className="text-xs font-medium text-rose-600">{nameError}</p> : null}
+              </FormField>
+              <FormField label={T.titleLabel}>
+                <Input value={fields.title} onChange={set('title')} placeholder={T.titlePlaceholder} />
+              </FormField>
+            </div>
+          </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <FormField label={CUSTOMER_TEXT.modal.companyNameLabel}>
-              <Input
-                value={companyName}
-                onChange={(e) => setCompanyName(e.target.value)}
-                placeholder={CUSTOMER_TEXT.modal.companyNamePlaceholder}
-              />
-            </FormField>
-            <FormField label={CUSTOMER_TEXT.modal.companyNumberLabel}>
-              <Input
-                value={companyNumber}
-                onChange={(e) => setCompanyNumber(e.target.value)}
-                placeholder={CUSTOMER_TEXT.modal.companyNumberPlaceholder}
-              />
+          {/* Company */}
+          <div className="space-y-3">
+            <SectionTitle hint={T.companyHint}>{T.companySection}</SectionTitle>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <FormField label={T.companyNameLabel}>
+                <Input value={fields.companyName} onChange={set('companyName')} placeholder={T.companyNamePlaceholder} />
+              </FormField>
+              <FormField label={T.companyNumberLabel}>
+                <Input value={fields.companyNumber} onChange={set('companyNumber')} placeholder={T.companyNumberPlaceholder} />
+              </FormField>
+              <FormField label={T.companyPhoneLabel}>
+                <Input value={fields.companyPhone} onChange={set('companyPhone')} placeholder={T.companyPhonePlaceholder} />
+              </FormField>
+              <FormField label={T.companyEmailLabel}>
+                <Input type="email" value={fields.companyEmail} onChange={set('companyEmail')} placeholder={T.companyEmailPlaceholder} />
+              </FormField>
+            </div>
+            <FormField label={T.addressLabel}>
+              <Input value={fields.address} onChange={set('address')} placeholder={T.addressPlaceholder} />
             </FormField>
           </div>
 
-          <FormField label={CUSTOMER_TEXT.modal.addressLabel}>
-            <Input
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              placeholder={CUSTOMER_TEXT.modal.addressPlaceholder}
-            />
-          </FormField>
-
-          {/* Contacts grid */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-slate-800">{CUSTOMER_TEXT.modal.contactsLabel}</h3>
-              <Button type="button" variant="ghost" onClick={openAddContact}>
-                {CUSTOMER_TEXT.modal.addContact}
+          {/* Contacts */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-1">
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-semibold text-slate-800">{T.contactsLabel}</h3>
+                <span className="text-xs font-normal text-slate-400">{T.contactsHint}</span>
+              </div>
+              <Button type="button" variant="ghost" onClick={addContact}>
+                {T.addContact}
               </Button>
             </div>
 
-            <div className="overflow-hidden rounded-xl border border-slate-100">
-              {contacts.length === 0 ? (
-                <p className="py-6 text-center text-xs text-slate-400">No contacts yet.</p>
-              ) : (
-                <table className="w-full text-xs bg-white">
-                  <thead className="bg-slate-50 text-slate-400 uppercase tracking-wide">
-                    <tr>
-                      <th className="w-8 px-3 py-2 text-center">Primary</th>
-                      <th className="px-3 py-2 text-left">Name</th>
-                      <th className="px-3 py-2 text-left">Email</th>
-                      <th className="px-3 py-2 text-left">Phone</th>
-                      <th className="w-16 px-2 py-2" />
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-50 bg-white">
-                    {contacts.map((c, i) => (
-                      <tr key={i} className="hover:bg-slate-50/60">
-                        <td className="px-3 py-2 text-center">
-                          <button
-                            type="button"
-                            onClick={() => setPrimary(i)}
-                            className={`transition-colors ${c.isPrimary ? 'text-amber-400' : 'text-slate-300 hover:text-amber-300'}`}
-                            aria-label={c.isPrimary ? 'Primary contact' : 'Set as primary'}
-                            title={c.isPrimary ? 'Primary contact' : 'Set as primary'}
-                          >
-                            <StarIcon filled={c.isPrimary} />
-                          </button>
-                        </td>
-                        <td className="max-w-[140px] truncate px-3 py-2 text-slate-700">
-                          {[c.firstName, c.lastName].filter(Boolean).join(' ') || (
-                            <span className="text-slate-300">—</span>
-                          )}
-                        </td>
-                        <td className="max-w-[140px] truncate px-3 py-2 text-slate-700">
-                          {c.email || <span className="text-slate-300">—</span>}
-                        </td>
-                        <td className="px-3 py-2 text-slate-700">
-                          {c.phone || <span className="text-slate-300">—</span>}
-                        </td>
-                        <td className="px-2 py-2">
-                          <div className="flex items-center justify-end gap-1">
-                            <button
-                              type="button"
-                              onClick={() => openEditContact(i)}
-                              className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors"
-                              aria-label="Edit contact"
-                            >
-                              <PencilIcon className="h-3.5 w-3.5" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => removeContact(i)}
-                              className="rounded p-1 text-slate-400 hover:bg-rose-50 hover:text-rose-500 transition-colors"
-                              aria-label="Remove contact"
-                            >
-                              <XIcon className="h-3.5 w-3.5" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
+            <div className="space-y-3">
+              {contacts.map((c, i) => (
+                <div key={i} className="rounded-xl border border-slate-200 p-3">
+                  <div className="mb-2 flex items-center justify-between">
+                    <button
+                      type="button"
+                      onClick={() => setPrimary(i)}
+                      className={`inline-flex items-center gap-1.5 text-xs font-medium transition-colors ${
+                        c.isPrimary ? 'text-amber-500' : 'text-slate-400 hover:text-amber-400'
+                      }`}
+                      title={c.isPrimary ? 'Primary contact' : 'Set as primary'}
+                    >
+                      <StarIcon filled={c.isPrimary} />
+                      {c.isPrimary ? 'Primary' : 'Set as primary'}
+                    </button>
+                    {contacts.length > 1 ? (
+                      <button
+                        type="button"
+                        onClick={() => removeContact(i)}
+                        className="rounded p-1 text-slate-400 transition-colors hover:bg-rose-50 hover:text-rose-500"
+                        aria-label="Remove contact"
+                      >
+                        <XIcon className="h-4 w-4" />
+                      </button>
+                    ) : null}
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <FormField label={T.contactNameLabel}>
+                      <Input
+                        value={c.name}
+                        onChange={(e) => setContactField(i, 'name', e.target.value)}
+                        placeholder="Full name"
+                      />
+                    </FormField>
+                    <FormField label={T.contactTitleLabel}>
+                      <Input
+                        value={c.title}
+                        onChange={(e) => setContactField(i, 'title', e.target.value)}
+                        placeholder="Role"
+                      />
+                    </FormField>
+                    <FormField label={T.contactPhoneLabel}>
+                      <Input
+                        value={c.phone}
+                        onChange={(e) => setContactField(i, 'phone', e.target.value)}
+                        placeholder="+972 …"
+                      />
+                    </FormField>
+                    <FormField label={T.contactEmailLabel}>
+                      <Input
+                        type="email"
+                        value={c.email}
+                        onChange={(e) => setContactField(i, 'email', e.target.value)}
+                        placeholder="name@company.com"
+                      />
+                    </FormField>
+                  </div>
+                </div>
+              ))}
             </div>
-            {contactsError && <p className="text-xs font-medium text-rose-600">{contactsError}</p>}
+            {contactsError ? (
+              <p className="text-xs font-medium text-rose-600">{contactsError}</p>
+            ) : null}
           </div>
 
-          {submitError && (
+          {submitError ? (
             <p className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-600">
               {submitError}
             </p>
-          )}
+          ) : null}
         </Form>
-      </Dialog>
-
-      <ContactModal
-        isOpen={contactModal !== null}
-        onClose={closeContactModal}
-        contact={editingContact}
-        onSave={handleContactSave}
-      />
-    </>
+      </div>
+    </Dialog>
   );
 }
 
@@ -305,14 +307,13 @@ CustomerModal.propTypes = {
   customer: PropTypes.shape({
     id: PropTypes.string,
     name: PropTypes.string,
-    contacts: PropTypes.arrayOf(
-      PropTypes.shape({
-        email: PropTypes.string,
-        phone: PropTypes.string,
-        address: PropTypes.string,
-        isPrimary: PropTypes.bool,
-      })
-    ),
+    title: PropTypes.string,
+    companyName: PropTypes.string,
+    companyNumber: PropTypes.string,
+    companyPhone: PropTypes.string,
+    companyEmail: PropTypes.string,
+    address: PropTypes.string,
+    contacts: PropTypes.arrayOf(PropTypes.object),
   }),
   onSuccess: PropTypes.func.isRequired,
 };
