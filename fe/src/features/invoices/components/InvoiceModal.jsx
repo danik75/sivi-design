@@ -68,7 +68,7 @@ export default function InvoiceModal({ isOpen, onClose, invoice, onSuccess, onVi
   const [picker, setPicker] = useState(null); // 'tasks' | 'expenses' | null
   const skipAutoPrefillRef = useRef(false);
   const lineItemsInitializedRef = useRef(false);
-  const autoAddedCustomerRef = useRef(''); // customerId whose tasks were auto-added (create)
+  const prefillBuiltRef = useRef(''); // contractId whose line items were prepopulated (create)
 
   const createMutation = useCreateInvoice();
   const updateMutation = useUpdateInvoice();
@@ -104,6 +104,14 @@ export default function InvoiceModal({ isOpen, onClose, invoice, onSuccess, onVi
     [contracts]
   );
 
+  // On create, load the customer's available (done, unlinked) tasks so we can
+  // pre-populate the invoice and disable "Add from tasks" while all are added.
+  const { data: availableTasks = [], isFetched: tasksFetched } = useQuery(
+    ['available-tasks', formState.customerId, invoice?.id],
+    () => getAvailableTasks(formState.customerId, invoice?.id),
+    { enabled: isOpen && !invoice && Boolean(formState.customerId) }
+  );
+
   useEffect(() => {
     if (!isOpen) {
       return undefined;
@@ -126,7 +134,7 @@ export default function InvoiceModal({ isOpen, onClose, invoice, onSuccess, onVi
     setErrors({});
     setSubmitError('');
     lineItemsInitializedRef.current = false; // reset so detail fetch can populate once
-    autoAddedCustomerRef.current = ''; // reset so tasks re-populate on (re)open
+    prefillBuiltRef.current = ''; // reset so line items re-populate on (re)open
     createMutation.reset();
     updateMutation.reset();
 
@@ -189,23 +197,34 @@ export default function InvoiceModal({ isOpen, onClose, invoice, onSuccess, onVi
     refetchPrefill();
   }, [formState.contractId]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Build the initial line items once a contract is chosen: the contract fee
+  // (from prefill) followed, on create, by ALL of the customer's available
+  // (done, unlinked) tasks. Runs once per contract so background refetches
+  // don't clobber the user's edits.
   useEffect(() => {
     if (!prefillData) return;
-    setLineItems(
-      prefillData.suggestedLineItems.map((lineItem) => ({
-        description: lineItem.description,
-        quantity: String(lineItem.quantity),
-        unitPrice: String(lineItem.unitPrice),
-        amount: String(lineItem.amount),
-        sourceType: lineItem.sourceType,
-        sourceId: lineItem.sourceId,
-        sourceDate: lineItem.sourceDate ?? null,
-      }))
-    );
+    // Create mode: wait until the available-tasks query has settled so we
+    // don't lock in an empty task list before it loads.
+    if (!invoice && !tasksFetched) return;
+    if (prefillBuiltRef.current === formState.contractId) return;
+    prefillBuiltRef.current = formState.contractId;
+
+    const feeItems = prefillData.suggestedLineItems.map((lineItem) => ({
+      description: lineItem.description,
+      quantity: String(lineItem.quantity),
+      unitPrice: String(lineItem.unitPrice),
+      amount: String(lineItem.amount),
+      sourceType: lineItem.sourceType,
+      sourceId: lineItem.sourceId,
+      sourceDate: lineItem.sourceDate ?? null,
+    }));
+    const taskItems = invoice ? [] : buildTaskLineItems(availableTasks);
+    setLineItems([...feeItems, ...taskItems]);
+
     if (prefillData.currency && !formState.currency) {
       setFormState((prev) => ({ ...prev, currency: prefillData.currency }));
     }
-  }, [prefillData]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [prefillData, availableTasks, tasksFetched]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const subtotal = lineItems.reduce((sum, lineItem) => sum + parseFloat(lineItem.amount || 0), 0);
   const discountAmount = (() => {
@@ -270,11 +289,13 @@ export default function InvoiceModal({ isOpen, onClose, invoice, onSuccess, onVi
     .filter((li) => li.sourceType === 'expense')
     .map((li) => li.sourceId);
 
-  const handleAddTasks = (tasks) => {
+  // Map done tasks → invoice line items, applying the contract's rate
+  // (T&M → hours × hourly rate; otherwise quantity 1 at price 0).
+  const buildTaskLineItems = (tasks) => {
     const contract = contractMap[formState.contractId];
     const isTM = contract?.type === 'time_and_materials';
     const rate = Number(contract?.hourlyRate) || 0;
-    const additions = tasks.map((t) => {
+    return tasks.map((t) => {
       const hours = t.actualHours != null ? Number(t.actualHours) : Number(t.estimatedHours) || 1;
       const quantity = isTM ? hours || 1 : 1;
       const unitPrice = isTM ? rate : 0;
@@ -288,28 +309,11 @@ export default function InvoiceModal({ isOpen, onClose, invoice, onSuccess, onVi
         sourceDate: t.endDate,
       };
     });
-    handleLineItemsChange([...lineItems, ...additions]);
   };
 
-  // On create, know the customer's available (done, unlinked) tasks so we can
-  // pre-populate the invoice and disable "Add from tasks" while all are added.
-  const { data: availableTasks = [] } = useQuery(
-    ['available-tasks', formState.customerId, invoice?.id],
-    () => getAvailableTasks(formState.customerId, invoice?.id),
-    { enabled: isOpen && !invoice && Boolean(formState.customerId) }
-  );
-
-  // Auto-add all available tasks once per selected customer (create mode).
-  useEffect(() => {
-    if (invoice || !formState.customerId || !availableTasks.length) return;
-    if (autoAddedCustomerRef.current === formState.customerId) return;
-    autoAddedCustomerRef.current = formState.customerId;
-    const present = new Set(
-      lineItems.filter((li) => li.sourceType === 'task').map((li) => li.sourceId)
-    );
-    const toAdd = availableTasks.filter((t) => !present.has(t.id));
-    if (toAdd.length) handleAddTasks(toAdd);
-  }, [availableTasks, formState.customerId, invoice]); // eslint-disable-line react-hooks/exhaustive-deps
+  const handleAddTasks = (tasks) => {
+    handleLineItemsChange([...lineItems, ...buildTaskLineItems(tasks)]);
+  };
 
   // "Add from tasks" is disabled while every available task is already on the invoice.
   const allTasksAdded =
