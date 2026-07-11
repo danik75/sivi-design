@@ -3,7 +3,8 @@ import pool from '../db';
 
 // Number of data points shown in the trend chart
 const MONTHLY_LOOKBACK = 12;
-const YEARLY_LOOKBACK = 5;
+// Current year + the past two years (see Profitability Trend on the Billing tab)
+const YEARLY_LOOKBACK = 3;
 
 @Injectable()
 export class BillingRepository {
