@@ -40,16 +40,29 @@ export const CUSTOMER_TEXT = {
     editTitle: 'Edit Customer',
     nameLabel: 'Name',
     namePlaceholder: 'Enter customer name',
+    titleLabel: 'Title',
+    titlePlaceholder: 'Optional (e.g. VP Design)',
+    customerSection: 'Customer',
+    companySection: 'Company',
+    companyHint: 'Optional',
     companyNameLabel: 'Company Name',
     companyNamePlaceholder: 'Optional',
     companyNumberLabel: 'Company Number',
-    companyNumberPlaceholder: 'Optional (e.g. registration / tax ID)',
+    companyNumberPlaceholder: 'Registration / tax ID',
+    companyPhoneLabel: 'Telephone',
+    companyPhonePlaceholder: 'Company phone',
+    companyEmailLabel: 'Email',
+    companyEmailPlaceholder: 'company@example.com',
     addressLabel: 'Address',
-    addressPlaceholder: 'Optional (street, city, country)',
+    addressPlaceholder: 'Street, city, country',
     contactsLabel: 'Contacts',
-    contactsHint: 'Keep the primary contact first in the list.',
+    contactsHint: 'Star the primary contact.',
     contactsRequired: 'At least one contact is required.',
-    addContact: 'Add Contact',
+    addContact: 'Add contact',
+    contactNameLabel: 'Name',
+    contactTitleLabel: 'Title',
+    contactPhoneLabel: 'Phone',
+    contactEmailLabel: 'Email',
     cancel: 'Cancel',
     createSubmit: 'Save Customer',
     editSubmit: 'Save Changes',
@@ -78,11 +91,10 @@ export const CUSTOMER_TEXT = {
 
 export function createEmptyContact(isPrimary = false) {
   return {
-    firstName: '',
-    lastName: '',
-    email: '',
+    name: '',
+    title: '',
     phone: '',
-    address: '',
+    email: '',
     isPrimary,
   };
 }
@@ -95,20 +107,25 @@ export function getPrimaryContact(customer) {
   );
 }
 
-export function normalizeCustomerPayload({ name, companyName, companyNumber, address, contacts }) {
+export function normalizeCustomerPayload({
+  name,
+  title,
+  companyName,
+  companyNumber,
+  companyPhone,
+  companyEmail,
+  address,
+  contacts,
+}) {
   const filtered = contacts
     .map((contact) => ({
-      firstName: contact.firstName?.trim() ?? '',
-      lastName: contact.lastName?.trim() ?? '',
+      name: contact.name?.trim() ?? '',
+      title: contact.title?.trim() ?? '',
       email: contact.email?.trim() ?? '',
       phone: contact.phone?.trim() ?? '',
-      address: contact.address?.trim() ?? '',
       isPrimary: Boolean(contact.isPrimary),
     }))
-    .filter(
-      (contact) =>
-        contact.firstName || contact.lastName || contact.email || contact.phone || contact.address
-    );
+    .filter((contact) => contact.name || contact.email || contact.phone);
 
   // ensure exactly one primary — keep user's choice, fall back to first
   const hasPrimary = filtered.some((c) => c.isPrimary);
@@ -119,8 +136,11 @@ export function normalizeCustomerPayload({ name, companyName, companyNumber, add
 
   return {
     name: name.trim(),
+    title: title?.trim() || null,
     companyName: companyName?.trim() || null,
     companyNumber: companyNumber?.trim() || null,
+    companyPhone: companyPhone?.trim() || null,
+    companyEmail: companyEmail?.trim() || null,
     address: address?.trim() || null,
     contacts: normalizedContacts,
   };

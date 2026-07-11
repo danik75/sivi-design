@@ -52,6 +52,26 @@ const MIGRATIONS: Array<{ name: string; sql: string }> = [
     sql: `ALTER TABLE tasks ADD COLUMN IF NOT EXISTS contract_id UUID REFERENCES contracts(id) ON DELETE SET NULL`,
   },
   {
+    name: 'customers.title',
+    sql: `ALTER TABLE customers ADD COLUMN IF NOT EXISTS title TEXT`,
+  },
+  {
+    name: 'customers.company_phone',
+    sql: `ALTER TABLE customers ADD COLUMN IF NOT EXISTS company_phone TEXT`,
+  },
+  {
+    name: 'customers.company_email',
+    sql: `ALTER TABLE customers ADD COLUMN IF NOT EXISTS company_email TEXT`,
+  },
+  {
+    name: 'contacts.name',
+    sql: `ALTER TABLE contacts ADD COLUMN IF NOT EXISTS name TEXT`,
+  },
+  {
+    name: 'contacts.title',
+    sql: `ALTER TABLE contacts ADD COLUMN IF NOT EXISTS title TEXT`,
+  },
+  {
     name: 'subscriptions.table',
     sql: `CREATE TABLE IF NOT EXISTS subscriptions (
       id             UUID          PRIMARY KEY DEFAULT gen_random_uuid(),

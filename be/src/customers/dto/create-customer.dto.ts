@@ -14,6 +14,16 @@ import {
 export class CreateContactDto {
   @IsOptional()
   @IsString()
+  @MaxLength(160)
+  name?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  title?: string;
+
+  @IsOptional()
+  @IsString()
   firstName?: string;
 
   @IsOptional()
@@ -45,6 +55,11 @@ export class CreateCustomerDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(120)
+  title?: string;
+
+  @IsOptional()
+  @IsString()
   @MaxLength(160)
   companyName?: string;
 
@@ -52,6 +67,15 @@ export class CreateCustomerDto {
   @IsString()
   @MaxLength(50)
   companyNumber?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  companyPhone?: string;
+
+  @IsOptional()
+  @IsEmail()
+  companyEmail?: string;
 
   @IsOptional()
   @IsString()

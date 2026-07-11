@@ -8,15 +8,15 @@ export class CustomerRepository {
   async findAll(search?: string, page = 1, limit = 25) {
     const offset = (page - 1) * limit;
     const where = search
-      ? `WHERE c.name ILIKE $1 OR c.company_name ILIKE $1 OR EXISTS (SELECT 1 FROM contacts ct WHERE ct.customer_id = c.id AND (ct.first_name ILIKE $1 OR ct.last_name ILIKE $1 OR ct.email ILIKE $1 OR ct.phone ILIKE $1))`
+      ? `WHERE c.name ILIKE $1 OR c.company_name ILIKE $1 OR EXISTS (SELECT 1 FROM contacts ct WHERE ct.customer_id = c.id AND (ct.name ILIKE $1 OR ct.first_name ILIKE $1 OR ct.last_name ILIKE $1 OR ct.email ILIKE $1 OR ct.phone ILIKE $1))`
       : '';
     const params = search ? [`%${search}%`, limit, offset] : [limit, offset];
     const limitIdx = search ? 2 : 1;
     const offsetIdx = search ? 3 : 2;
 
     const q = `
-      SELECT c.id, c.name, c.company_name AS "companyName", c.company_number AS "companyNumber", c.address, c.created_at, c.updated_at,
-        json_agg(json_build_object('id', ct.id, 'firstName', ct.first_name, 'lastName', ct.last_name, 'email', ct.email, 'phone', ct.phone, 'address', ct.address, 'isPrimary', ct.is_primary) ORDER BY ct.is_primary DESC, ct.created_at) FILTER (WHERE ct.id IS NOT NULL) AS contacts
+      SELECT c.id, c.name, c.title, c.company_name AS "companyName", c.company_number AS "companyNumber", c.company_phone AS "companyPhone", c.company_email AS "companyEmail", c.address, c.created_at, c.updated_at,
+        json_agg(json_build_object('id', ct.id, 'name', COALESCE(NULLIF(trim(ct.name), ''), NULLIF(trim(concat_ws(' ', ct.first_name, ct.last_name)), '')), 'title', ct.title, 'firstName', ct.first_name, 'lastName', ct.last_name, 'email', ct.email, 'phone', ct.phone, 'address', ct.address, 'isPrimary', ct.is_primary) ORDER BY ct.is_primary DESC, ct.created_at) FILTER (WHERE ct.id IS NOT NULL) AS contacts
       FROM customers c
       LEFT JOIN contacts ct ON ct.customer_id = c.id
       ${where}
@@ -25,7 +25,7 @@ export class CustomerRepository {
       LIMIT $${limitIdx} OFFSET $${offsetIdx}
     `;
     const countQ = search
-      ? `SELECT COUNT(*) FROM customers c WHERE c.name ILIKE $1 OR c.company_name ILIKE $1 OR EXISTS (SELECT 1 FROM contacts ct WHERE ct.customer_id = c.id AND (ct.first_name ILIKE $1 OR ct.last_name ILIKE $1 OR ct.email ILIKE $1 OR ct.phone ILIKE $1))`
+      ? `SELECT COUNT(*) FROM customers c WHERE c.name ILIKE $1 OR c.company_name ILIKE $1 OR EXISTS (SELECT 1 FROM contacts ct WHERE ct.customer_id = c.id AND (ct.name ILIKE $1 OR ct.first_name ILIKE $1 OR ct.last_name ILIKE $1 OR ct.email ILIKE $1 OR ct.phone ILIKE $1))`
       : `SELECT COUNT(*) FROM customers`;
     const countParams = search ? [`%${search}%`] : [];
 
@@ -35,8 +35,8 @@ export class CustomerRepository {
 
   async findOne(id: string) {
     const res = await pool.query(
-      `SELECT c.id, c.name, c.company_name AS "companyName", c.company_number AS "companyNumber", c.address, c.created_at, c.updated_at,
-        json_agg(json_build_object('id', ct.id, 'firstName', ct.first_name, 'lastName', ct.last_name, 'email', ct.email, 'phone', ct.phone, 'address', ct.address, 'isPrimary', ct.is_primary) ORDER BY ct.is_primary DESC, ct.created_at) FILTER (WHERE ct.id IS NOT NULL) AS contacts
+      `SELECT c.id, c.name, c.title, c.company_name AS "companyName", c.company_number AS "companyNumber", c.company_phone AS "companyPhone", c.company_email AS "companyEmail", c.address, c.created_at, c.updated_at,
+        json_agg(json_build_object('id', ct.id, 'name', COALESCE(NULLIF(trim(ct.name), ''), NULLIF(trim(concat_ws(' ', ct.first_name, ct.last_name)), '')), 'title', ct.title, 'firstName', ct.first_name, 'lastName', ct.last_name, 'email', ct.email, 'phone', ct.phone, 'address', ct.address, 'isPrimary', ct.is_primary) ORDER BY ct.is_primary DESC, ct.created_at) FILTER (WHERE ct.id IS NOT NULL) AS contacts
        FROM customers c LEFT JOIN contacts ct ON ct.customer_id = c.id
        WHERE c.id = $1 GROUP BY c.id`,
       [id],
@@ -58,11 +58,15 @@ export class CustomerRepository {
         throw new ConflictException('Customer name already exists');
       }
       const res = await client.query(
-        'INSERT INTO customers (name, company_name, company_number, address) VALUES ($1, $2, $3, $4) RETURNING id',
+        `INSERT INTO customers (name, title, company_name, company_number, company_phone, company_email, address)
+         VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
         [
           dto.name.trim(),
+          dto.title?.trim() || null,
           dto.companyName?.trim() || null,
           dto.companyNumber?.trim() || null,
+          dto.companyPhone?.trim() || null,
+          dto.companyEmail?.trim() || null,
           dto.address?.trim() || null,
         ],
       );
@@ -71,14 +75,14 @@ export class CustomerRepository {
         for (let i = 0; i < dto.contacts.length; i += 1) {
           const c = dto.contacts[i];
           await client.query(
-            'INSERT INTO contacts (customer_id, first_name, last_name, email, phone, address, is_primary) VALUES ($1,$2,$3,$4,$5,$6,$7)',
+            'INSERT INTO contacts (customer_id, name, title, email, phone, address, is_primary) VALUES ($1,$2,$3,$4,$5,$6,$7)',
             [
               customer.id,
-              c.firstName ?? null,
-              c.lastName ?? null,
-              c.email ?? null,
-              c.phone ?? null,
-              c.address ?? null,
+              c.name?.trim() || null,
+              c.title?.trim() || null,
+              c.email?.trim() || null,
+              c.phone?.trim() || null,
+              c.address?.trim() || null,
               c.isPrimary ?? i === 0,
             ],
           );
@@ -113,9 +117,27 @@ export class CustomerRepository {
         }
         await client.query('UPDATE customers SET name = $1, updated_at = now() WHERE id = $2', [dto.name.trim(), id]);
       }
+      if (dto.title !== undefined) {
+        await client.query('UPDATE customers SET title = $1, updated_at = now() WHERE id = $2', [
+          dto.title?.trim() || null,
+          id,
+        ]);
+      }
       if (dto.companyName !== undefined) {
         await client.query('UPDATE customers SET company_name = $1, updated_at = now() WHERE id = $2', [
           dto.companyName?.trim() || null,
+          id,
+        ]);
+      }
+      if (dto.companyPhone !== undefined) {
+        await client.query('UPDATE customers SET company_phone = $1, updated_at = now() WHERE id = $2', [
+          dto.companyPhone?.trim() || null,
+          id,
+        ]);
+      }
+      if (dto.companyEmail !== undefined) {
+        await client.query('UPDATE customers SET company_email = $1, updated_at = now() WHERE id = $2', [
+          dto.companyEmail?.trim() || null,
           id,
         ]);
       }
@@ -136,14 +158,14 @@ export class CustomerRepository {
         for (let i = 0; i < dto.contacts.length; i += 1) {
           const c = dto.contacts[i];
           await client.query(
-            'INSERT INTO contacts (customer_id, first_name, last_name, email, phone, address, is_primary) VALUES ($1,$2,$3,$4,$5,$6,$7)',
+            'INSERT INTO contacts (customer_id, name, title, email, phone, address, is_primary) VALUES ($1,$2,$3,$4,$5,$6,$7)',
             [
               id,
-              c.firstName ?? null,
-              c.lastName ?? null,
-              c.email ?? null,
-              c.phone ?? null,
-              c.address ?? null,
+              c.name?.trim() || null,
+              c.title?.trim() || null,
+              c.email?.trim() || null,
+              c.phone?.trim() || null,
+              c.address?.trim() || null,
               c.isPrimary ?? i === 0,
             ],
           );

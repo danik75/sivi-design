@@ -25,8 +25,11 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS customers (
   id             UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   name           TEXT        NOT NULL UNIQUE CHECK (char_length(trim(name)) > 0),
+  title          TEXT,
   company_name   TEXT,
   company_number TEXT,
+  company_phone  TEXT,
+  company_email  TEXT,
   address        TEXT,
   created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at     TIMESTAMPTZ NOT NULL DEFAULT now()
@@ -35,6 +38,8 @@ CREATE TABLE IF NOT EXISTS customers (
 CREATE TABLE IF NOT EXISTS contacts (
   id          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   customer_id UUID        NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+  name        TEXT,
+  title       TEXT,
   first_name  TEXT,
   last_name   TEXT,
   email       TEXT,
