@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { PoolClient } from 'pg';
 import pool from '../db';
+import { CreateInvoiceAttachmentDto } from './dto/create-invoice-attachment.dto';
 import { CreateInvoiceDto } from './dto/create-invoice.dto';
 import { CreateLineItemDto } from './dto/create-line-item.dto';
 import { InvoiceStatus } from './dto/transition-status.dto';
@@ -704,6 +705,84 @@ export class InvoiceRepository {
     if (dueDate < issueDate) {
       throw new BadRequestException('dueDate must be greater than or equal to issueDate');
     }
+  }
+
+  async listAttachments(invoiceId: string) {
+    this.assertValidUuid(invoiceId, 'invoiceId');
+    const res = await pool.query(
+      `
+        SELECT
+          id,
+          invoice_id     AS "invoiceId",
+          file_name      AS "fileName",
+          file_mime_type AS "fileMimeType",
+          file_size      AS "fileSize",
+          created_at     AS "createdAt"
+        FROM invoice_attachments
+        WHERE invoice_id = $1
+        ORDER BY created_at DESC
+      `,
+      [invoiceId],
+    );
+    return res.rows;
+  }
+
+  async getAttachment(attachmentId: string) {
+    this.assertValidUuid(attachmentId, 'attachmentId');
+    const res = await pool.query(
+      `
+        SELECT
+          id,
+          invoice_id     AS "invoiceId",
+          file_data      AS "fileData",
+          file_name      AS "fileName",
+          file_mime_type AS "fileMimeType",
+          file_size      AS "fileSize",
+          created_at     AS "createdAt"
+        FROM invoice_attachments
+        WHERE id = $1
+      `,
+      [attachmentId],
+    );
+    if (!res.rows[0]) throw new NotFoundException('Attachment not found');
+    return res.rows[0];
+  }
+
+  async addAttachment(invoiceId: string, dto: CreateInvoiceAttachmentDto) {
+    this.assertValidUuid(invoiceId, 'invoiceId');
+
+    const invRes = await pool.query(`SELECT id FROM invoices WHERE id = $1`, [invoiceId]);
+    if (!invRes.rows[0]) throw new NotFoundException('Invoice not found');
+
+    const res = await pool.query(
+      `
+        INSERT INTO invoice_attachments (invoice_id, file_data, file_name, file_mime_type, file_size)
+        VALUES ($1, $2, $3, $4, $5)
+        RETURNING id
+      `,
+      [
+        invoiceId,
+        dto.fileData,
+        dto.fileName.trim(),
+        dto.fileMimeType ?? null,
+        dto.fileSize ?? null,
+      ],
+    );
+
+    const created = await this.getAttachment(res.rows[0].id);
+    // Return metadata only (omit the base64 payload from the create response).
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { fileData, ...meta } = created;
+    return meta;
+  }
+
+  async deleteAttachment(attachmentId: string) {
+    this.assertValidUuid(attachmentId, 'attachmentId');
+    const res = await pool.query(`DELETE FROM invoice_attachments WHERE id = $1 RETURNING id`, [
+      attachmentId,
+    ]);
+    if (!res.rows[0]) throw new NotFoundException('Attachment not found');
+    return { deleted: true };
   }
 
   private assertValidUuid(value: string, field: string) {

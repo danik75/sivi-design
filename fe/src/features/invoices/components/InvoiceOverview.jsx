@@ -11,6 +11,7 @@ import Table, {
 } from '@/components/chadcn/Table';
 import XIcon from '@/components/chadcn/icons/XIcon';
 import { formatAmount, getStatusVariant, INVOICE_TEXT } from '@/features/invoices/constants';
+import InvoiceAttachments from '@/features/invoices/components/InvoiceAttachments';
 import useInvoice from '@/features/invoices/hooks/useInvoice';
 import ReceiptDetailModal from '@/features/receipts/components/ReceiptDetailModal';
 
@@ -359,6 +360,9 @@ export default function InvoiceOverview({ isOpen, invoiceId, onClose }) {
                 <p className="text-sm text-slate-400">No line items.</p>
               )}
             </div>
+
+            {/* Attachments */}
+            <InvoiceAttachments invoiceId={invoice.id} />
 
             {/* Totals */}
             <div className="flex justify-end px-6 py-5">
