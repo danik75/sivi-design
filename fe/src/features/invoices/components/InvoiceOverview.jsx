@@ -116,8 +116,16 @@ function buildEmailHtml(invoice) {
       <div>
         <div style="font-size:11px;font-weight:600;color:#aaa;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;">Customer</div>
         <div style="font-size:14px;color:#222;">${invoice.customerName ?? '—'}</div>
-        ${invoice.customerCompanyName ? `<div style="font-size:12px;color:#666;margin-top:2px;">${invoice.customerCompanyName}</div>` : ''}
-        ${invoice.customerCompanyNumber ? `<div style="font-size:12px;color:#666;margin-top:2px;">Company No. ${invoice.customerCompanyNumber}</div>` : ''}
+        ${
+          invoice.customerCompanyName || invoice.customerCompanyNumber
+            ? `<div style="font-size:12px;color:#666;margin-top:2px;">${[
+                invoice.customerCompanyName,
+                invoice.customerCompanyNumber ? `Company No. ${invoice.customerCompanyNumber}` : '',
+              ]
+                .filter(Boolean)
+                .join(' · ')}</div>`
+            : ''
+        }
       </div>
       <div>
         <div style="font-size:11px;font-weight:600;color:#aaa;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;">Contract type</div>
@@ -289,11 +297,18 @@ export default function InvoiceOverview({ isOpen, invoiceId, onClose }) {
             {/* Meta grid */}
             <div className="grid grid-cols-2 gap-x-8 gap-y-4 px-6 py-5 sm:grid-cols-3 lg:grid-cols-4">
               <Field label="Customer" value={invoice.customerName} />
-              {invoice.customerCompanyName ? (
-                <Field label="Company" value={invoice.customerCompanyName} />
-              ) : null}
-              {invoice.customerCompanyNumber ? (
-                <Field label="Company No." value={invoice.customerCompanyNumber} />
+              {invoice.customerCompanyName || invoice.customerCompanyNumber ? (
+                <Field
+                  label="Company"
+                  value={[
+                    invoice.customerCompanyName,
+                    invoice.customerCompanyNumber
+                      ? `Company No. ${invoice.customerCompanyNumber}`
+                      : null,
+                  ]
+                    .filter(Boolean)
+                    .join(' · ')}
+                />
               ) : null}
               <Field label="Contract" value={invoice.contractTypeLabel} />
               <Field label="Issue Date" value={formatDate(invoice.issueDate)} />
