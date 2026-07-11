@@ -1,4 +1,5 @@
 import PropTypes from 'prop-types';
+import { useQuery } from '@tanstack/react-query';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Button from '@/components/chadcn/Button';
 import DatePicker from '@/components/chadcn/DatePicker';
@@ -22,6 +23,7 @@ import useCreateInvoice from '@/features/invoices/hooks/useCreateInvoice';
 import useInvoice from '@/features/invoices/hooks/useInvoice';
 import useInvoicePrefill from '@/features/invoices/hooks/useInvoicePrefill';
 import useUpdateInvoice from '@/features/invoices/hooks/useUpdateInvoice';
+import { getAvailableTasks } from '@/features/invoices/services/invoicesApi';
 
 const FORM_ID = 'invoice-modal-form';
 const TEXTAREA_CLASS_NAME =
@@ -66,6 +68,7 @@ export default function InvoiceModal({ isOpen, onClose, invoice, onSuccess, onVi
   const [picker, setPicker] = useState(null); // 'tasks' | 'expenses' | null
   const skipAutoPrefillRef = useRef(false);
   const lineItemsInitializedRef = useRef(false);
+  const autoAddedCustomerRef = useRef(''); // customerId whose tasks were auto-added (create)
 
   const createMutation = useCreateInvoice();
   const updateMutation = useUpdateInvoice();
@@ -123,6 +126,7 @@ export default function InvoiceModal({ isOpen, onClose, invoice, onSuccess, onVi
     setErrors({});
     setSubmitError('');
     lineItemsInitializedRef.current = false; // reset so detail fetch can populate once
+    autoAddedCustomerRef.current = ''; // reset so tasks re-populate on (re)open
     createMutation.reset();
     updateMutation.reset();
 
@@ -286,6 +290,32 @@ export default function InvoiceModal({ isOpen, onClose, invoice, onSuccess, onVi
     });
     handleLineItemsChange([...lineItems, ...additions]);
   };
+
+  // On create, know the customer's available (done, unlinked) tasks so we can
+  // pre-populate the invoice and disable "Add from tasks" while all are added.
+  const { data: availableTasks = [] } = useQuery(
+    ['available-tasks', formState.customerId, invoice?.id],
+    () => getAvailableTasks(formState.customerId, invoice?.id),
+    { enabled: isOpen && !invoice && Boolean(formState.customerId) }
+  );
+
+  // Auto-add all available tasks once per selected customer (create mode).
+  useEffect(() => {
+    if (invoice || !formState.customerId || !availableTasks.length) return;
+    if (autoAddedCustomerRef.current === formState.customerId) return;
+    autoAddedCustomerRef.current = formState.customerId;
+    const present = new Set(
+      lineItems.filter((li) => li.sourceType === 'task').map((li) => li.sourceId)
+    );
+    const toAdd = availableTasks.filter((t) => !present.has(t.id));
+    if (toAdd.length) handleAddTasks(toAdd);
+  }, [availableTasks, formState.customerId, invoice]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // "Add from tasks" is disabled while every available task is already on the invoice.
+  const allTasksAdded =
+    !invoice &&
+    availableTasks.length > 0 &&
+    availableTasks.every((t) => linkedTaskIds.includes(t.id));
 
   const handleAddExpenses = (expenses) => {
     const additions = expenses.map((e) => {
@@ -506,7 +536,7 @@ export default function InvoiceModal({ isOpen, onClose, invoice, onSuccess, onVi
             type="button"
             variant="ghost"
             onClick={() => setPicker('tasks')}
-            disabled={!formState.customerId}
+            disabled={!formState.customerId || allTasksAdded}
           >
             Add from tasks
           </Button>
