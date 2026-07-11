@@ -10,6 +10,7 @@ import Dropdown from '@/components/chadcn/Dropdown';
 import XIcon from '@/components/chadcn/icons/XIcon';
 import useContracts from '@/features/contracts/hooks/useContracts';
 import useCustomers from '@/features/customers/hooks/useCustomers';
+import InvoiceAttachments from '@/features/invoices/components/InvoiceAttachments';
 import InvoiceLineItemsEditor from '@/features/invoices/components/InvoiceLineItemsEditor';
 import TaskPickerDialog from '@/features/invoices/components/TaskPickerDialog';
 import ExpensePickerDialog from '@/features/invoices/components/ExpensePickerDialog';
@@ -557,6 +558,17 @@ export default function InvoiceModal({ isOpen, onClose, invoice, onSuccess, onVi
         {errors.lineItems ? (
           <p className="text-xs font-medium text-rose-600">{errors.lineItems}</p>
         ) : null}
+
+        {invoice?.id ? (
+          <InvoiceAttachments
+            invoiceId={invoice.id}
+            className="border-t border-slate-100 pt-4"
+          />
+        ) : (
+          <p className="border-t border-slate-100 pt-4 text-xs text-slate-400">
+            Save the invoice to add attachments.
+          </p>
+        )}
 
         <div className="flex justify-end">
           <div className="w-full max-w-sm rounded-2xl border border-slate-100 bg-slate-50 p-4 shadow-sm">

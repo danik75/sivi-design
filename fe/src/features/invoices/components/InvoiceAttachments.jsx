@@ -48,7 +48,7 @@ const PaperclipIcon = () => (
   </svg>
 );
 
-export default function InvoiceAttachments({ invoiceId }) {
+export default function InvoiceAttachments({ invoiceId, className }) {
   const qc = useQueryClient();
   const fileRef = useRef(null);
   const [error, setError] = useState('');
@@ -117,7 +117,7 @@ export default function InvoiceAttachments({ invoiceId }) {
   }
 
   return (
-    <div className="px-6 py-4">
+    <div className={className}>
       <div className="mb-3 flex items-center justify-between">
         <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Attachments</p>
         <Button
@@ -181,4 +181,9 @@ export default function InvoiceAttachments({ invoiceId }) {
 
 InvoiceAttachments.propTypes = {
   invoiceId: PropTypes.string.isRequired,
+  className: PropTypes.string,
+};
+
+InvoiceAttachments.defaultProps = {
+  className: 'px-6 py-4',
 };
