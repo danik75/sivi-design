@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types';
 import { useQuery } from '@tanstack/react-query';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Button from '@/components/chadcn/Button';
 import Dialog from '@/components/chadcn/Dialog';
 import SearchInput from '@/components/chadcn/SearchInput';
@@ -27,6 +27,14 @@ export default function TaskPickerDialog({
 
   const already = useMemo(() => new Set(existingSourceIds), [existingSourceIds]);
   const tasks = data ?? [];
+
+  // Pre-select the tasks that aren't already on the invoice (e.g. removed ones),
+  // so re-adding them is a single confirm.
+  useEffect(() => {
+    if (!isOpen || !data) return;
+    const addedSet = new Set(existingSourceIds);
+    setSelected(new Set(data.filter((t) => !addedSet.has(t.id)).map((t) => t.id)));
+  }, [isOpen, data]); // eslint-disable-line react-hooks/exhaustive-deps
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return tasks;
