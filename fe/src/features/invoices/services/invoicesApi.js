@@ -18,3 +18,15 @@ export const getAvailableExpenses = (customerId, excludeInvoiceId, search) =>
   api
     .get('/invoices/available-expenses', { params: { customerId, excludeInvoiceId, search } })
     .then((r) => r.data);
+
+export const listInvoiceAttachments = (invoiceId) =>
+  api.get(`/invoices/${invoiceId}/attachments`).then((r) => r.data);
+
+export const uploadInvoiceAttachment = (invoiceId, payload) =>
+  api.post(`/invoices/${invoiceId}/attachments`, payload).then((r) => r.data);
+
+export const getInvoiceAttachment = (attachmentId) =>
+  api.get(`/invoices/attachments/${attachmentId}`).then((r) => r.data);
+
+export const deleteInvoiceAttachment = (attachmentId) =>
+  api.delete(`/invoices/attachments/${attachmentId}`).then((r) => r.data);

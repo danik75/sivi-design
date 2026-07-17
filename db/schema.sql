@@ -308,3 +308,15 @@ CREATE TABLE IF NOT EXISTS receipts (
 );
 
 CREATE INDEX IF NOT EXISTS receipts_invoice_id_idx ON receipts(invoice_id);
+
+CREATE TABLE IF NOT EXISTS invoice_attachments (
+  id             UUID          PRIMARY KEY DEFAULT gen_random_uuid(),
+  invoice_id     UUID          NOT NULL REFERENCES invoices(id) ON DELETE CASCADE,
+  file_data      TEXT          NOT NULL,
+  file_name      VARCHAR(255)  NOT NULL,
+  file_mime_type VARCHAR(100),
+  file_size      INTEGER,
+  created_at     TIMESTAMPTZ   NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS invoice_attachments_invoice_id_idx ON invoice_attachments(invoice_id);

@@ -11,6 +11,7 @@ import {
   Put,
   Query,
 } from '@nestjs/common';
+import { CreateInvoiceAttachmentDto } from './dto/create-invoice-attachment.dto';
 import { CreateInvoiceDto } from './dto/create-invoice.dto';
 import { TransitionStatusDto } from './dto/transition-status.dto';
 import { UpdateInvoiceDto } from './dto/update-invoice.dto';
@@ -40,6 +41,30 @@ export class InvoicesController {
     @Query('search') search?: string,
   ) {
     return this.service.availableExpenses(customerId, excludeInvoiceId, search);
+  }
+
+  // ----- Attachments (declared before :id so static paths take precedence) -----
+
+  @Get('attachments/:attachmentId')
+  getAttachment(@Param('attachmentId') attachmentId: string) {
+    return this.service.getAttachment(attachmentId);
+  }
+
+  @Delete('attachments/:attachmentId')
+  @HttpCode(HttpStatus.OK)
+  deleteAttachment(@Param('attachmentId') attachmentId: string) {
+    return this.service.deleteAttachment(attachmentId);
+  }
+
+  @Get(':id/attachments')
+  listAttachments(@Param('id') id: string) {
+    return this.service.listAttachments(id);
+  }
+
+  @Post(':id/attachments')
+  @HttpCode(HttpStatus.CREATED)
+  addAttachment(@Param('id') id: string, @Body() dto: CreateInvoiceAttachmentDto) {
+    return this.service.addAttachment(id, dto);
   }
 
   @Get()

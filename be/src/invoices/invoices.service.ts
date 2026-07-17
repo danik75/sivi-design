@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { CreateInvoiceAttachmentDto } from './dto/create-invoice-attachment.dto';
 import { CreateInvoiceDto } from './dto/create-invoice.dto';
 import { TransitionStatusDto } from './dto/transition-status.dto';
 import { UpdateInvoiceDto } from './dto/update-invoice.dto';
@@ -42,5 +43,21 @@ export class InvoicesService {
 
   availableExpenses(customerId: string, excludeInvoiceId?: string, search?: string) {
     return this.repo.getAvailableExpenses(customerId, excludeInvoiceId, search);
+  }
+
+  listAttachments(invoiceId: string) {
+    return this.repo.listAttachments(invoiceId);
+  }
+
+  getAttachment(attachmentId: string) {
+    return this.repo.getAttachment(attachmentId);
+  }
+
+  addAttachment(invoiceId: string, dto: CreateInvoiceAttachmentDto) {
+    return this.repo.addAttachment(invoiceId, dto);
+  }
+
+  deleteAttachment(attachmentId: string) {
+    return this.repo.deleteAttachment(attachmentId);
   }
 }
