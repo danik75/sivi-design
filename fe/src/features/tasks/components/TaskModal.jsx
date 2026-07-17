@@ -433,7 +433,7 @@ export default function TaskModal({ isOpen, onClose, task, onSuccess, onComplete
               <Input
                 type="number"
                 min="0"
-                step="0.5"
+                step="0.25"
                 value={fields.estimatedHours}
                 onChange={set('estimatedHours')}
                 placeholder={TASK_TEXT.modal.estimatedHoursPlaceholder}
