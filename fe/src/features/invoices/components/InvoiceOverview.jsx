@@ -320,7 +320,7 @@ export default function InvoiceOverview({ isOpen, invoiceId, onClose }) {
                 <Table>
                   <TableHead>
                     <TableRow>
-                      <TableHeader>Description</TableHeader>
+                      <TableHeader>Task Name</TableHeader>
                       <TableHeader>Source</TableHeader>
                       <TableHeader>Date</TableHeader>
                       <TableHeader>Qty</TableHeader>

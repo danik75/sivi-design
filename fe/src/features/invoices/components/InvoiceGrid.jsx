@@ -121,7 +121,7 @@ export default function InvoiceGrid({
         </div>
       ) : allInvoices.length ? (
         <div className="space-y-4">
-          <Table>
+          <Table maxHeight="max-h-[60vh]">
             <TableHead>
               <TableRow>
                 <TableHeader>{INVOICE_TEXT.headers.invoiceNumber}</TableHeader>
