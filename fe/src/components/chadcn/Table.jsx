@@ -1,8 +1,15 @@
 import PropTypes from 'prop-types';
 
-function Table({ children }) {
+function Table({ children, maxHeight }) {
+  // When maxHeight is set, the wrapper becomes a vertical scroll container and
+  // the header sticks to the top while the body scrolls.
+  const scrollCls = maxHeight
+    ? ` ${maxHeight} overflow-y-auto [&>table>thead]:sticky [&>table>thead]:top-0 [&>table>thead]:z-10`
+    : '';
   return (
-    <div className="w-full overflow-x-auto rounded-xl border border-slate-100 bg-white shadow-sm">
+    <div
+      className={`w-full overflow-x-auto rounded-xl border border-slate-100 bg-white shadow-sm${scrollCls}`}
+    >
       <table className="w-full text-sm bg-white">{children}</table>
     </div>
   );
@@ -42,6 +49,7 @@ const childrenProp = PropTypes.node;
 
 Table.propTypes = {
   children: childrenProp,
+  maxHeight: PropTypes.string,
 };
 
 TableHead.propTypes = {

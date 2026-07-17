@@ -120,7 +120,7 @@ export const INVOICE_TEXT = {
     prefillLoading: 'Loading suggestions…',
     prefillError: 'Unable to load suggestions.',
     lineItem: {
-      description: 'Description',
+      description: 'Task Name',
       quantity: 'Qty',
       unitPrice: 'Unit Price',
       amount: 'Amount',
