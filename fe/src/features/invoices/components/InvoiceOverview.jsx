@@ -296,7 +296,6 @@ export default function InvoiceOverview({ isOpen, invoiceId, onClose }) {
               {invoice.customerCompanyNumber ? (
                 <Field label="Company No." value={invoice.customerCompanyNumber} />
               ) : null}
-              <Field label="Contract" value={invoice.contractTypeLabel} />
               <Field label="Issue Date" value={formatDate(invoice.issueDate)} />
               <Field label="Due Date" value={formatDate(invoice.dueDate)} />
               <Field label="Currency" value={invoice.currency} />
